@@ -32,18 +32,22 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Language>('en');
 
   useEffect(() => {
-    const storedLang = localStorage.getItem('lang') as Language | null;
-    if (storedLang && ['en', 'ar'].includes(storedLang)) {
-      setLang(storedLang);
+    if (typeof window !== 'undefined') {
+      const storedLang = localStorage.getItem('lang') as Language | null;
+      if (storedLang && ['en', 'ar'].includes(storedLang)) {
+        setLang(storedLang);
+      }
     }
   }, []);
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   useEffect(() => {
-    document.documentElement.lang = lang;
-    document.documentElement.dir = dir;
-    localStorage.setItem('lang', lang);
+    if (typeof window !== 'undefined') {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = dir;
+      localStorage.setItem('lang', lang);
+    }
   }, [lang, dir]);
 
   const t = useCallback((key: string, options?: { [key: string]: string | number }) => {
