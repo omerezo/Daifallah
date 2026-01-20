@@ -32,22 +32,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Language>('en');
 
   useEffect(() => {
-    const storedLang = localStorage.getItem('lang') as Language;
+    const storedLang = localStorage.getItem('lang') as Language | null;
     if (storedLang && ['en', 'ar'].includes(storedLang)) {
       setLang(storedLang);
     }
   }, []);
-
-  const setLanguage = (newLang: Language) => {
-    setLang(newLang);
-    localStorage.setItem('lang', newLang);
-  };
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
 
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = dir;
+    localStorage.setItem('lang', lang);
   }, [lang, dir]);
 
   const t = useCallback((key: string, options?: { [key: string]: string | number }) => {
@@ -61,7 +57,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [lang]);
 
   return (
-    <I18nContext.Provider value={{ lang, dir, t, setLanguage }}>
+    <I18nContext.Provider value={{ lang, dir, t, setLanguage: setLang }}>
       {children}
     </I18nContext.Provider>
   );
