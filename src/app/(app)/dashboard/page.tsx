@@ -47,13 +47,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function DashboardPage() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
 
   const currencySummaries = useMemo(() => {
     const summaries = {} as Record<
@@ -79,6 +82,15 @@ export default function DashboardPage() {
     return summaries;
   }, []);
 
+  const handleSavePayment = () => {
+    // In a real app, you would handle form submission here
+    toast({
+      title: t('payment_saved'),
+      description: t('payment_saved_description'),
+    });
+    setIsRecordPaymentOpen(false);
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex items-center">
@@ -86,7 +98,10 @@ export default function DashboardPage() {
           {t('dashboard')}
         </h1>
         <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-          <Dialog>
+          <Dialog
+            open={isRecordPaymentOpen}
+            onOpenChange={setIsRecordPaymentOpen}
+          >
             <DialogTrigger asChild>
               <Button size="sm" className="h-8 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
@@ -137,7 +152,9 @@ export default function DashboardPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">{t('save_payment')}</Button>
+                <Button type="button" onClick={handleSavePayment}>
+                  {t('save_payment')}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

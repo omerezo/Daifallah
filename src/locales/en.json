@@ -115,5 +115,7 @@
   "committee_logo": "Committee Logo",
   "upload_new_logo": "Upload a new logo to appear on reports and receipts.",
   "upload": "Upload",
-  "select_participant": "Select a participant"
+  "select_participant": "Select a participant",
+  "payment_saved": "Payment Saved",
+  "payment_saved_description": "Your payment has been successfully recorded."
 }
