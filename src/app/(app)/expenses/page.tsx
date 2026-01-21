@@ -27,11 +27,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
-import { expenses } from '@/lib/placeholder-data';
+import { useData } from '@/context/data-provider';
 import { Badge } from '@/components/ui/badge';
 
 export default function ExpensesPage() {
   const { t } = useTranslation();
+  const { expenses } = useData();
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">

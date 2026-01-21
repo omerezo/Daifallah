@@ -26,12 +26,6 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
-  recentActivities as initialRecentActivities,
-  payments as initialPayments,
-  expenses as allExpenses,
-  participants,
-} from '@/lib/placeholder-data';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -51,6 +45,7 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useData } from '@/context/data-provider';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
@@ -63,12 +58,16 @@ const months = [
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const {
+    payments,
+    addPayment,
+    recentActivities,
+    addRecentActivity,
+    participants,
+    expenses: allExpenses,
+  } = useData();
 
-  const [payments, setPayments] = useState(initialPayments);
-  const [recentActivities, setRecentActivities] = useState(
-    initialRecentActivities
-  );
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
 
   const [selectedParticipantId, setSelectedParticipantId] = useState<
     string | undefined
@@ -102,7 +101,7 @@ export default function DashboardPage() {
       };
     }
     return summaries;
-  }, [payments]);
+  }, [payments, allExpenses]);
 
   const handleSavePayment = () => {
     const paymentDate = new Date(paymentYear, paymentMonth, 1);
@@ -139,8 +138,8 @@ export default function DashboardPage() {
       amount: `${paymentAmount} ${paymentCurrency}`,
     };
 
-    setPayments((prevPayments) => [newPayment, ...prevPayments]);
-    setRecentActivities((prevActivities) => [newActivity, ...prevActivities]);
+    addPayment(newPayment);
+    addRecentActivity(newActivity);
 
     toast({
       title: t('payment_saved'),
@@ -456,5 +455,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

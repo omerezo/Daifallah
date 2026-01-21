@@ -27,15 +27,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
-import { payments } from '@/lib/placeholder-data';
+import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
 import { logoBase64 } from '@/components/logo';
+import type { Payment } from '@/lib/types';
 
 export default function PaymentsPage() {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
+  const { payments } = useData();
 
-  const generateReceipt = (payment: (typeof payments)[0]) => {
+  const generateReceipt = (payment: Payment) => {
     const receiptHtml = `
       <html>
         <head>
