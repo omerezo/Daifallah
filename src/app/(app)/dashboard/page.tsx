@@ -24,7 +24,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { recentActivities } from '@/lib/placeholder-data';
+import {
+  recentActivities,
+  payments,
+  expenses as allExpenses,
+} from '@/lib/placeholder-data';
 import {
   Dialog,
   DialogContent,
@@ -42,58 +46,134 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DialogFooter } from '@/components/ui/dialog';
+import { useMemo } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const kpiData = [
-  {
-    title: 'total_collected_month',
-    value: '$5,231.89',
-    icon: TrendingUp,
-    change: '+20.1% from last month',
-  },
-  {
-    title: 'total_expenses',
-    value: '$1,250.00',
-    icon: TrendingDown,
-    change: '+15.2% from last month',
-  },
-  {
-    title: 'net_balance',
-    value: '$3,981.89',
-    icon: DollarSign,
-    change: '+180.1% from last month',
-  },
-  {
-    title: 'active_members',
-    value: '73',
-    icon: Users,
-    change: '+2 since last month',
-  },
-];
+const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function DashboardPage() {
   const { t } = useTranslation();
+
+  const currencySummaries = useMemo(() => {
+    const summaries = {} as Record<
+      (typeof currencies)[number],
+      { collected: number; expenses: number; net: number }
+    >;
+
+    for (const currency of currencies) {
+      const collected = payments
+        .filter((p) => p.currency === currency)
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      const expenses = allExpenses
+        .filter((e) => e.currency === currency)
+        .reduce((sum, e) => sum + e.amount, 0);
+
+      summaries[currency] = {
+        collected,
+        expenses,
+        net: collected - expenses,
+      };
+    }
+    return summaries;
+  }, []);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <h1 className="font-headline text-2xl font-bold tracking-tight md:text-3xl">
         {t('dashboard')}
       </h1>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        {kpiData.map((kpi) => (
-          <Card key={kpi.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {t(kpi.title)}
-              </CardTitle>
-              <kpi.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{kpi.value}</div>
-              <p className="text-xs text-muted-foreground">{kpi.change}</p>
-            </CardContent>
-          </Card>
+
+      <Tabs defaultValue={currencies[0]} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          {currencies.map((currency) => (
+            <TabsTrigger key={currency} value={currency}>
+              {currency}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {currencies.map((currency) => (
+          <TabsContent key={currency} value={currency}>
+            <div className="grid gap-4 pt-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {t('total_collected_month')}
+                  </CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {currencySummaries[currency].collected.toLocaleString()}
+                    <span className="text-xs text-muted-foreground ltr:ml-1 rtl:mr-1">
+                      {currency}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +20.1% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {t('total_expenses')}
+                  </CardTitle>
+                  <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {currencySummaries[currency].expenses.toLocaleString()}
+                    <span className="text-xs text-muted-foreground ltr:ml-1 rtl:mr-1">
+                      {currency}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +15.2% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {t('net_balance')}
+                  </CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {currencySummaries[currency].net.toLocaleString()}
+                    <span className="text-xs text-muted-foreground ltr:ml-1 rtl:mr-1">
+                      {currency}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +180.1% from last month
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         ))}
+      </Tabs>
+
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('active_members')}
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">73</div>
+            <p className="text-xs text-muted-foreground">
+              +2 since last month
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
       <div className="grid grid-cols-1 gap-4 md:gap-8">
         <Card>
           <CardHeader>
