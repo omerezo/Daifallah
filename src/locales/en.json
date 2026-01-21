@@ -135,7 +135,10 @@
   "september": "September",
   "october": "October",
   "november": "November",
-  "december": "December"
+  "december": "December",
+  "day_of_month": "Day of Month",
+  "income": "Income",
+  "transactions_detail": "Transactions Detail",
+  "detailed_list_transactions_month": "A detailed list of all income and expenses for the selected month.",
+  "no_transactions_month": "No transactions recorded for this month."
 }
-
-    

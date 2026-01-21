@@ -135,7 +135,10 @@
   "september": "سبتمبر",
   "october": "أكتوبر",
   "november": "نوفمبر",
-  "december": "ديسمبر"
+  "december": "ديسمبر",
+  "day_of_month": "يوم من الشهر",
+  "income": "دخل",
+  "transactions_detail": "تفاصيل المعاملات",
+  "detailed_list_transactions_month": "قائمة مفصلة بجميع الإيرادات والمصروفات للشهر المحدد.",
+  "no_transactions_month": "لا توجد معاملات مسجلة لهذا الشهر."
 }
-
-    

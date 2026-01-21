@@ -66,3 +66,26 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .printable-area {
+    padding: 1rem;
+  }
+  .print-only-title {
+      display: block !important;
+      margin-bottom: 2rem;
+  }
+  .recharts-surface {
+    overflow: visible;
+  }
+  main {
+    padding: 0 !important;
+  }
+}
