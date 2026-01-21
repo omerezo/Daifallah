@@ -39,7 +39,7 @@ export default function LoginPage() {
             <Logo className="h-16 w-16" />
           </div>
           <CardTitle className="font-headline text-3xl">
-            UmmaTech Aid
+            {t('app_name')}
           </CardTitle>
           <CardDescription>{t('login_description')}</CardDescription>
         </CardHeader>

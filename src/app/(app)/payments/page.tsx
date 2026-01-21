@@ -28,45 +28,119 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 import { payments } from '@/lib/placeholder-data';
-import jsPDF from 'jspdf';
 import { useToast } from '@/hooks/use-toast';
+import { logoBase64 } from '@/components/logo';
 
 export default function PaymentsPage() {
-  const { t } = useTranslation();
+  const { t, dir } = useTranslation();
   const { toast } = useToast();
 
   const generateReceipt = (payment: (typeof payments)[0]) => {
-    const doc = new jsPDF();
-    
-    // In a real app, you would use the logo here
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.text('UmmaTech Aid', 105, 20, { align: 'center' });
+    const receiptHtml = `
+      <html>
+        <head>
+          <title>${t('payment_receipt')} - ${payment.id}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet" />
+          <style>
+            body { 
+              font-family: 'Amiri', serif; 
+              direction: ${dir};
+              margin: 2rem;
+            }
+            .receipt-container {
+              border: 1px solid #ccc;
+              padding: 2rem;
+              width: 100%;
+              max-width: 800px;
+              margin: auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 2rem;
+            }
+            .header img {
+              width: 100px;
+              height: 100px;
+              margin-bottom: 1rem;
+            }
+            .header h1 {
+              font-size: 1.5rem;
+              margin: 0;
+            }
+            .details-grid {
+              display: grid;
+              grid-template-columns: auto 1fr;
+              gap: 1rem;
+            }
+            .details-grid dt {
+              font-weight: bold;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 3rem;
+              font-size: 0.9rem;
+              color: #555;
+            }
+             @media print {
+              body {
+                margin: 0;
+              }
+              .receipt-container {
+                border: none;
+                box-shadow: none;
+                max-width: 100%;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            <div class="header">
+              <img src="${logoBase64}" alt="Logo" />
+              <h1>${t('app_name')}</h1>
+              <h2>${t('payment_receipt')}</h2>
+            </div>
+            <dl class="details-grid">
+              <dt>${t('receipt_id')}:</dt>
+              <dd>${payment.id}</dd>
+              <dt>${t('date')}:</dt>
+              <dd>${new Date(payment.date).toLocaleDateString(dir === 'rtl' ? 'ar-SA' : 'en-US')}</dd>
+              <dt>${t('participant_name')}:</dt>
+              <dd>${payment.participantName}</dd>
+              <dt>${t('amount')}:</dt>
+              <dd>${payment.amount} ${payment.currency}</dd>
+              <dt>${t('type')}:</dt>
+              <dd>${t(payment.type.toLowerCase())}</dd>
+            </dl>
+            <div class="footer">
+              <p>${t('thank_you_contribution')}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
 
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Payment Receipt', 105, 30, { align: 'center' });
-
-    doc.line(20, 35, 190, 35);
-
-    doc.setFontSize(12);
-    doc.text(`Receipt ID: ${payment.id}`, 20, 45);
-    doc.text(`Date: ${payment.date}`, 20, 55);
-    doc.text(`Participant: ${payment.participantName}`, 20, 65);
-    doc.text(`Amount: ${payment.amount} ${payment.currency}`, 20, 75);
-    doc.text(`Type: ${payment.type}`, 20, 85);
-    
-    doc.line(20, 100, 190, 100);
-
-    doc.setFontSize(10);
-    doc.text('Thank you for your contribution!', 105, 110, { align: 'center' });
-    
-    doc.save(`receipt-${payment.id}.pdf`);
-
-    toast({
-      title: t('receipt_generated'),
-      description: `Receipt for ${payment.participantName} has been downloaded.`,
-    });
+    const receiptWindow = window.open('', '_blank');
+    if (receiptWindow) {
+      receiptWindow.document.write(receiptHtml);
+      receiptWindow.document.close();
+      receiptWindow.onload = () => {
+        receiptWindow.focus();
+        receiptWindow.print();
+        toast({
+          title: t('receipt_generated'),
+          description: t('receipt_generated_description', {name: payment.participantName}),
+        });
+      }
+    } else {
+       toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('popup_blocked_error'),
+        });
+    }
   };
 
   return (
@@ -157,3 +231,4 @@ export default function PaymentsPage() {
     </div>
   );
 }
+

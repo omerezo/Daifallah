@@ -94,7 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2 p-1">
             <Logo className="w-8 h-8" />
             <h2 className="font-headline text-lg font-semibold tracking-tight">
-              UmmaTech Aid
+              {t('app_name')}
             </h2>
           </div>
         </SidebarHeader>
