@@ -117,5 +117,6 @@
   "upload": "Upload",
   "select_participant": "Select a participant",
   "payment_saved": "Payment Saved",
-  "payment_saved_description": "Your payment has been successfully recorded."
+  "payment_saved_description": "Your payment has been successfully recorded.",
+  "fill_all_fields": "Please fill out all fields."
 }

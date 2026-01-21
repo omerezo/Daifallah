@@ -25,8 +25,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
-  recentActivities,
-  payments,
+  recentActivities as initialRecentActivities,
+  payments as initialPayments,
   expenses as allExpenses,
   participants,
 } from '@/lib/placeholder-data';
@@ -58,6 +58,18 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
 
+  const [payments, setPayments] = useState(initialPayments);
+  const [recentActivities, setRecentActivities] = useState(
+    initialRecentActivities
+  );
+
+  const [selectedParticipantId, setSelectedParticipantId] = useState<
+    string | undefined
+  >();
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentCurrency, setPaymentCurrency] =
+    useState<(typeof currencies)[number]>('USD');
+
   const currencySummaries = useMemo(() => {
     const summaries = {} as Record<
       (typeof currencies)[number],
@@ -80,14 +92,52 @@ export default function DashboardPage() {
       };
     }
     return summaries;
-  }, []);
+  }, [payments]);
 
   const handleSavePayment = () => {
-    // In a real app, you would handle form submission here
+    if (!selectedParticipantId || !paymentAmount) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('fill_all_fields'),
+      });
+      return;
+    }
+
+    const participant = participants.find((p) => p.id === selectedParticipantId);
+    if (!participant) return;
+
+    const newPayment = {
+      id: `PAY-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      participantName: participant.name,
+      amount: parseFloat(paymentAmount),
+      currency: paymentCurrency,
+      type: 'Monthly Share' as const,
+    };
+
+    const newActivity = {
+      id: `${Date.now()}`,
+      name: participant.name,
+      email: `${participant.name.toLowerCase().replace(' ', '.')}@example.com`,
+      type: 'Payment' as const,
+      status: 'Paid' as const,
+      date: new Date().toLocaleDateString('en-CA'),
+      amount: `${paymentAmount} ${paymentCurrency}`,
+    };
+
+    setPayments((prevPayments) => [newPayment, ...prevPayments]);
+    setRecentActivities((prevActivities) => [newActivity, ...prevActivities]);
+
     toast({
       title: t('payment_saved'),
       description: t('payment_saved_description'),
     });
+    
+    // Reset form and close dialog
+    setSelectedParticipantId(undefined);
+    setPaymentAmount('');
+    setPaymentCurrency('USD');
     setIsRecordPaymentOpen(false);
   };
 
@@ -119,7 +169,10 @@ export default function DashboardPage() {
                   <Label htmlFor="participant" className="text-right">
                     {t('participant')}
                   </Label>
-                  <Select>
+                  <Select
+                    value={selectedParticipantId}
+                    onValueChange={setSelectedParticipantId}
+                  >
                     <SelectTrigger id="participant" className="col-span-3">
                       <SelectValue placeholder={t('select_participant')} />
                     </SelectTrigger>
@@ -136,14 +189,25 @@ export default function DashboardPage() {
                   <Label htmlFor="amount" className="text-right">
                     {t('amount')}
                   </Label>
-                  <Input id="amount" type="number" className="col-span-2" />
-                  <Select defaultValue="usd">
+                  <Input
+                    id="amount"
+                    type="number"
+                    className="col-span-2"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                  />
+                  <Select
+                    value={paymentCurrency}
+                    onValueChange={(v) =>
+                      setPaymentCurrency(v as typeof paymentCurrency)
+                    }
+                  >
                     <SelectTrigger className="col-span-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {currencies.map((c) => (
-                        <SelectItem key={c} value={c.toLowerCase()}>
+                        <SelectItem key={c} value={c}>
                           {c}
                         </SelectItem>
                       ))}
