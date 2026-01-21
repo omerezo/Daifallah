@@ -44,6 +44,7 @@ const months = [
   'january', 'february', 'march', 'april', 'may', 'june', 
   'july', 'august', 'september', 'october', 'november', 'december'
 ];
+const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function MonthlyReportsPage() {
   const { t, dir } = useTranslation();
@@ -52,12 +53,11 @@ export default function MonthlyReportsPage() {
 
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  // For the demo, let's use a fixed currency. In a real app, this could be a selector.
-  const selectedCurrency = 'USD'; 
+  const [selectedCurrency, setSelectedCurrency] = useState<(typeof currencies)[number]>('USD'); 
 
   const handlePrint = useReactToPrint({
     content: () => printRef.current,
-    documentTitle: `${t('monthly_reports')} - ${t(months[selectedMonth])} ${selectedYear}`
+    documentTitle: `${t('monthly_reports')} - ${t(months[selectedMonth])} ${selectedYear} (${selectedCurrency})`
   });
 
   const monthlyData = useMemo(() => {
@@ -151,6 +151,21 @@ export default function MonthlyReportsPage() {
               {years.map((year) => (
                 <SelectItem key={year} value={String(year)}>
                   {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+           <Select
+            value={selectedCurrency}
+            onValueChange={(v) => setSelectedCurrency(v as (typeof currencies)[number])}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder={t('currency')} />
+            </SelectTrigger>
+            <SelectContent>
+              {currencies.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
                 </SelectItem>
               ))}
             </SelectContent>
