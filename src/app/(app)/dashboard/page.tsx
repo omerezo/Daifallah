@@ -14,7 +14,6 @@ import {
   TrendingDown,
   PlusCircle,
   Upload,
-  CalendarIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -52,12 +51,14 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
+
+const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+const months = [
+  'january', 'february', 'march', 'april', 'may', 'june', 
+  'july', 'august', 'september', 'october', 'november', 'december'
+];
 
 export default function DashboardPage() {
   const { t } = useTranslation();
@@ -75,7 +76,8 @@ export default function DashboardPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentCurrency, setPaymentCurrency] =
     useState<(typeof currencies)[number]>('USD');
-  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
+  const [paymentMonth, setPaymentMonth] = useState(new Date().getMonth());
+  const [paymentYear, setPaymentYear] = useState(new Date().getFullYear());
   const [bankTransferFile, setBankTransferFile] = useState<File | null>(null);
 
   const currencySummaries = useMemo(() => {
@@ -103,6 +105,8 @@ export default function DashboardPage() {
   }, [payments]);
 
   const handleSavePayment = () => {
+    const paymentDate = new Date(paymentYear, paymentMonth, 1);
+
     if (!selectedParticipantId || !paymentAmount || !paymentDate) {
       toast({
         variant: 'destructive',
@@ -147,7 +151,8 @@ export default function DashboardPage() {
     setSelectedParticipantId(undefined);
     setPaymentAmount('');
     setPaymentCurrency('USD');
-    setPaymentDate(new Date());
+    setPaymentMonth(new Date().getMonth());
+    setPaymentYear(new Date().getFullYear());
     setBankTransferFile(null);
     setIsRecordPaymentOpen(false);
   };
@@ -229,32 +234,38 @@ export default function DashboardPage() {
                   <Label htmlFor="payment-date" className="text-right">
                     {t('date')}
                   </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'col-span-3 justify-start text-left font-normal',
-                          !paymentDate && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
-                        {paymentDate ? (
-                          format(paymentDate, 'PPP')
-                        ) : (
-                          <span>{t('pick_a_date')}</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={paymentDate}
-                        onSelect={setPaymentDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div className="col-span-3 grid grid-cols-2 gap-2">
+                    <Select
+                      value={String(paymentMonth)}
+                      onValueChange={(v) => setPaymentMonth(Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('month')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {months.map((month, index) => (
+                           <SelectItem key={month} value={String(index)}>
+                            {t(month)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={String(paymentYear)}
+                      onValueChange={(v) => setPaymentYear(Number(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('year')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={String(year)}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="bank-transfer" className="text-right">
@@ -445,3 +456,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

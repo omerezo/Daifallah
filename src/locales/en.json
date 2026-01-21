@@ -38,6 +38,7 @@
   "monthly_overview": "Monthly Overview",
   "income_vs_expenses_overview": "Overview of income vs. expenses.",
   "year": "Year",
+  "month": "Month",
   "export_pdf": "Export to PDF",
   "visual_breakdown_income_expenses": "A visual breakdown of income and expenses for this month.",
   "yoy_growth_overview": "Year-over-year growth overview.",
@@ -122,5 +123,19 @@
   "pick_a_date": "Pick a date",
   "bank_transfer": "Bank Transfer",
   "upload_file": "Upload file",
-  "attachment": "Attachment"
+  "attachment": "Attachment",
+  "january": "January",
+  "february": "February",
+  "march": "March",
+  "april": "April",
+  "may": "May",
+  "june": "June",
+  "july": "July",
+  "august": "August",
+  "september": "September",
+  "october": "October",
+  "november": "November",
+  "december": "December"
 }
+
+    

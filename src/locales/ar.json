@@ -38,6 +38,7 @@
   "monthly_overview": "نظرة عامة شهرية",
   "income_vs_expenses_overview": "نظرة عامة على الدخل مقابل المصروفات.",
   "year": "السنة",
+  "month": "الشهر",
   "export_pdf": "تصدير PDF",
   "visual_breakdown_income_expenses": "تحليل مرئي للدخل والمصروفات لهذا الشهر.",
   "yoy_growth_overview": "نظرة عامة على النمو السنوي",
@@ -122,5 +123,19 @@
   "pick_a_date": "اختر تاريخاً",
   "bank_transfer": "حوالة بنكية",
   "upload_file": "رفع ملف",
-  "attachment": "مرفق"
+  "attachment": "مرفق",
+  "january": "يناير",
+  "february": "فبراير",
+  "march": "مارس",
+  "april": "أبريل",
+  "may": "مايو",
+  "june": "يونيو",
+  "july": "يوليو",
+  "august": "أغسطس",
+  "september": "سبتمبر",
+  "october": "أكتوبر",
+  "november": "نوفمبر",
+  "december": "ديسمبر"
 }
+
+    
