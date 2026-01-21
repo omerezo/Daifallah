@@ -180,6 +180,7 @@ export default function PaymentsPage() {
                 <TableHead className="text-right">{t('amount')}</TableHead>
                 <TableHead className="hidden md:table-cell">{t('currency')}</TableHead>
                 <TableHead className="hidden sm:table-cell">{t('type')}</TableHead>
+                <TableHead className="hidden lg:table-cell">{t('attachment')}</TableHead>
                 <TableHead>
                   <span className="sr-only">{t('actions')}</span>
                 </TableHead>
@@ -197,6 +198,16 @@ export default function PaymentsPage() {
                     {payment.currency}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">{t(payment.type.toLowerCase())}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {payment.bankTransferProof ? (
+                      <a href="#" className="underline flex items-center gap-1 text-sm">
+                        <File className="h-3.5 w-3.5" />
+                        {payment.bankTransferProof}
+                      </a>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -231,4 +242,3 @@ export default function PaymentsPage() {
     </div>
   );
 }
-

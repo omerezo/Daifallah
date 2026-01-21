@@ -118,5 +118,9 @@
   "select_participant": "Select a participant",
   "payment_saved": "Payment Saved",
   "payment_saved_description": "Your payment has been successfully recorded.",
-  "fill_all_fields": "Please fill out all fields."
+  "fill_all_fields": "Please fill out all fields.",
+  "pick_a_date": "Pick a date",
+  "bank_transfer": "Bank Transfer",
+  "upload_file": "Upload file",
+  "attachment": "Attachment"
 }

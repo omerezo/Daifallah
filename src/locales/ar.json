@@ -118,5 +118,9 @@
   "select_participant": "اختر مشاركاً",
   "payment_saved": "تم حفظ الدفعة",
   "payment_saved_description": "تم تسجيل الدفعة بنجاح.",
-  "fill_all_fields": "يرجى ملء جميع الحقول."
+  "fill_all_fields": "يرجى ملء جميع الحقول.",
+  "pick_a_date": "اختر تاريخاً",
+  "bank_transfer": "حوالة بنكية",
+  "upload_file": "رفع ملف",
+  "attachment": "مرفق"
 }

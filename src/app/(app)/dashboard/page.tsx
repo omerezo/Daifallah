@@ -13,6 +13,8 @@ import {
   TrendingUp,
   TrendingDown,
   PlusCircle,
+  Upload,
+  CalendarIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -50,6 +52,10 @@ import { DialogFooter } from '@/components/ui/dialog';
 import { useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
@@ -69,6 +75,8 @@ export default function DashboardPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentCurrency, setPaymentCurrency] =
     useState<(typeof currencies)[number]>('USD');
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
+  const [bankTransferFile, setBankTransferFile] = useState<File | null>(null);
 
   const currencySummaries = useMemo(() => {
     const summaries = {} as Record<
@@ -95,7 +103,7 @@ export default function DashboardPage() {
   }, [payments]);
 
   const handleSavePayment = () => {
-    if (!selectedParticipantId || !paymentAmount) {
+    if (!selectedParticipantId || !paymentAmount || !paymentDate) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -109,11 +117,12 @@ export default function DashboardPage() {
 
     const newPayment = {
       id: `PAY-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+      date: paymentDate.toISOString().split('T')[0],
       participantName: participant.name,
       amount: parseFloat(paymentAmount),
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
+      bankTransferProof: bankTransferFile?.name,
     };
 
     const newActivity = {
@@ -122,7 +131,7 @@ export default function DashboardPage() {
       email: `${participant.name.toLowerCase().replace(' ', '.')}@example.com`,
       type: 'Payment' as const,
       status: 'Paid' as const,
-      date: new Date().toLocaleDateString('en-CA'),
+      date: paymentDate.toLocaleDateString('en-CA'),
       amount: `${paymentAmount} ${paymentCurrency}`,
     };
 
@@ -138,6 +147,8 @@ export default function DashboardPage() {
     setSelectedParticipantId(undefined);
     setPaymentAmount('');
     setPaymentCurrency('USD');
+    setPaymentDate(new Date());
+    setBankTransferFile(null);
     setIsRecordPaymentOpen(false);
   };
 
@@ -213,6 +224,65 @@ export default function DashboardPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="payment-date" className="text-right">
+                    {t('date')}
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={'outline'}
+                        className={cn(
+                          'col-span-3 justify-start text-left font-normal',
+                          !paymentDate && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
+                        {paymentDate ? (
+                          format(paymentDate, 'PPP')
+                        ) : (
+                          <span>{t('pick_a_date')}</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={paymentDate}
+                        onSelect={setPaymentDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="bank-transfer" className="text-right">
+                    {t('bank_transfer')}
+                  </Label>
+                  <div className="col-span-3">
+                    <Input
+                      id="bank-transfer"
+                      type="file"
+                      className="sr-only"
+                      onChange={(e) =>
+                        setBankTransferFile(
+                          e.target.files ? e.target.files[0] : null
+                        )
+                      }
+                    />
+                    <Label
+                      htmlFor="bank-transfer"
+                      className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Upload className="h-4 w-4" />
+                      <span>
+                        {bankTransferFile
+                          ? bankTransferFile.name
+                          : t('upload_file')}
+                      </span>
+                    </Label>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
