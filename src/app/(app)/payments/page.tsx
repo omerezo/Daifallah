@@ -202,9 +202,9 @@ export default function PaymentsPage() {
                   <TableCell className="hidden sm:table-cell">{t(payment.type.toLowerCase())}</TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {payment.bankTransferProof ? (
-                      <a href="#" className="underline flex items-center gap-1 text-sm">
+                      <a href={payment.bankTransferProof.url} download={payment.bankTransferProof.filename} target="_blank" rel="noopener noreferrer" className="underline flex items-center gap-1 text-sm">
                         <File className="h-3.5 w-3.5" />
-                        {payment.bankTransferProof}
+                        {payment.bankTransferProof.filename}
                       </a>
                     ) : (
                       '-'

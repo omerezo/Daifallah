@@ -5,7 +5,10 @@ export type Payment = {
   amount: number;
   currency: 'USD' | 'SAR' | 'EGP' | 'SDG';
   type: 'Monthly Share' | 'Donation';
-  bankTransferProof?: string;
+  bankTransferProof?: {
+    filename: string;
+    url: string;
+  };
 };
 
 export type Participant = {

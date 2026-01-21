@@ -46,6 +46,7 @@ import { useMemo, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider';
+import type { Payment } from '@/lib/types';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
@@ -103,10 +104,10 @@ export default function DashboardPage() {
     return summaries;
   }, [payments, allExpenses]);
 
-  const handleSavePayment = () => {
-    const paymentDate = new Date(paymentYear, paymentMonth, 1);
+  const handleSavePayment = async () => {
+    const paymentDate = new Date();
 
-    if (!selectedParticipantId || !paymentAmount || !paymentDate) {
+    if (!selectedParticipantId || !paymentAmount) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -118,14 +119,27 @@ export default function DashboardPage() {
     const participant = participants.find((p) => p.id === selectedParticipantId);
     if (!participant) return;
 
-    const newPayment = {
+    let bankTransferProof: Payment['bankTransferProof'];
+    if (bankTransferFile) {
+      const url = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target!.result as string);
+        reader.readAsDataURL(bankTransferFile);
+      });
+      bankTransferProof = {
+        filename: bankTransferFile.name,
+        url: url,
+      };
+    }
+    
+    const newPayment: Payment = {
       id: `PAY-${Date.now()}`,
       date: paymentDate.toISOString().split('T')[0],
       participantName: participant.name,
       amount: parseFloat(paymentAmount),
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
-      bankTransferProof: bankTransferFile?.name,
+      bankTransferProof,
     };
 
     const newActivity = {
@@ -305,6 +319,23 @@ export default function DashboardPage() {
         </div>
       </div>
 
+       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t('active_members')}
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">73</div>
+            <p className="text-xs text-muted-foreground">
+              +2 since last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue={currencies[0]} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           {currencies.map((currency) => (
@@ -377,23 +408,6 @@ export default function DashboardPage() {
           </TabsContent>
         ))}
       </Tabs>
-
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('active_members')}
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">73</div>
-            <p className="text-xs text-muted-foreground">
-              +2 since last month
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="grid grid-cols-1 gap-4 md:gap-8">
         <Card>
