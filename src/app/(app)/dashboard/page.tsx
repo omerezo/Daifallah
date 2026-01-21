@@ -12,7 +12,7 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
-  Plus,
+  PlusCircle,
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
@@ -28,6 +28,7 @@ import {
   recentActivities,
   payments,
   expenses as allExpenses,
+  participants,
 } from '@/lib/placeholder-data';
 import {
   Dialog,
@@ -80,9 +81,68 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <h1 className="font-headline text-2xl font-bold tracking-tight md:text-3xl">
-        {t('dashboard')}
-      </h1>
+      <div className="flex items-center">
+        <h1 className="font-headline text-2xl font-bold tracking-tight md:text-3xl">
+          {t('dashboard')}
+        </h1>
+        <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button size="sm" className="h-8 gap-1">
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  {t('record_payment')}
+                </span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{t('record_payment')}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="participant" className="text-right">
+                    {t('participant')}
+                  </Label>
+                  <Select>
+                    <SelectTrigger id="participant" className="col-span-3">
+                      <SelectValue placeholder={t('select_participant')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {participants.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="amount" className="text-right">
+                    {t('amount')}
+                  </Label>
+                  <Input id="amount" type="number" className="col-span-2" />
+                  <Select defaultValue="usd">
+                    <SelectTrigger className="col-span-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((c) => (
+                        <SelectItem key={c} value={c.toLowerCase()}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">{t('save_payment')}</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
 
       <Tabs defaultValue={currencies[0]} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -231,49 +291,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button
-            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg md:bottom-8 md:right-8"
-            aria-label={t('record_payment')}
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{t('record_payment')}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                {t('participant')}
-              </Label>
-              <Input id="name" value="Ahmed Ali" className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="amount" className="text-right">
-                {t('amount')}
-              </Label>
-              <Input id="amount" type="number" className="col-span-2" />
-              <Select defaultValue="usd">
-                <SelectTrigger className="col-span-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="usd">USD</SelectItem>
-                  <SelectItem value="sar">SAR</SelectItem>
-                  <SelectItem value="egp">EGP</SelectItem>
-                  <SelectItem value="sdg">SDG</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit">{t('save_payment')}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

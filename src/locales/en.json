@@ -114,5 +114,6 @@
   "customize_logo_branding": "Customize your committee's logo and branding.",
   "committee_logo": "Committee Logo",
   "upload_new_logo": "Upload a new logo to appear on reports and receipts.",
-  "upload": "Upload"
+  "upload": "Upload",
+  "select_participant": "Select a participant"
 }

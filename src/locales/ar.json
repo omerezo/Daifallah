@@ -1,6 +1,6 @@
 {
   "app_name": "جمعية ابناء ضيف الله الخيرية",
-  "dashboard": "لوحة التحكم",
+  "dashboard": "لوحة المعلومات",
   "total_collected_month": "إجمالي المتحصلات هذا الشهر",
   "total_expenses": "إجمالي المصروفات",
   "net_balance": "صافي الرصيد",
@@ -114,5 +114,6 @@
   "customize_logo_branding": "تخصيص شعار لجنتك وعلامتها التجارية.",
   "committee_logo": "شعار اللجنة",
   "upload_new_logo": "تحميل شعار جديد ليظهر في التقارير والإيصالات.",
-  "upload": "تحميل"
+  "upload": "تحميل",
+  "select_participant": "اختر مشاركاً"
 }
