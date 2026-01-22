@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   Card,
@@ -54,7 +54,7 @@ const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function ParticipantsPage() {
   const { t } = useTranslation();
-  const { participants, addParticipant } = useData();
+  const { participants, addParticipant, updateParticipant } = useData();
   const { toast } = useToast();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -63,6 +63,26 @@ export default function ParticipantsPage() {
   const [shareAmount, setShareAmount] = useState('');
   const [shareCurrency, setShareCurrency] =
     useState<(typeof currencies)[number]>('USD');
+
+  // Edit State
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingParticipant, setEditingParticipant] =
+    useState<Participant | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editShareAmount, setEditShareAmount] = useState('');
+  const [editShareCurrency, setEditShareCurrency] =
+    useState<(typeof currencies)[number]>('USD');
+
+  useEffect(() => {
+    if (editingParticipant) {
+      setEditName(editingParticipant.name);
+      setEditPhone(editingParticipant.phone);
+      const [amount, currency] = editingParticipant.monthlyShare.split(' ');
+      setEditShareAmount(amount);
+      setEditShareCurrency(currency as (typeof currencies)[number]);
+    }
+  }, [editingParticipant]);
 
   const handleAddParticipant = () => {
     if (!name || !phone || !shareAmount) {
@@ -89,12 +109,57 @@ export default function ParticipantsPage() {
       description: t('participant_added_description', { name }),
     });
 
-    // Reset form and close dialog
     setName('');
     setPhone('');
     setShareAmount('');
     setShareCurrency('USD');
     setIsAddDialogOpen(false);
+  };
+
+  const handleOpenEditDialog = (participant: Participant) => {
+    setEditingParticipant(participant);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateParticipant = () => {
+    if (!editingParticipant || !editName || !editPhone || !editShareAmount) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('fill_all_fields'),
+      });
+      return;
+    }
+
+    const updatedParticipant: Participant = {
+      ...editingParticipant,
+      name: editName,
+      phone: editPhone,
+      monthlyShare: `${editShareAmount} ${editShareCurrency}`,
+    };
+
+    updateParticipant(updatedParticipant);
+
+    toast({
+      title: t('participant_updated'),
+      description: t('participant_updated_description', { name: editName }),
+    });
+
+    setIsEditDialogOpen(false);
+    setEditingParticipant(null);
+  };
+
+  const handleToggleStatus = (participant: Participant) => {
+    const newStatus = participant.status === 'Active' ? 'Inactive' : 'Active';
+    const updatedParticipant: Participant = { ...participant, status: newStatus };
+    updateParticipant(updatedParticipant);
+    toast({
+      title: t('status_updated'),
+      description: t('status_updated_description', {
+        name: participant.name,
+        status: t(newStatus.toLowerCase()),
+      }),
+    });
   };
 
   return (
@@ -252,8 +317,14 @@ export default function ParticipantsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                        <DropdownMenuItem>{t('edit')}</DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleOpenEditDialog(participant)}
+                        >
+                          {t('edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleToggleStatus(participant)}
+                        >
                           {participant.status === 'Active'
                             ? t('deactivate')
                             : t('activate')}
@@ -271,6 +342,71 @@ export default function ParticipantsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Participant Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{t('edit_participant')}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                {t('name')}
+              </Label>
+              <Input
+                id="edit-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-phone" className="text-right">
+                {t('phone')}
+              </Label>
+              <Input
+                id="edit-phone"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-monthly-share" className="text-right">
+                {t('monthly_share')}
+              </Label>
+              <Input
+                id="edit-monthly-share"
+                type="number"
+                value={editShareAmount}
+                onChange={(e) => setEditShareAmount(e.target.value)}
+                className="col-span-2"
+              />
+              <Select
+                value={editShareCurrency}
+                onValueChange={(v) =>
+                  setEditShareCurrency(v as typeof editShareCurrency)
+                }
+              >
+                <SelectTrigger className="col-span-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleUpdateParticipant}>{t('save_changes')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

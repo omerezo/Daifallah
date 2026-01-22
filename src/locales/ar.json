@@ -147,5 +147,11 @@
   "recorded_by": "سجل بواسطة",
   "save_participant": "حفظ المشارك",
   "participant_added": "تمت إضافة المشارك",
-  "participant_added_description": "تمت إضافة {{name}} إلى قائمة المشاركين بنجاح."
+  "participant_added_description": "تمت إضافة {{name}} إلى قائمة المشاركين بنجاح.",
+  "edit_participant": "تعديل المشارك",
+  "save_changes": "حفظ التغييرات",
+  "participant_updated": "تم تحديث المشارك",
+  "participant_updated_description": "تم تحديث بيانات {{name}}.",
+  "status_updated": "تم تحديث الحالة",
+  "status_updated_description": "تم تغيير حالة {{name}} إلى {{status}}."
 }

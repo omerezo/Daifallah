@@ -147,5 +147,11 @@
   "recorded_by": "Recorded By",
   "save_participant": "Save Participant",
   "participant_added": "Participant Added",
-  "participant_added_description": "{{name}} has been added to the list of participants."
+  "participant_added_description": "{{name}} has been added to the list of participants.",
+  "edit_participant": "Edit Participant",
+  "save_changes": "Save Changes",
+  "participant_updated": "Participant Updated",
+  "participant_updated_description": "{{name}}'s details have been updated.",
+  "status_updated": "Status Updated",
+  "status_updated_description": "{{name}}'s status has been changed to {{status}}."
 }
