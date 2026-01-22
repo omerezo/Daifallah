@@ -20,7 +20,7 @@ export type Participant = {
   phone: string;
   monthlyShare: string;
   status: 'Active' | 'Inactive';
-  lastPaymentDate: string;
+  lastPaymentDate?: string;
 };
 
 export type Expense = {

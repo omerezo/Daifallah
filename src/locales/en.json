@@ -144,5 +144,8 @@
   "remarks": "Remarks",
   "add_remarks_placeholder": "Add any remarks for this payment",
   "payment_for": "Payment For",
-  "recorded_by": "Recorded By"
+  "recorded_by": "Recorded By",
+  "save_participant": "Save Participant",
+  "participant_added": "Participant Added",
+  "participant_added_description": "{{name}} has been added to the list of participants."
 }

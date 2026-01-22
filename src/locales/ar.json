@@ -144,5 +144,8 @@
   "remarks": "ملاحظات",
   "add_remarks_placeholder": "أضف أي ملاحظات لهذه الدفعة",
   "payment_for": "دفعة شهر",
-  "recorded_by": "سجل بواسطة"
+  "recorded_by": "سجل بواسطة",
+  "save_participant": "حفظ المشارك",
+  "participant_added": "تمت إضافة المشارك",
+  "participant_added_description": "تمت إضافة {{name}} إلى قائمة المشاركين بنجاح."
 }

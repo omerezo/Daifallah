@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   Card,
@@ -29,10 +30,72 @@ import {
 import { MoreHorizontal } from 'lucide-react';
 import { useData } from '@/context/data-provider';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import type { Participant } from '@/lib/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function ParticipantsPage() {
   const { t } = useTranslation();
-  const { participants } = useData();
+  const { participants, addParticipant } = useData();
+  const { toast } = useToast();
+
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [shareAmount, setShareAmount] = useState('');
+  const [shareCurrency, setShareCurrency] =
+    useState<(typeof currencies)[number]>('USD');
+
+  const handleAddParticipant = () => {
+    if (!name || !phone || !shareAmount) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('fill_all_fields'),
+      });
+      return;
+    }
+
+    const newParticipant: Participant = {
+      id: `P-${Date.now()}`,
+      name,
+      phone,
+      monthlyShare: `${shareAmount} ${shareCurrency}`,
+      status: 'Active',
+    };
+
+    addParticipant(newParticipant);
+
+    toast({
+      title: t('participant_added'),
+      description: t('participant_added_description', { name }),
+    });
+
+    // Reset form and close dialog
+    setName('');
+    setPhone('');
+    setShareAmount('');
+    setShareCurrency('USD');
+    setIsAddDialogOpen(false);
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -47,12 +110,79 @@ export default function ParticipantsPage() {
               {t('export_csv')}
             </span>
           </Button>
-          <Button size="sm" className="h-8 gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              {t('add_participant')}
-            </span>
-          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="h-8 gap-1">
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  {t('add_participant')}
+                </span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{t('add_participant')}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    {t('name')}
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="phone" className="text-right">
+                    {t('phone')}
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="monthly-share" className="text-right">
+                    {t('monthly_share')}
+                  </Label>
+                  <Input
+                    id="monthly-share"
+                    type="number"
+                    value={shareAmount}
+                    onChange={(e) => setShareAmount(e.target.value)}
+                    className="col-span-2"
+                  />
+                  <Select
+                    value={shareCurrency}
+                    onValueChange={(v) =>
+                      setShareCurrency(v as typeof shareCurrency)
+                    }
+                  >
+                    <SelectTrigger className="col-span-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleAddParticipant}>
+                  {t('save_participant')}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       <Card>
@@ -67,10 +197,16 @@ export default function ParticipantsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>{t('name')}</TableHead>
-                <TableHead className="hidden md:table-cell">{t('phone')}</TableHead>
-                <TableHead className="hidden lg:table-cell">{t('monthly_share')}</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  {t('phone')}
+                </TableHead>
+                <TableHead className="hidden lg:table-cell">
+                  {t('monthly_share')}
+                </TableHead>
                 <TableHead>{t('status')}</TableHead>
-                <TableHead className="hidden sm:table-cell">{t('last_payment_date')}</TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  {t('last_payment_date')}
+                </TableHead>
                 <TableHead>
                   <span className="sr-only">{t('actions')}</span>
                 </TableHead>
@@ -79,19 +215,37 @@ export default function ParticipantsPage() {
             <TableBody>
               {participants.map((participant) => (
                 <TableRow key={participant.id}>
-                  <TableCell className="font-medium">{participant.name}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">{participant.phone}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{participant.monthlyShare}</TableCell>
+                  <TableCell className="font-medium">
+                    {participant.name}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">
+                    {participant.phone}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {participant.monthlyShare}
+                  </TableCell>
                   <TableCell>
-                    <Badge variant={participant.status === 'Active' ? 'default' : 'destructive'}>
+                    <Badge
+                      variant={
+                        participant.status === 'Active'
+                          ? 'default'
+                          : 'destructive'
+                      }
+                    >
                       {t(participant.status.toLowerCase())}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell text-muted-foreground">{participant.lastPaymentDate}</TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground">
+                    {participant.lastPaymentDate || '-'}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                           <span className="sr-only">{t('toggle_menu')}</span>
                         </Button>
@@ -100,7 +254,9 @@ export default function ParticipantsPage() {
                         <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
                         <DropdownMenuItem>{t('edit')}</DropdownMenuItem>
                         <DropdownMenuItem>
-                          {participant.status === 'Active' ? t('deactivate') : t('activate')}
+                          {participant.status === 'Active'
+                            ? t('deactivate')
+                            : t('activate')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-destructive">

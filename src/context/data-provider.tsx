@@ -16,6 +16,7 @@ interface DataContextType {
   recentActivities: RecentActivity[];
   addPayment: (payment: Payment) => void;
   addRecentActivity: (activity: RecentActivity) => void;
+  addParticipant: (participant: Participant) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -34,6 +35,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setRecentActivities((prev) => [activity, ...prev]);
   };
 
+  const addParticipant = (participant: Participant) => {
+    setParticipants((prev) => [participant, ...prev]);
+  };
+
   const value = {
     payments,
     participants,
@@ -41,6 +46,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     recentActivities,
     addPayment,
     addRecentActivity,
+    addParticipant,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
