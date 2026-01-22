@@ -83,6 +83,10 @@
   }
 }
 
+.print-only-title {
+  display: none;
+}
+
 @media print {
   body {
     background: white !important;
@@ -103,5 +107,9 @@
   }
   main {
     padding: 0 !important;
+  }
+  .recharts-responsive-container {
+    width: 100% !important;
+    height: 350px !important;
   }
 }
