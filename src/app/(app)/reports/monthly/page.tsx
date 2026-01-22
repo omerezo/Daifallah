@@ -62,16 +62,16 @@ export default function MonthlyReportsPage() {
 
   const monthlyData = useMemo(() => {
     const filteredPayments = payments.filter((p) => {
-      const paymentDate = new Date(p.date);
+      const paymentForDate = new Date(p.paymentFor);
       return (
-        paymentDate.getFullYear() === selectedYear &&
-        paymentDate.getMonth() === selectedMonth &&
+        paymentForDate.getFullYear() === selectedYear &&
+        paymentForDate.getMonth() === selectedMonth &&
         p.currency === selectedCurrency
       );
     });
 
     const filteredExpenses = expenses.filter((e) => {
-      const expenseDate = new Date(e.date);
+      const expenseDate = new Date(e.date + 'T00:00:00');
       return (
         expenseDate.getFullYear() === selectedYear &&
         expenseDate.getMonth() === selectedMonth &&
@@ -91,14 +91,14 @@ export default function MonthlyReportsPage() {
     }));
 
     filteredPayments.forEach((p) => {
-      const day = new Date(p.date).getDate() - 1;
+      const day = new Date(p.date + 'T00:00:00').getDate() - 1;
       if (chartData[day]) {
         chartData[day].income += p.amount;
       }
     });
 
     filteredExpenses.forEach((e) => {
-      const day = new Date(e.date).getDate() - 1;
+      const day = new Date(e.date + 'T00:00:00').getDate() - 1;
        if (chartData[day]) {
         chartData[day].expenses += e.amount;
       }
@@ -107,7 +107,7 @@ export default function MonthlyReportsPage() {
     const allTransactions = [
       ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const })),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    ].sort((a, b) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime());
 
 
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };
@@ -283,7 +283,7 @@ export default function MonthlyReportsPage() {
                     <TableBody>
                         {monthlyData.allTransactions.length > 0 ? monthlyData.allTransactions.map((tx) => (
                             <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}</TableCell>
+                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
                                 <TableCell>
                                     <Badge variant={tx.transactionType === 'Income' ? 'secondary' : 'destructive'}>{t(tx.transactionType.toLowerCase())}</Badge>
@@ -305,5 +305,3 @@ export default function MonthlyReportsPage() {
     </div>
   );
 }
-
-    

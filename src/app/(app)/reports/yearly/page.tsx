@@ -61,15 +61,15 @@ export default function YearlyReportsPage() {
 
   const yearlyData = useMemo(() => {
     const filteredPayments = payments.filter((p) => {
-      const paymentDate = new Date(p.date);
+      const paymentForDate = new Date(p.paymentFor);
       return (
-        paymentDate.getFullYear() === selectedYear &&
+        paymentForDate.getFullYear() === selectedYear &&
         p.currency === selectedCurrency
       );
     });
 
     const filteredExpenses = expenses.filter((e) => {
-      const expenseDate = new Date(e.date);
+      const expenseDate = new Date(e.date + 'T00:00:00');
       return (
         expenseDate.getFullYear() === selectedYear &&
         e.currency === selectedCurrency
@@ -82,10 +82,10 @@ export default function YearlyReportsPage() {
 
     const chartData = months.map((month, index) => {
         const monthIncome = filteredPayments
-            .filter(p => new Date(p.date).getMonth() === index)
+            .filter(p => new Date(p.paymentFor).getMonth() === index)
             .reduce((sum, p) => sum + p.amount, 0);
         const monthExpenses = filteredExpenses
-            .filter(e => new Date(e.date).getMonth() === index)
+            .filter(e => new Date(e.date + 'T00:00:00').getMonth() === index)
             .reduce((sum, e) => sum + e.amount, 0);
         
         return {
@@ -98,7 +98,7 @@ export default function YearlyReportsPage() {
     const allTransactions = [
       ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const })),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    ].sort((a, b) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime());
 
 
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };
@@ -263,7 +263,7 @@ export default function YearlyReportsPage() {
                     <TableBody>
                         {yearlyData.allTransactions.length > 0 ? yearlyData.allTransactions.map((tx) => (
                             <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}</TableCell>
+                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
                                 <TableCell>
                                     <Badge variant={tx.transactionType === 'Income' ? 'secondary' : 'destructive'}>{t(tx.transactionType.toLowerCase())}</Badge>
