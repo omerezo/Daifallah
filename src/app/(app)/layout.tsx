@@ -232,7 +232,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <div className="flex flex-col flex-1">
         <header className="flex h-12 items-center gap-4 border-b bg-background/50 px-4 backdrop-blur-sm md:h-14 md:px-6">
-          <SidebarTrigger className="md:hidden" />
+          <SidebarTrigger />
           <div className="flex-1">
             {/* Can add breadcrumbs or global search here */}
           </div>
