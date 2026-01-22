@@ -74,6 +74,22 @@ const SidebarProvider = React.forwardRef<
     // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
+
+    React.useEffect(() => {
+      if (openProp === undefined) {
+        // uncontrolled
+        const cookieValue = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
+          ?.split("=")[1]
+
+        if (cookieValue) {
+          _setOpen(cookieValue === "true")
+        }
+      }
+    }, [openProp])
+
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value

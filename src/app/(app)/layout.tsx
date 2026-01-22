@@ -3,6 +3,11 @@
 import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
@@ -102,33 +107,45 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             {menuItems.map((item) =>
               item.subItems ? (
-                <SidebarMenuItem key={item.label}>
-                  <SidebarMenuButton
-                    isActive={item.subItems.some((sub) =>
-                      pathname.startsWith(sub.href)
-                    )}
-                    className="justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </div>
-                    <ChevronDown className="transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                  </SidebarMenuButton>
-                  <SidebarMenuSub>
-                    {item.subItems.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.href}>
-                        <Link href={subItem.href} legacyBehavior passHref>
-                          <SidebarMenuSubButton
-                            isActive={pathname.startsWith(subItem.href)}
-                          >
-                            {subItem.label}
-                          </SidebarMenuSubButton>
-                        </Link>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                </SidebarMenuItem>
+                <Collapsible
+                  asChild
+                  key={item.label}
+                  defaultOpen={item.subItems.some((sub) =>
+                    pathname.startsWith(sub.href)
+                  )}
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        isActive={item.subItems.some((sub) =>
+                          pathname.startsWith(sub.href)
+                        )}
+                        className="justify-between group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </div>
+                        <ChevronDown className="transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {item.subItems.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.href}>
+                            <Link href={subItem.href} legacyBehavior passHref>
+                              <SidebarMenuSubButton
+                                isActive={pathname.startsWith(subItem.href)}
+                              >
+                                {subItem.label}
+                              </SidebarMenuSubButton>
+                            </Link>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               ) : (
                 <SidebarMenuItem key={item.label}>
                   <Link href={item.href!} legacyBehavior passHref>
@@ -166,11 +183,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="p-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-start gap-2 overflow-hidden p-2 h-auto">
-                   <Avatar className="h-8 w-8">
-                      <AvatarImage src={placeholderImages[0].imageUrl} alt="User" />
-                      <AvatarFallback>UA</AvatarFallback>
-                    </Avatar>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 overflow-hidden p-2 h-auto"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={placeholderImages[0].imageUrl}
+                      alt="User"
+                    />
+                    <AvatarFallback>UA</AvatarFallback>
+                  </Avatar>
                   <div className="flex flex-col items-start overflow-hidden">
                     <span className="truncate font-medium">User Admin</span>
                     <span className="truncate text-xs text-muted-foreground">
@@ -207,7 +230,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <div className="flex flex-col flex-1">
         <header className="flex h-12 items-center gap-4 border-b bg-background/50 px-4 backdrop-blur-sm md:h-14 md:px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
@@ -215,7 +238,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main>{children}</main>
-      </SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }
