@@ -108,7 +108,7 @@ export default function YearlyReportsPage() {
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center gap-4 no-print">
         <div>
-          <h1 className="font-headline text-2xl font-bold tracking-tight md:text-3xl">
+          <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
             {t('yearly_reports')}
           </h1>
           <p className="text-muted-foreground">
@@ -157,7 +157,7 @@ export default function YearlyReportsPage() {
       
       <div ref={printRef} className="printable-area space-y-8">
         <div className="text-center print-only-title">
-            <h1 className="font-headline text-3xl font-bold">{t('app_name')}</h1>
+            <h1 className="font-display text-3xl font-bold">{t('app_name')}</h1>
             <h2 className="text-xl font-semibold">{t('yearly_reports')} - {selectedYear}</h2>
             <p className="text-muted-foreground">{selectedCurrency}</p>
         </div>

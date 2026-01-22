@@ -38,7 +38,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-4">
             <Logo className="h-16 w-16" />
           </div>
-          <CardTitle className="font-headline text-3xl">
+          <CardTitle className="font-display text-3xl">
             {t('app_name')}
           </CardTitle>
           <CardDescription>{t('login_description')}</CardDescription>

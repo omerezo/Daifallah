@@ -98,7 +98,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader className="border-b border-border">
           <div className="flex items-center gap-2 p-1">
             <Logo className="w-8 h-8" />
-            <h2 className="font-headline text-lg font-semibold tracking-tight">
+            <h2 className="font-display text-lg font-semibold tracking-tight">
               {t('app_name')}
             </h2>
           </div>

@@ -51,7 +51,7 @@ export default function UsersPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex items-center">
-        <h1 className="font-headline text-2xl font-bold tracking-tight md:text-3xl">
+        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
           {t('user_management')}
         </h1>
         <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
