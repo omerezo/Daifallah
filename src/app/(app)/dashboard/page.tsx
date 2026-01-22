@@ -107,7 +107,7 @@ export default function DashboardPage() {
   }, [payments, allExpenses]);
 
   const handleSavePayment = async () => {
-    const paymentDate = new Date();
+    const paymentDate = new Date(paymentYear, paymentMonth, 1);
 
     if (!selectedParticipantId || !paymentAmount) {
       toast({
