@@ -9,6 +9,7 @@ export type Payment = {
     filename: string;
     url: string;
   };
+  remarks?: string;
 };
 
 export type Participant = {

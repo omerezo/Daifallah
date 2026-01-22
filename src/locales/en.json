@@ -140,5 +140,7 @@
   "income": "Income",
   "transactions_detail": "Transactions Detail",
   "detailed_list_transactions_month": "A detailed list of all income and expenses for the selected month.",
-  "no_transactions_month": "No transactions recorded for this month."
+  "no_transactions_month": "No transactions recorded for this month.",
+  "remarks": "Remarks",
+  "add_remarks_placeholder": "Add any remarks for this payment"
 }

@@ -8,6 +8,7 @@ export const payments: Payment[] = [
     amount: 100,
     currency: 'USD',
     type: 'Monthly Share',
+    remarks: 'Paid on time',
   },
   {
     id: 'PAY-002',

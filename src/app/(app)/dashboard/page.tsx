@@ -47,6 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider';
 import type { Payment } from '@/lib/types';
+import { Textarea } from '@/components/ui/textarea';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
@@ -79,6 +80,7 @@ export default function DashboardPage() {
   const [paymentMonth, setPaymentMonth] = useState(new Date().getMonth());
   const [paymentYear, setPaymentYear] = useState(new Date().getFullYear());
   const [bankTransferFile, setBankTransferFile] = useState<File | null>(null);
+  const [remarks, setRemarks] = useState('');
 
   const currencySummaries = useMemo(() => {
     const summaries = {} as Record<
@@ -140,6 +142,7 @@ export default function DashboardPage() {
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
       bankTransferProof,
+      remarks,
     };
 
     const newActivity = {
@@ -167,6 +170,7 @@ export default function DashboardPage() {
     setPaymentMonth(new Date().getMonth());
     setPaymentYear(new Date().getFullYear());
     setBankTransferFile(null);
+    setRemarks('');
     setIsRecordPaymentOpen(false);
   };
 
@@ -307,6 +311,18 @@ export default function DashboardPage() {
                       </span>
                     </Label>
                   </div>
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <Label htmlFor="remarks" className="text-right pt-2">
+                    {t('remarks')}
+                  </Label>
+                  <Textarea
+                    id="remarks"
+                    className="col-span-3"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder={t('add_remarks_placeholder')}
+                  />
                 </div>
               </div>
               <DialogFooter>
