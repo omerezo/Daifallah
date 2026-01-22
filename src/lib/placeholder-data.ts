@@ -9,6 +9,8 @@ export const payments: Payment[] = [
     currency: 'USD',
     type: 'Monthly Share',
     remarks: 'Paid on time',
+    paymentFor: 'May 2024',
+    recordedBy: 'Admin User',
   },
   {
     id: 'PAY-002',
@@ -17,6 +19,8 @@ export const payments: Payment[] = [
     amount: 500,
     currency: 'SAR',
     type: 'Donation',
+    paymentFor: 'May 2024',
+    recordedBy: 'Admin User',
   },
   {
     id: 'PAY-003',
@@ -25,6 +29,8 @@ export const payments: Payment[] = [
     amount: 100,
     currency: 'USD',
     type: 'Monthly Share',
+    paymentFor: 'May 2024',
+    recordedBy: 'Manager User',
   },
   {
     id: 'PAY-004',
@@ -33,6 +39,8 @@ export const payments: Payment[] = [
     amount: 2000,
     currency: 'EGP',
     type: 'Monthly Share',
+    paymentFor: 'May 2024',
+    recordedBy: 'Collector User',
   },
   {
     id: 'PAY-005',
@@ -41,6 +49,8 @@ export const payments: Payment[] = [
     amount: 100,
     currency: 'USD',
     type: 'Monthly Share',
+    paymentFor: 'May 2024',
+    recordedBy: 'Admin User',
   },
 ];
 

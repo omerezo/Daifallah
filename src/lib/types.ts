@@ -5,6 +5,8 @@ export type Payment = {
   amount: number;
   currency: 'USD' | 'SAR' | 'EGP' | 'SDG';
   type: 'Monthly Share' | 'Donation';
+  paymentFor: string;
+  recordedBy: string;
   bankTransferProof?: {
     filename: string;
     url: string;

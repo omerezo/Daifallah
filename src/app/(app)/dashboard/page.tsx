@@ -107,8 +107,6 @@ export default function DashboardPage() {
   }, [payments, allExpenses]);
 
   const handleSavePayment = async () => {
-    const paymentDate = new Date(paymentYear, paymentMonth, 1);
-
     if (!selectedParticipantId || !paymentAmount) {
       toast({
         variant: 'destructive',
@@ -134,13 +132,18 @@ export default function DashboardPage() {
       };
     }
     
+    const paymentForDate = new Date(paymentYear, paymentMonth, 1);
+    const paymentForMonth = paymentForDate.toLocaleString('en-US', { month: 'long' });
+
     const newPayment: Payment = {
       id: `PAY-${Date.now()}`,
-      date: paymentDate.toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0],
       participantName: participant.name,
       amount: parseFloat(paymentAmount),
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
+      paymentFor: `${paymentForMonth} ${paymentYear}`,
+      recordedBy: 'User Admin', // Hardcoded for now, replace with actual logged-in user
       bankTransferProof,
       remarks,
     };
@@ -151,7 +154,7 @@ export default function DashboardPage() {
       email: `${participant.name.toLowerCase().replace(' ', '.')}@example.com`,
       type: 'Payment' as const,
       status: 'Paid' as const,
-      date: paymentDate.toLocaleDateString('en-CA'),
+      date: new Date().toLocaleDateString('en-CA'),
       amount: `${paymentAmount} ${paymentCurrency}`,
     };
 
@@ -249,7 +252,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="payment-date" className="text-right">
-                    {t('date')}
+                    {t('payment_for')}
                   </Label>
                   <div className="col-span-3 grid grid-cols-2 gap-2">
                     <Select

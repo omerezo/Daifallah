@@ -142,5 +142,7 @@
   "detailed_list_transactions_month": "قائمة مفصلة بجميع الإيرادات والمصروفات للشهر المحدد.",
   "no_transactions_month": "لا توجد معاملات مسجلة لهذا الشهر.",
   "remarks": "ملاحظات",
-  "add_remarks_placeholder": "أضف أي ملاحظات لهذه الدفعة"
+  "add_remarks_placeholder": "أضف أي ملاحظات لهذه الدفعة",
+  "payment_for": "دفعة شهر",
+  "recorded_by": "سجل بواسطة"
 }

@@ -108,9 +108,11 @@ export default function PaymentsPage() {
               <dt>${t('receipt_id')}:</dt>
               <dd>${payment.id}</dd>
               <dt>${t('date')}:</dt>
-              <dd>${new Date(payment.date).toLocaleDateString(dir === 'rtl' ? 'ar-SA' : 'en-US')}</dd>
+              <dd>${new Date(payment.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-SA' : 'en-US')}</dd>
               <dt>${t('participant_name')}:</dt>
               <dd>${payment.participantName}</dd>
+              <dt>${t('payment_for')}:</dt>
+              <dd>${payment.paymentFor}</dd>
               <dt>${t('amount')}:</dt>
               <dd>${payment.amount} ${payment.currency}</dd>
               <dt>${t('type')}:</dt>
@@ -179,6 +181,8 @@ export default function PaymentsPage() {
               <TableRow>
                 <TableHead>{t('date')}</TableHead>
                 <TableHead>{t('participant_name')}</TableHead>
+                <TableHead>{t('payment_for')}</TableHead>
+                <TableHead className="hidden md:table-cell">{t('recorded_by')}</TableHead>
                 <TableHead className="text-right">{t('amount')}</TableHead>
                 <TableHead className="hidden md:table-cell">{t('currency')}</TableHead>
                 <TableHead className="hidden sm:table-cell">{t('type')}</TableHead>
@@ -196,6 +200,8 @@ export default function PaymentsPage() {
                   <TableCell className="font-medium">
                     {payment.participantName}
                   </TableCell>
+                  <TableCell>{payment.paymentFor}</TableCell>
+                  <TableCell className="hidden md:table-cell">{payment.recordedBy}</TableCell>
                   <TableCell className="text-right">{payment.amount}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     {payment.currency}
