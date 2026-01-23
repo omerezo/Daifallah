@@ -15,6 +15,8 @@ interface DataContextType {
   expenses: Expense[];
   recentActivities: RecentActivity[];
   addPayment: (payment: Payment) => void;
+  updatePayment: (payment: Payment) => void;
+  deletePayment: (paymentId: string) => void;
   addRecentActivity: (activity: RecentActivity) => void;
   addParticipant: (participant: Participant) => void;
   updateParticipant: (participant: Participant) => void;
@@ -24,12 +26,26 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [payments, setPayments] = useState<Payment[]>(initialPayments);
-  const [participants, setParticipants] = useState<Participant[]>(initialParticipants);
+  const [participants, setParticipants] = useState<Participant[]>(
+    initialParticipants
+  );
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(initialRecentActivities);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
+    initialRecentActivities
+  );
 
   const addPayment = (payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
+  };
+
+  const updatePayment = (updatedPayment: Payment) => {
+    setPayments((prev) =>
+      prev.map((p) => (p.id === updatedPayment.id ? updatedPayment : p))
+    );
+  };
+
+  const deletePayment = (paymentId: string) => {
+    setPayments((prev) => prev.filter((p) => p.id !== paymentId));
   };
 
   const addRecentActivity = (activity: RecentActivity) => {
@@ -52,6 +68,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     expenses,
     recentActivities,
     addPayment,
+    updatePayment,
+    deletePayment,
     addRecentActivity,
     addParticipant,
     updateParticipant,

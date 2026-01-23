@@ -50,6 +50,7 @@
   "manage_your_committee_payments": "Manage and view all recorded payments.",
   "export": "Export",
   "add_payment": "Add Payment",
+  "edit_payment": "Edit Payment",
   "participant_name": "Participant Name",
   "currency": "Currency",
   "actions": "Actions",
@@ -153,5 +154,10 @@
   "participant_updated": "Participant Updated",
   "participant_updated_description": "{{name}}'s details have been updated.",
   "status_updated": "Status Updated",
-  "status_updated_description": "{{name}}'s status has been changed to {{status}}."
+  "status_updated_description": "{{name}}'s status has been changed to {{status}}.",
+  "payment_updated": "Payment Updated",
+  "payment_updated_description": "The payment details have been successfully updated.",
+  "delete_payment_confirm": "Are you sure you want to delete this payment? This action cannot be undone.",
+  "payment_deleted": "Payment Deleted",
+  "payment_deleted_description": "The payment has been successfully deleted."
 }

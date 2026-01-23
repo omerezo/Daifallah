@@ -50,6 +50,7 @@
   "manage_your_committee_payments": "إدارة وعرض جميع المدفوعات المسجلة.",
   "export": "تصدير",
   "add_payment": "إضافة دفعة",
+  "edit_payment": "تعديل الدفعة",
   "participant_name": "اسم المشارك",
   "currency": "العملة",
   "actions": "الإجراءات",
@@ -153,5 +154,10 @@
   "participant_updated": "تم تحديث المشارك",
   "participant_updated_description": "تم تحديث بيانات {{name}}.",
   "status_updated": "تم تحديث الحالة",
-  "status_updated_description": "تم تغيير حالة {{name}} إلى {{status}}."
+  "status_updated_description": "تم تغيير حالة {{name}} إلى {{status}}.",
+  "payment_updated": "تم تحديث الدفعة",
+  "payment_updated_description": "تم تحديث بيانات الدفعة بنجاح.",
+  "delete_payment_confirm": "هل أنت متأكد أنك تريد حذف هذه الدفعة؟ لا يمكن التراجع عن هذا الإجراء.",
+  "payment_deleted": "تم حذف الدفعة",
+  "payment_deleted_description": "تم حذف الدفعة بنجاح."
 }
