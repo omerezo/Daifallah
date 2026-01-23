@@ -159,5 +159,8 @@
   "payment_updated_description": "The payment details have been successfully updated.",
   "delete_payment_confirm": "Are you sure you want to delete this payment? This action cannot be undone.",
   "payment_deleted": "Payment Deleted",
-  "payment_deleted_description": "The payment has been successfully deleted."
+  "payment_deleted_description": "The payment has been successfully deleted.",
+  "delete_participant_confirm": "Are you sure you want to delete {{name}}? This will also delete all their associated payments.",
+  "participant_deleted": "Participant Deleted",
+  "participant_deleted_description": "{{name}} has been removed from the list of participants."
 }

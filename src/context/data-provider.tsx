@@ -32,6 +32,7 @@ interface DataContextType {
   addRecentActivity: (activity: RecentActivity) => void;
   addParticipant: (participant: Participant) => void;
   updateParticipant: (participant: Participant) => void;
+  deleteParticipant: (participantId: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -74,6 +75,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const deleteParticipant = useCallback((participantId: string) => {
+    setParticipants((prev) => prev.filter((p) => p.id !== participantId));
+  }, []);
+
   const value = useMemo(
     () => ({
       payments,
@@ -86,6 +91,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addRecentActivity,
       addParticipant,
       updateParticipant,
+      deleteParticipant,
     }),
     [
       payments,
@@ -98,6 +104,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addRecentActivity,
       addParticipant,
       updateParticipant,
+      deleteParticipant
     ]
   );
 

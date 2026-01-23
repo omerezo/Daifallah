@@ -48,7 +48,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -109,7 +108,7 @@ export default function PaymentsPage() {
       
       setRemarks(editingPayment.remarks || '');
       setBankTransferFile(null);
-    } else {
+    } else if (!isPaymentDialogOpen) {
       setSelectedParticipantId(undefined);
       setPaymentAmount('');
       setPaymentCurrency('USD');
@@ -211,7 +210,7 @@ export default function PaymentsPage() {
     setEditingPayment(null);
   };
   
-  const handleDeletePayment = () => {
+  const handleConfirmDelete = () => {
     if (paymentToDelete) {
       deletePayment(paymentToDelete.id);
       toast({
@@ -316,30 +315,13 @@ export default function PaymentsPage() {
                             {t('edit')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onSelect={(e) => e.preventDefault()}
-                                >
-                                  {t('delete')}
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {t('delete_payment_confirm')}
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deletePayment(payment.id)}>
-                                    {t('delete')}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => setPaymentToDelete(payment)}
+                          >
+                            {t('delete')}
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -351,6 +333,7 @@ export default function PaymentsPage() {
         </Card>
       </div>
 
+      {/* Add/Edit Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -493,6 +476,24 @@ export default function PaymentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!paymentToDelete} onOpenChange={(isOpen) => !isOpen && setPaymentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('delete_payment_confirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              {t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

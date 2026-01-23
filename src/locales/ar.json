@@ -159,5 +159,8 @@
   "payment_updated_description": "تم تحديث بيانات الدفعة بنجاح.",
   "delete_payment_confirm": "هل أنت متأكد أنك تريد حذف هذه الدفعة؟ لا يمكن التراجع عن هذا الإجراء.",
   "payment_deleted": "تم حذف الدفعة",
-  "payment_deleted_description": "تم حذف الدفعة بنجاح."
+  "payment_deleted_description": "تم حذف الدفعة بنجاح.",
+  "delete_participant_confirm": "هل أنت متأكد أنك تريد حذف {{name}}؟ سيؤدي هذا أيضًا إلى حذف جميع مدفوعاتهم المرتبطة.",
+  "participant_deleted": "تم حذف المشارك",
+  "participant_deleted_description": "تمت إزالة {{name}} من قائمة المشاركين."
 }
