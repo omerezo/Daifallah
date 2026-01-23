@@ -17,6 +17,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -42,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { placeholderImages } from '@/lib/placeholder-images.json';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, lang, dir } = useTranslation();
@@ -186,7 +189,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={placeholderImages[0].imageUrl}
+                        src={PlaceHolderImages[0].imageUrl}
                         alt="User"
                       />
                       <AvatarFallback>UA</AvatarFallback>
