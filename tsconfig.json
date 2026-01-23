@@ -24,9 +24,6 @@
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": [
-    "node_modules",
-    "src/app/(app/payments/page.tsx",
-    "src/app/(app/reports/monthly/page.tsx",
-    "src/app/(app/reports/yearly/page.tsx"
+    "node_modules"
   ]
 }
