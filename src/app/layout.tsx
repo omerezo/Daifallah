@@ -1,21 +1,27 @@
-import type { Metadata } from 'next';
+'use client';
+
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
-
-export const metadata: Metadata = {
-  title: 'جمعية ابناء ضيف الله الخيرية',
-  description: 'تطبيق إدارة جمعية خيرية عائلية',
-};
+import { usePathname } from 'next/navigation';
+import AppLayout from './AppLayout';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
+
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        <title>جمعية ابناء ضيف الله الخيرية</title>
+        <meta
+          name="description"
+          content="تطبيق إدارة جمعية خيرية عائلية"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -29,7 +35,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <Providers>
-          {children}
+          {isLoginPage ? children : <AppLayout>{children}</AppLayout>}
           <Toaster />
         </Providers>
       </body>

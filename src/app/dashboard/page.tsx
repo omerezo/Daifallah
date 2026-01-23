@@ -133,7 +133,7 @@ export default function DashboardPage() {
     }
     
     const paymentForDate = new Date(paymentYear, paymentMonth, 1);
-    const paymentForMonth = paymentForDate.toLocaleString('en-US', { month: 'long' });
+    const paymentForMonth = paymentForDate.toLocaleString('default', { month: 'long' });
 
     const newPayment: Payment = {
       id: `PAY-${Date.now()}`,

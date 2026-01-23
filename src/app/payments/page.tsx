@@ -108,7 +108,7 @@ export default function PaymentsPage() {
               <dt>${t('receipt_id')}:</dt>
               <dd>${payment.id}</dd>
               <dt>${t('date')}:</dt>
-              <dd>${new Date(payment.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-SA' : 'en-US')}</dd>
+              <dd>${new Date(payment.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-SA' : 'en-US', { timeZone: 'UTC' })}</dd>
               <dt>${t('participant_name')}:</dt>
               <dd>${payment.participantName}</dd>
               <dt>${t('payment_for')}:</dt>

@@ -62,15 +62,17 @@ export default function MonthlyReportsPage() {
 
   const monthlyData = useMemo(() => {
     const filteredPayments = payments.filter((p) => {
+      // NOTE: We parse paymentFor as a UTC date to avoid timezone issues.
       const paymentForDate = new Date(p.paymentFor);
       return (
-        paymentForDate.getFullYear() === selectedYear &&
-        paymentForDate.getMonth() === selectedMonth &&
+        paymentForDate.getUTCFullYear() === selectedYear &&
+        paymentForDate.getUTCMonth() === selectedMonth &&
         p.currency === selectedCurrency
       );
     });
 
     const filteredExpenses = expenses.filter((e) => {
+      // NOTE: We add 'T00:00:00' to treat the date as local timezone and avoid shifting.
       const expenseDate = new Date(e.date + 'T00:00:00');
       return (
         expenseDate.getFullYear() === selectedYear &&
@@ -105,13 +107,13 @@ export default function MonthlyReportsPage() {
     });
 
     const allTransactions = [
-      ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const })),
+      ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const, description: `${t('payment_for')} ${p.paymentFor}` })),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
     ].sort((a, b) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime());
 
 
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };
-  }, [payments, expenses, selectedYear, selectedMonth, selectedCurrency]);
+  }, [payments, expenses, selectedYear, selectedMonth, selectedCurrency, t]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -275,6 +277,7 @@ export default function MonthlyReportsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>{t('date')}</TableHead>
+                            <TableHead>{t('participant_name')}</TableHead>
                             <TableHead>{t('description')}</TableHead>
                             <TableHead>{t('type')}</TableHead>
                             <TableHead className="text-right">{t('amount')}</TableHead>
@@ -283,8 +286,9 @@ export default function MonthlyReportsPage() {
                     <TableBody>
                         {monthlyData.allTransactions.length > 0 ? monthlyData.allTransactions.map((tx) => (
                             <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}</TableCell>
+                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { timeZone: 'UTC' })}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
+                                <TableCell>{tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description}</TableCell>
                                 <TableCell>
                                     <Badge variant={tx.transactionType === 'Income' ? 'secondary' : 'destructive'}>{t(tx.transactionType.toLowerCase())}</Badge>
                                 </TableCell>
@@ -294,7 +298,7 @@ export default function MonthlyReportsPage() {
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center text-muted-foreground">{t('no_transactions_month')}</TableCell>
+                                <TableCell colSpan={5} className="text-center text-muted-foreground">{t('no_transactions_month')}</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

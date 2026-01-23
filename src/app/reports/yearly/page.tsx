@@ -63,7 +63,7 @@ export default function YearlyReportsPage() {
     const filteredPayments = payments.filter((p) => {
       const paymentForDate = new Date(p.paymentFor);
       return (
-        paymentForDate.getFullYear() === selectedYear &&
+        paymentForDate.getUTCFullYear() === selectedYear &&
         p.currency === selectedCurrency
       );
     });
@@ -82,7 +82,7 @@ export default function YearlyReportsPage() {
 
     const chartData = months.map((month, index) => {
         const monthIncome = filteredPayments
-            .filter(p => new Date(p.paymentFor).getMonth() === index)
+            .filter(p => new Date(p.paymentFor).getUTCMonth() === index)
             .reduce((sum, p) => sum + p.amount, 0);
         const monthExpenses = filteredExpenses
             .filter(e => new Date(e.date + 'T00:00:00').getMonth() === index)
@@ -96,7 +96,7 @@ export default function YearlyReportsPage() {
     });
 
     const allTransactions = [
-      ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const })),
+      ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const, description: `${t('payment_for')} ${p.paymentFor}` })),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
     ].sort((a, b) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime());
 
@@ -255,6 +255,7 @@ export default function YearlyReportsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>{t('date')}</TableHead>
+                            <TableHead>{t('participant_name')}</TableHead>
                             <TableHead>{t('description')}</TableHead>
                             <TableHead>{t('type')}</TableHead>
                             <TableHead className="text-right">{t('amount')}</TableHead>
@@ -263,8 +264,9 @@ export default function YearlyReportsPage() {
                     <TableBody>
                         {yearlyData.allTransactions.length > 0 ? yearlyData.allTransactions.map((tx) => (
                             <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}</TableCell>
+                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { timeZone: 'UTC' })}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
+                                <TableCell>{tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description}</TableCell>
                                 <TableCell>
                                     <Badge variant={tx.transactionType === 'Income' ? 'secondary' : 'destructive'}>{t(tx.transactionType.toLowerCase())}</Badge>
                                 </TableCell>
@@ -274,7 +276,7 @@ export default function YearlyReportsPage() {
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center text-muted-foreground">{t('no_transactions_month').replace(t('month'), t('year'))}</TableCell>
+                                <TableCell colSpan={5} className="text-center text-muted-foreground">{t('no_transactions_month').replace(t('month'), t('year'))}</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
