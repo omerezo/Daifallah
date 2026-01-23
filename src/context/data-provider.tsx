@@ -1,13 +1,25 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   payments as initialPayments,
   participants as initialParticipants,
   expenses as initialExpenses,
   recentActivities as initialRecentActivities,
 } from '@/lib/placeholder-data';
-import type { Payment, Participant, Expense, RecentActivity } from '@/lib/types';
+import type {
+  Payment,
+  Participant,
+  Expense,
+  RecentActivity,
+} from '@/lib/types';
 
 interface DataContextType {
   payments: Payment[];
@@ -34,46 +46,60 @@ export function DataProvider({ children }: { children: ReactNode }) {
     initialRecentActivities
   );
 
-  const addPayment = (payment: Payment) => {
+  const addPayment = useCallback((payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
-  };
+  }, []);
 
-  const updatePayment = (updatedPayment: Payment) => {
+  const updatePayment = useCallback((updatedPayment: Payment) => {
     setPayments((prev) =>
       prev.map((p) => (p.id === updatedPayment.id ? updatedPayment : p))
     );
-  };
+  }, []);
 
-  const deletePayment = (paymentId: string) => {
+  const deletePayment = useCallback((paymentId: string) => {
     setPayments((prev) => prev.filter((p) => p.id !== paymentId));
-  };
+  }, []);
 
-  const addRecentActivity = (activity: RecentActivity) => {
+  const addRecentActivity = useCallback((activity: RecentActivity) => {
     setRecentActivities((prev) => [activity, ...prev]);
-  };
+  }, []);
 
-  const addParticipant = (participant: Participant) => {
+  const addParticipant = useCallback((participant: Participant) => {
     setParticipants((prev) => [participant, ...prev]);
-  };
+  }, []);
 
-  const updateParticipant = (updatedParticipant: Participant) => {
+  const updateParticipant = useCallback((updatedParticipant: Participant) => {
     setParticipants((prev) =>
       prev.map((p) => (p.id === updatedParticipant.id ? updatedParticipant : p))
     );
-  };
+  }, []);
 
-  const value = {
-    payments,
-    participants,
-    expenses,
-    recentActivities,
-    addPayment,
-    updatePayment,
-    deletePayment,
-    addRecentActivity,
-    addParticipant,
-    updateParticipant,
-  };
+  const value = useMemo(
+    () => ({
+      payments,
+      participants,
+      expenses,
+      recentActivities,
+      addPayment,
+      updatePayment,
+      deletePayment,
+      addRecentActivity,
+      addParticipant,
+      updateParticipant,
+    }),
+    [
+      payments,
+      participants,
+      expenses,
+      recentActivities,
+      addPayment,
+      updatePayment,
+      deletePayment,
+      addRecentActivity,
+      addParticipant,
+      updateParticipant,
+    ]
+  );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
