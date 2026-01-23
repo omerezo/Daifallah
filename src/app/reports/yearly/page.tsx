@@ -63,7 +63,7 @@ export default function YearlyReportsPage() {
     const filteredPayments = payments.filter((p) => {
       const paymentForDate = new Date(p.paymentFor);
       return (
-        paymentForDate.getUTCFullYear() === selectedYear &&
+        paymentForDate.getFullYear() === selectedYear &&
         p.currency === selectedCurrency
       );
     });
@@ -82,7 +82,7 @@ export default function YearlyReportsPage() {
 
     const chartData = months.map((month, index) => {
         const monthIncome = filteredPayments
-            .filter(p => new Date(p.paymentFor).getUTCMonth() === index)
+            .filter(p => new Date(p.paymentFor).getMonth() === index)
             .reduce((sum, p) => sum + p.amount, 0);
         const monthExpenses = filteredExpenses
             .filter(e => new Date(e.date + 'T00:00:00').getMonth() === index)

@@ -62,11 +62,11 @@ export default function MonthlyReportsPage() {
 
   const monthlyData = useMemo(() => {
     const filteredPayments = payments.filter((p) => {
-      // NOTE: We parse paymentFor as a UTC date to avoid timezone issues.
+      // NOTE: We parse paymentFor as a local date to avoid timezone issues.
       const paymentForDate = new Date(p.paymentFor);
       return (
-        paymentForDate.getUTCFullYear() === selectedYear &&
-        paymentForDate.getUTCMonth() === selectedMonth &&
+        paymentForDate.getFullYear() === selectedYear &&
+        paymentForDate.getMonth() === selectedMonth &&
         p.currency === selectedCurrency
       );
     });
