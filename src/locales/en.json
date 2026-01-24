@@ -39,7 +39,7 @@
   "income_vs_expenses_overview": "Overview of income vs. expenses.",
   "year": "Year",
   "month": "Month",
-  "export_pdf": "Export to PDF",
+  "export_pdf": "Export as PDF",
   "visual_breakdown_income_expenses": "A visual breakdown of income and expenses for this month.",
   "yoy_growth_overview": "Year-over-year growth overview.",
   "yearly_comparison": "Yearly Comparison",
@@ -68,7 +68,7 @@
   "participants_management": "Participants Management",
   "all_participants": "All Participants",
   "manage_your_committee_members": "Add, edit, and manage your committee members.",
-  "export_csv": "Export CSV",
+  "export_csv": "Export as CSV",
   "add_participant": "Add Participant",
   "name": "Name",
   "phone": "Phone",
@@ -172,5 +172,9 @@
   "unpaid_participants": "Unpaid Participants",
   "select_month_year_unpaid": "Please select a specific month and year to see unpaid participants.",
   "unpaid_for_month": "Unpaid for {{month}} {{year}}",
-  "no_data_found": "No data found for the selected filters."
+  "no_data_found": "No data found for the selected filters.",
+  "payments_report": "Payments Report",
+  "no_data_to_export": "There is no data to export for the current filters.",
+  "export_successful": "Export Successful",
+  "csv_download_description": "Your CSV file will be downloaded shortly."
 }

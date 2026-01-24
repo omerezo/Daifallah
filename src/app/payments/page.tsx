@@ -30,7 +30,7 @@ import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
 import { logoBase64 } from '@/components/logo';
 import type { Payment, Participant } from '@/lib/types';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -59,6 +59,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { useReactToPrint } from 'react-to-print';
+
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 const allYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
@@ -71,6 +73,7 @@ export default function PaymentsPage() {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
   const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity } = useData();
+  const printRef = useRef<HTMLDivElement>(null);
 
   // Dialog states
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -111,6 +114,57 @@ export default function PaymentsPage() {
       resetForm();
     }
   };
+
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: `${t('payments_report')} - ${new Date().toLocaleDateString()}`
+  });
+
+  const handleExportCSV = () => {
+    if (filteredData.data.length === 0 && filteredData.type !== 'message') {
+        toast({ variant: 'destructive', title: t('error'), description: t('no_data_to_export') });
+        return;
+    }
+
+    let headers: string[];
+    let data: (string|number)[][];
+    let filename: string;
+
+    if (filteredData.type === 'payments') {
+        const paymentData = filteredData.data as Payment[];
+        headers = ['ID', t('date'), t('participant_name'), t('payment_for'), t('recorded_by'), t('amount'), t('currency'), t('type'), t('remarks')];
+        data = paymentData.map(p => [p.id, p.date, p.participantName, p.paymentFor, p.recordedBy, p.amount, p.currency, p.type, p.remarks || '']);
+        filename = 'payments.csv';
+    } else if (filteredData.type === 'unpaid') { // unpaid
+        const participantData = filteredData.data as Participant[];
+        headers = [t('name'), t('phone'), t('monthly_share'), t('status')];
+        data = participantData.map(p => [p.name, p.phone, p.monthlyShare, p.status]);
+        const monthName = t(allMonths[parseInt(filterMonth)]);
+        const year = filterYear;
+        filename = `unpaid_${monthName}_${year}.csv`;
+    } else {
+        toast({ variant: 'destructive', title: t('error'), description: t('no_data_to_export') });
+        return;
+    }
+
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({ title: t('export_successful'), description: t('csv_download_description') });
+  }
 
   const generateReceipt = (payment: Payment) => {
     const paidStampBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQwIDk2Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LCA0KSI+PHJlY3Qgd2lkdGg9IjIzMiIgaGVpZ2h0PSI4OCIgc3R5bGU9ImZpbGw6bm9uZTsgc3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlOiNkNDAwMDA7IiByeD0iOCIgcnk9IjgiLz48dGV4dCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMTYsIDYwKSIgc3R5bGU9ImZvbnQtZmFtaWx5OkFyaWFsLCBIZWx2ZXRpY2E7Zm9udC1zaXplOjQ4cHg7ZmlsbDojZDQwMDAwO2ZvbnQtd2VpZ2h0OmJvbGQ7dGV4dC1hbmNob3I6bWlkZGxlIj5QQUlEPC90ZXh0PjwvZz48L3N2Zz4=";
@@ -349,17 +403,25 @@ export default function PaymentsPage() {
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="flex items-center">
+        <div className="flex items-center no-print">
           <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
             {t('payments_management')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            <Button size="sm" variant="outline" className="h-8 gap-1">
-              <File className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                {t('export')}
-              </span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8 gap-1">
+                  <File className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    {t('export')}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePrint}>{t('export_pdf')}</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -369,7 +431,7 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        <Card>
+        <Card className="no-print">
           <CardHeader>
             <CardTitle>{t('filters')}</CardTitle>
           </CardHeader>
@@ -423,135 +485,142 @@ export default function PaymentsPage() {
             </div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{view === 'payments' ? t('all_payments') : t('unpaid_for_month', { month: t(allMonths[parseInt(filterMonth)]), year: filterYear })}</CardTitle>
-            <CardDescription>
-              {t('manage_your_committee_payments')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredData.type === 'message' && <p className="text-muted-foreground text-center">{filteredData.data}</p>}
-            {filteredData.type === 'payments' && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('date')}</TableHead>
-                    <TableHead>{t('participant_name')}</TableHead>
-                    <TableHead>{t('payment_for')}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t('recorded_by')}</TableHead>
-                    <TableHead className="text-right">{t('amount')}</TableHead>
-                    <TableHead className="hidden md:table-cell">{t('currency')}</TableHead>
-                    <TableHead className="hidden sm:table-cell">{t('type')}</TableHead>
-                    <TableHead className="hidden lg:table-cell">{t('remarks')}</TableHead>
-                    <TableHead className="hidden lg:table-cell">{t('attachment')}</TableHead>
-                    <TableHead>
-                      <span className="sr-only">{t('actions')}</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(filteredData.data as Payment[]).map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>{payment.date}</TableCell>
-                      <TableCell className="font-medium">
-                        {payment.participantName}
-                      </TableCell>
-                      <TableCell>{payment.paymentFor}</TableCell>
-                      <TableCell className="hidden md:table-cell">{payment.recordedBy}</TableCell>
-                      <TableCell className="text-right">{payment.amount}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {payment.currency}
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{t(payment.type.toLowerCase())}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{payment.remarks || '-'}</TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {payment.bankTransferProof ? (
-                          <a href={payment.bankTransferProof.url} download={payment.bankTransferProof.filename} target="_blank" rel="noopener noreferrer" className="underline flex items-center gap-1 text-sm">
-                            <File className="h-3.5 w-3.5" />
-                            {payment.bankTransferProof.filename}
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                         <DropdownMenu modal={false}>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">{t('toggle_menu')}</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => generateReceipt(payment)}>
-                              {t('generate_receipt')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onSelect={() => {
-                                setTimeout(() => {
-                                  handleOpenEditDialog(payment);
-                                }, 100); 
-                              }}
-                            >
-                              {t('edit')}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onSelect={() => {
-                                setTimeout(() => {
-                                  setPaymentToDelete(payment);
-                                }, 100); 
-                              }}
-                            >
-                              {t('delete')}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+        
+        <div ref={printRef} className="printable-area">
+          <div className="text-center print-only-title">
+              <h1 className="font-display text-3xl font-bold">{t('app_name')}</h1>
+              <h2 className="text-xl font-semibold">{t('payments_report')}</h2>
+              <p className="text-muted-foreground">{new Date().toLocaleDateString()}</p>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>{view === 'payments' ? t('all_payments') : t('unpaid_for_month', { month: t(allMonths[parseInt(filterMonth)]), year: filterYear })}</CardTitle>
+              <CardDescription>
+                {t('manage_your_committee_payments')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredData.type === 'message' && <p className="text-muted-foreground text-center">{filteredData.data}</p>}
+              {filteredData.type === 'payments' && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('date')}</TableHead>
+                      <TableHead>{t('participant_name')}</TableHead>
+                      <TableHead>{t('payment_for')}</TableHead>
+                      <TableHead className="hidden md:table-cell">{t('recorded_by')}</TableHead>
+                      <TableHead className="text-right">{t('amount')}</TableHead>
+                      <TableHead className="hidden md:table-cell">{t('currency')}</TableHead>
+                      <TableHead className="hidden sm:table-cell">{t('type')}</TableHead>
+                      <TableHead className="hidden lg:table-cell">{t('remarks')}</TableHead>
+                      <TableHead className="hidden lg:table-cell">{t('attachment')}</TableHead>
+                      <TableHead>
+                        <span className="sr-only">{t('actions')}</span>
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-             {filteredData.type === 'unpaid' && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('name')}</TableHead>
-                    <TableHead>{t('phone')}</TableHead>
-                    <TableHead>{t('monthly_share')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(filteredData.data as Participant[]).map((participant) => (
-                    <TableRow key={participant.id}>
-                      <TableCell className="font-medium">{participant.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{participant.phone}</TableCell>
-                      <TableCell>{participant.monthlyShare}</TableCell>
-                      <TableCell>
-                        <Badge variant={participant.status === 'Active' ? 'default' : 'destructive'}>
-                          {t(participant.status.toLowerCase())}
-                        </Badge>
-                      </TableCell>
+                  </TableHeader>
+                  <TableBody>
+                    {(filteredData.data as Payment[]).map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell>{payment.date}</TableCell>
+                        <TableCell className="font-medium">
+                          {payment.participantName}
+                        </TableCell>
+                        <TableCell>{payment.paymentFor}</TableCell>
+                        <TableCell className="hidden md:table-cell">{payment.recordedBy}</TableCell>
+                        <TableCell className="text-right">{payment.amount}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {payment.currency}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">{t(payment.type.toLowerCase())}</TableCell>
+                        <TableCell className="hidden lg:table-cell">{payment.remarks || '-'}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {payment.bankTransferProof ? (
+                            <a href={payment.bankTransferProof.url} download={payment.bankTransferProof.filename} target="_blank" rel="noopener noreferrer" className="underline flex items-center gap-1 text-sm">
+                              <File className="h-3.5 w-3.5" />
+                              {payment.bankTransferProof.filename}
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">{t('toggle_menu')}</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => generateReceipt(payment)}>
+                                {t('generate_receipt')}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setTimeout(() => {
+                                    handleOpenEditDialog(payment);
+                                  }, 100); 
+                                }}
+                              >
+                                {t('edit')}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={() => {
+                                  setTimeout(() => {
+                                    setPaymentToDelete(payment);
+                                  }, 100); 
+                                }}
+                              >
+                                {t('delete')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              {filteredData.type === 'unpaid' && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t('name')}</TableHead>
+                      <TableHead>{t('phone')}</TableHead>
+                      <TableHead>{t('monthly_share')}</TableHead>
+                      <TableHead>{t('status')}</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            {filteredData.data.length === 0 && filteredData.type !== 'message' && (
-              <p className="text-muted-foreground text-center py-8">{t('no_data_found')}</p>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {(filteredData.data as Participant[]).map((participant) => (
+                      <TableRow key={participant.id}>
+                        <TableCell className="font-medium">{participant.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{participant.phone}</TableCell>
+                        <TableCell>{participant.monthlyShare}</TableCell>
+                        <TableCell>
+                          <Badge variant={participant.status === 'Active' ? 'default' : 'destructive'}>
+                            {t(participant.status.toLowerCase())}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              {filteredData.data.length === 0 && filteredData.type !== 'message' && (
+                <p className="text-muted-foreground text-center py-8">{t('no_data_found')}</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Add/Edit Dialog */}
