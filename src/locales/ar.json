@@ -163,5 +163,14 @@
   "delete_participant_confirm": "هل أنت متأكد أنك تريد حذف {{name}}؟ سيؤدي هذا أيضًا إلى حذف جميع مدفوعاتهم المرتبطة.",
   "participant_deleted": "تم حذف المشارك",
   "participant_deleted_description": "تمت إزالة {{name}} من قائمة المشاركين.",
-  "paid_stamp": "مدفوع"
+  "paid_stamp": "مدفوع",
+  "filters": "عوامل التصفية",
+  "all_participants": "كل المشاركين",
+  "all_collectors": "كل المحصلين",
+  "all_months": "كل الشهور",
+  "all_years": "كل السنوات",
+  "unpaid_participants": "المشاركون غير المسددين",
+  "select_month_year_unpaid": "يرجى تحديد شهر وسنة محددين لرؤية المشاركين غير المسددين.",
+  "unpaid_for_month": "غير مسدد لشهر {{month}} {{year}}",
+  "no_data_found": "لا توجد بيانات للعرض حسب الفلاتر المختارة."
 }

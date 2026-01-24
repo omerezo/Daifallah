@@ -29,8 +29,8 @@ import {
 import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
 import { logoBase64 } from '@/components/logo';
-import type { Payment } from '@/lib/types';
-import { useState, useCallback } from 'react';
+import type { Payment, Participant } from '@/lib/types';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -58,10 +58,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
-const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
-const months = [
+const allYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+const allMonths = [
   'january', 'february', 'march', 'april', 'may', 'june', 
   'july', 'august', 'september', 'october', 'november', 'december'
 ];
@@ -69,8 +70,9 @@ const months = [
 export default function PaymentsPage() {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
-  const { payments, participants, addPayment, updatePayment, deletePayment, addRecentActivity } = useData();
+  const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity } = useData();
 
+  // Dialog states
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
@@ -83,6 +85,14 @@ export default function PaymentsPage() {
   const [paymentYear, setPaymentYear] = useState(new Date().getFullYear());
   const [bankTransferFile, setBankTransferFile] = useState<File | null>(null);
   const [remarks, setRemarks] = useState('');
+
+  // Filter states
+  const [view, setView] = useState<'payments' | 'unpaid'>('payments');
+  const [filterParticipant, setFilterParticipant] = useState<string>('all');
+  const [filterCollector, setFilterCollector] = useState<string>('all');
+  const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
+  const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
+
 
   const resetForm = useCallback(() => {
     setEditingPayment(null);
@@ -101,7 +111,7 @@ export default function PaymentsPage() {
       resetForm();
     }
   };
-  
+
   const generateReceipt = (payment: Payment) => {
     const paidStampBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQwIDk2Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LCA0KSI+PHJlY3Qgd2lkdGg9IjIzMiIgaGVpZ2h0PSI4OCIgc3R5bGU9ImZpbGw6bm9uZTsgc3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlOiNkNDAwMDA7IiByeD0iOCIgcnk9IjgiLz48dGV4dCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMTYsIDYwKSIgc3R5bGU9ImZvbnQtZmFtaWx5OkFyaWFsLCBIZWx2ZXRpY2E7Zm9udC1zaXplOjQ4cHg7ZmlsbDojZDQwMDAwO2ZvbnQtd2VpZ2h0OmJvbGQ7dGV4dC1hbmNob3I6bWlkZGxlIj5QQUlEPC90ZXh0PjwvZz48L3N2Zz4=";
 
@@ -194,7 +204,7 @@ export default function PaymentsPage() {
       }
     } catch (e) {
       const [monthName, year] = payment.paymentFor.split(' ');
-      const monthIndex = months.findIndex(m => t(m).toLowerCase() === monthName?.toLowerCase() || m === monthName?.toLowerCase());
+      const monthIndex = allMonths.findIndex(m => t(m).toLowerCase() === monthName?.toLowerCase() || m === monthName?.toLowerCase());
       if (monthIndex !== -1) setPaymentMonth(monthIndex);
       if (year && !isNaN(Number(year))) setPaymentYear(Number(year));
     }
@@ -297,6 +307,44 @@ export default function PaymentsPage() {
     }
   };
 
+  const filteredData = useMemo(() => {
+    if (view === 'unpaid') {
+      const month = parseInt(filterMonth, 10);
+      const year = parseInt(filterYear, 10);
+
+      if (isNaN(month) || isNaN(year)) {
+        return { type: 'message', data: t('select_month_year_unpaid') };
+      }
+      
+      const paymentPeriod = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+      
+      const paidParticipantNames = new Set(
+        payments
+            .filter(p => p.paymentFor === paymentPeriod)
+            .map(p => p.participantName)
+      );
+
+      const unpaid = participants.filter(
+        p => p.status === 'Active' && !paidParticipantNames.has(p.name)
+      );
+      return { type: 'unpaid', data: unpaid };
+    } else { // view === 'payments'
+        const filtered = payments.filter(payment => {
+            const paymentForDate = new Date(payment.paymentFor);
+            const paymentMonthNum = paymentForDate.getMonth();
+            const paymentYearNum = paymentForDate.getFullYear();
+            
+            const participantMatch = filterParticipant === 'all' || payment.participantName === (participants.find(p => p.id === filterParticipant)?.name);
+            const collectorMatch = filterCollector === 'all' || payment.recordedBy === filterCollector;
+            const monthMatch = filterMonth === 'all' || paymentMonthNum === parseInt(filterMonth, 10);
+            const yearMatch = filterYear === 'all' || paymentYearNum === parseInt(filterYear, 10);
+            
+            return participantMatch && collectorMatch && monthMatch && yearMatch;
+        });
+        return { type: 'payments', data: filtered };
+    }
+  }, [view, payments, participants, filterParticipant, filterCollector, filterMonth, filterYear, t]);
+
 
   return (
     <>
@@ -320,100 +368,188 @@ export default function PaymentsPage() {
             </Button>
           </div>
         </div>
+
         <Card>
           <CardHeader>
-            <CardTitle>{t('all_payments')}</CardTitle>
+            <CardTitle>{t('filters')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+              <Select value={view} onValueChange={(v) => setView(v as 'payments' | 'unpaid')}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('view')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="payments">{t('all_payments')}</SelectItem>
+                  <SelectItem value="unpaid">{t('unpaid_participants')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterParticipant} onValueChange={setFilterParticipant} disabled={view === 'unpaid'}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('participant')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_participants')}</SelectItem>
+                  {participants.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterCollector} onValueChange={setFilterCollector} disabled={view === 'unpaid'}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('collector')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_collectors')}</SelectItem>
+                  {users.map(u => <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterMonth} onValueChange={setFilterMonth}>
+                 <SelectTrigger>
+                    <SelectValue placeholder={t('month')} />
+                  </SelectTrigger>
+                <SelectContent>
+                  {view === 'payments' && <SelectItem value="all">{t('all_months')}</SelectItem>}
+                  {allMonths.map((m, i) => <SelectItem key={i} value={String(i)}>{t(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+               <Select value={filterYear} onValueChange={setFilterYear}>
+                 <SelectTrigger>
+                    <SelectValue placeholder={t('year')} />
+                  </SelectTrigger>
+                <SelectContent>
+                   {view === 'payments' && <SelectItem value="all">{t('all_years')}</SelectItem>}
+                  {allYears.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{view === 'payments' ? t('all_payments') : t('unpaid_for_month', { month: t(allMonths[parseInt(filterMonth)]), year: filterYear })}</CardTitle>
             <CardDescription>
               {t('manage_your_committee_payments')}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('date')}</TableHead>
-                  <TableHead>{t('participant_name')}</TableHead>
-                  <TableHead>{t('payment_for')}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t('recorded_by')}</TableHead>
-                  <TableHead className="text-right">{t('amount')}</TableHead>
-                  <TableHead className="hidden md:table-cell">{t('currency')}</TableHead>
-                  <TableHead className="hidden sm:table-cell">{t('type')}</TableHead>
-                  <TableHead className="hidden lg:table-cell">{t('remarks')}</TableHead>
-                  <TableHead className="hidden lg:table-cell">{t('attachment')}</TableHead>
-                  <TableHead>
-                    <span className="sr-only">{t('actions')}</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{payment.date}</TableCell>
-                    <TableCell className="font-medium">
-                      {payment.participantName}
-                    </TableCell>
-                    <TableCell>{payment.paymentFor}</TableCell>
-                    <TableCell className="hidden md:table-cell">{payment.recordedBy}</TableCell>
-                    <TableCell className="text-right">{payment.amount}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {payment.currency}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">{t(payment.type.toLowerCase())}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{payment.remarks || '-'}</TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {payment.bankTransferProof ? (
-                        <a href={payment.bankTransferProof.url} download={payment.bankTransferProof.filename} target="_blank" rel="noopener noreferrer" className="underline flex items-center gap-1 text-sm">
-                          <File className="h-3.5 w-3.5" />
-                          {payment.bankTransferProof.filename}
-                        </a>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                       <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">{t('toggle_menu')}</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => generateReceipt(payment)}>
-                            {t('generate_receipt')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => {
-                              setTimeout(() => {
-                                handleOpenEditDialog(payment);
-                              }, 100); 
-                            }}
-                          >
-                            {t('edit')}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onSelect={() => {
-                              setTimeout(() => {
-                                setPaymentToDelete(payment);
-                              }, 100); 
-                            }}
-                          >
-                            {t('delete')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            {filteredData.type === 'message' && <p className="text-muted-foreground text-center">{filteredData.data}</p>}
+            {filteredData.type === 'payments' && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('date')}</TableHead>
+                    <TableHead>{t('participant_name')}</TableHead>
+                    <TableHead>{t('payment_for')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('recorded_by')}</TableHead>
+                    <TableHead className="text-right">{t('amount')}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t('currency')}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t('type')}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t('remarks')}</TableHead>
+                    <TableHead className="hidden lg:table-cell">{t('attachment')}</TableHead>
+                    <TableHead>
+                      <span className="sr-only">{t('actions')}</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {(filteredData.data as Payment[]).map((payment) => (
+                    <TableRow key={payment.id}>
+                      <TableCell>{payment.date}</TableCell>
+                      <TableCell className="font-medium">
+                        {payment.participantName}
+                      </TableCell>
+                      <TableCell>{payment.paymentFor}</TableCell>
+                      <TableCell className="hidden md:table-cell">{payment.recordedBy}</TableCell>
+                      <TableCell className="text-right">{payment.amount}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {payment.currency}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">{t(payment.type.toLowerCase())}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{payment.remarks || '-'}</TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {payment.bankTransferProof ? (
+                          <a href={payment.bankTransferProof.url} download={payment.bankTransferProof.filename} target="_blank" rel="noopener noreferrer" className="underline flex items-center gap-1 text-sm">
+                            <File className="h-3.5 w-3.5" />
+                            {payment.bankTransferProof.filename}
+                          </a>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                         <DropdownMenu modal={false}>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">{t('toggle_menu')}</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => generateReceipt(payment)}>
+                              {t('generate_receipt')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setTimeout(() => {
+                                  handleOpenEditDialog(payment);
+                                }, 100); 
+                              }}
+                            >
+                              {t('edit')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={() => {
+                                setTimeout(() => {
+                                  setPaymentToDelete(payment);
+                                }, 100); 
+                              }}
+                            >
+                              {t('delete')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+             {filteredData.type === 'unpaid' && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('name')}</TableHead>
+                    <TableHead>{t('phone')}</TableHead>
+                    <TableHead>{t('monthly_share')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(filteredData.data as Participant[]).map((participant) => (
+                    <TableRow key={participant.id}>
+                      <TableCell className="font-medium">{participant.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{participant.phone}</TableCell>
+                      <TableCell>{participant.monthlyShare}</TableCell>
+                      <TableCell>
+                        <Badge variant={participant.status === 'Active' ? 'default' : 'destructive'}>
+                          {t(participant.status.toLowerCase())}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+            {filteredData.data.length === 0 && filteredData.type !== 'message' && (
+              <p className="text-muted-foreground text-center py-8">{t('no_data_found')}</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -489,7 +625,7 @@ export default function PaymentsPage() {
                     <SelectValue placeholder={t('month')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {months.map((month, index) => (
+                    {allMonths.map((month, index) => (
                        <SelectItem key={month} value={String(index)}>
                         {t(month)}
                       </SelectItem>
@@ -504,7 +640,7 @@ export default function PaymentsPage() {
                     <SelectValue placeholder={t('year')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {years.map((year) => (
+                    {allYears.map((year) => (
                       <SelectItem key={year} value={String(year)}>
                         {year}
                       </SelectItem>

@@ -14,12 +14,14 @@ import {
   participants as initialParticipants,
   expenses as initialExpenses,
   recentActivities as initialRecentActivities,
+  users as initialUsers,
 } from '@/lib/placeholder-data';
 import type {
   Payment,
   Participant,
   Expense,
   RecentActivity,
+  User,
 } from '@/lib/types';
 
 interface DataContextType {
@@ -27,6 +29,7 @@ interface DataContextType {
   participants: Participant[];
   expenses: Expense[];
   recentActivities: RecentActivity[];
+  users: User[];
   addPayment: (payment: Payment) => void;
   updatePayment: (payment: Payment) => void;
   deletePayment: (paymentId: string) => void;
@@ -73,6 +76,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
     () => getInitialState('recentActivities', initialRecentActivities)
   );
+  const [users, setUsers] = useState<User[]>(() =>
+    getInitialState('users', initialUsers)
+  );
+
 
   useEffect(() => {
     localStorage.setItem('payments', JSON.stringify(payments));
@@ -85,6 +92,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses));
   }, [expenses]);
+  
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -147,6 +158,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       participants,
       expenses,
       recentActivities,
+      users,
       addPayment,
       updatePayment,
       deletePayment,
@@ -160,6 +172,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       participants,
       expenses,
       recentActivities,
+      users,
       addPayment,
       updatePayment,
       deletePayment,
