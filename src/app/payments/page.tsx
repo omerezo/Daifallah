@@ -155,28 +155,28 @@ export default function PaymentsPage() {
       // 3. GENERATE TABLE
       if (filteredData.type === 'payments') {
         const rows = (filteredData.data as Payment[]).map((p) => [
-          p.remarks || '-',
-          t(p.type.toLowerCase()),
-          p.currency,
-          String(p.amount),
-          p.recordedBy,
-          p.paymentFor,
-          p.participantName,
           p.date,
+          p.participantName,
+          p.paymentFor,
+          p.recordedBy,
+          String(p.amount),
+          p.currency,
+          t(p.type.toLowerCase()),
+          p.remarks || '-',
         ]);
   
         autoTable(doc, {
           startY: 35,
           head: [
             [
-              t('remarks'),
-              t('type'),
-              t('currency'),
-              t('amount'),
-              t('recorded_by'),
-              t('payment_for'),
-              t('participant_name'),
               t('date'),
+              t('participant_name'),
+              t('payment_for'),
+              t('recorded_by'),
+              t('amount'),
+              t('currency'),
+              t('type'),
+              t('remarks'),
             ],
           ],
           body: rows,
@@ -202,15 +202,15 @@ export default function PaymentsPage() {
   
       if (filteredData.type === 'unpaid') {
         const rows = (filteredData.data as Participant[]).map((p) => [
-          p.status,
-          String(p.monthlyShare),
-          p.phone,
           p.name,
+          p.phone,
+          String(p.monthlyShare),
+          p.status,
         ]);
   
         autoTable(doc, {
           startY: 35,
-          head: [[t('status'), t('monthly_share'), t('phone'), t('name')]],
+          head: [[t('name'), t('phone'), t('monthly_share'), t('status')]],
           body: rows,
           styles: {
             font: 'Amiri',
@@ -916,3 +916,4 @@ export default function PaymentsPage() {
     </>
   );
 }
+```
