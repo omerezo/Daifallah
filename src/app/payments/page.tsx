@@ -116,8 +116,10 @@ export default function PaymentsPage() {
   };
 
   const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `${t('payments_report')} - ${new Date().toLocaleDateString()}`
+    content: () => printRef.current,
+    documentTitle: `${t('payments_report')} - ${new Date().toLocaleDateString()}`,
+    onAfterPrint: () => console.log("Print Success"),
+    onPrintError: (error) => console.error("Print Error:", error),
   });
 
   const handleExportCSV = () => {
@@ -402,6 +404,29 @@ export default function PaymentsPage() {
 
   return (
     <>
+      <style jsx global>{`
+        @media print {
+          /* Hide everything by default */
+          body * {
+            visibility: hidden;
+          }
+          /* Show only the printable area */
+          .printable-area, .printable-area * {
+            visibility: visible;
+          }
+          /* Position the print area at top left */
+          .printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          /* Force hide elements with no-print class */
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center no-print">
           <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
@@ -421,12 +446,8 @@ export default function PaymentsPage() {
                 <DropdownMenuItem onSelect={handleExportCSV}>
                   {t('export_csv')}
                 </DropdownMenuItem>
-
-                {/* FIXED SECTION STARTS HERE */}
                 <DropdownMenuItem
                   onSelect={() => {
-                    // 1. We removed e.preventDefault() so the menu closes immediately.
-                    // 2. We wait 100ms for the menu to disappear, then print.
                     setTimeout(() => {
                       handlePrint();
                     }, 100);
@@ -434,8 +455,6 @@ export default function PaymentsPage() {
                 >
                   {t('export_pdf')}
                 </DropdownMenuItem>
-                {/* FIXED SECTION ENDS HERE */}
-                
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
