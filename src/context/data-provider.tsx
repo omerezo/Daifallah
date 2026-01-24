@@ -5,8 +5,6 @@ import {
   useContext,
   useState,
   ReactNode,
-  useCallback,
-  useMemo,
   useEffect,
 } from 'react';
 import {
@@ -75,117 +73,80 @@ export function DataProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    try {
-      localStorage.setItem('payments', JSON.stringify(payments));
-    } catch (error) {
-      console.error('Failed to save payments to localStorage:', error);
-    }
+    localStorage.setItem('payments', JSON.stringify(payments));
   }, [payments]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('participants', JSON.stringify(participants));
-    } catch (error) {
-      console.error('Failed to save participants to localStorage:', error);
-    }
+    localStorage.setItem('participants', JSON.stringify(participants));
   }, [participants]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('expenses', JSON.stringify(expenses));
-    } catch (error) {
-      console.error('Failed to save expenses to localStorage:', error);
-    }
+    localStorage.setItem('expenses', JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        'recentActivities',
-        JSON.stringify(recentActivities)
-      );
-    } catch (error) {
-      console.error(
-        'Failed to save recent activities to localStorage:',
-        error
-      );
-    }
+    localStorage.setItem(
+      'recentActivities',
+      JSON.stringify(recentActivities)
+    );
   }, [recentActivities]);
 
-  const addPayment = useCallback((payment: Payment) => {
+  const addPayment = (payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
-  }, []);
+  };
 
-  const updatePayment = useCallback((updatedPayment: Payment) => {
+  const updatePayment = (updatedPayment: Payment) => {
     setPayments((prev) =>
       prev.map((p) => (p.id === updatedPayment.id ? updatedPayment : p))
     );
-  }, []);
+  };
 
-  const deletePayment = useCallback((paymentId: string) => {
+  const deletePayment = (paymentId: string) => {
     setPayments((prev) => prev.filter((p) => p.id !== paymentId));
-  }, []);
+  };
 
-  const addRecentActivity = useCallback((activity: RecentActivity) => {
+  const addRecentActivity = (activity: RecentActivity) => {
     setRecentActivities((prev) => [activity, ...prev].slice(0, 20));
-  }, []);
+  };
 
-  const addParticipant = useCallback((participant: Participant) => {
+  const addParticipant = (participant: Participant) => {
     setParticipants((prev) => [participant, ...prev]);
-  }, []);
+  };
 
-  const updateParticipant = useCallback((updatedParticipant: Participant) => {
+  const updateParticipant = (updatedParticipant: Participant) => {
     setParticipants((prev) =>
       prev.map((p) => (p.id === updatedParticipant.id ? updatedParticipant : p))
     );
-  }, []);
+  };
 
-  const deleteParticipant = useCallback(
-    (participantId: string) => {
-      const participantToDelete = participants.find(
-        (p) => p.id === participantId
+  const deleteParticipant = (participantId: string) => {
+    const participantToDelete = participants.find(
+      (p) => p.id === participantId
+    );
+    if (participantToDelete) {
+      // Also delete payments associated with this participant
+      setPayments((prevPayments) =>
+        prevPayments.filter(
+          (p) => p.participantName !== participantToDelete.name
+        )
       );
-      if (participantToDelete) {
-        // Also delete payments associated with this participant
-        setPayments((prevPayments) =>
-          prevPayments.filter(
-            (p) => p.participantName !== participantToDelete.name
-          )
-        );
-      }
-      setParticipants((prev) => prev.filter((p) => p.id !== participantId));
-    },
-    [participants]
-  );
+    }
+    setParticipants((prev) => prev.filter((p) => p.id !== participantId));
+  };
 
-  const value = useMemo(
-    () => ({
-      payments,
-      participants,
-      expenses,
-      recentActivities,
-      addPayment,
-      updatePayment,
-      deletePayment,
-      addRecentActivity,
-      addParticipant,
-      updateParticipant,
-      deleteParticipant,
-    }),
-    [
-      payments,
-      participants,
-      expenses,
-      recentActivities,
-      addPayment,
-      updatePayment,
-      deletePayment,
-      addRecentActivity,
-      addParticipant,
-      updateParticipant,
-      deleteParticipant,
-    ]
-  );
+  const value = {
+    payments,
+    participants,
+    expenses,
+    recentActivities,
+    addPayment,
+    updatePayment,
+    deletePayment,
+    addRecentActivity,
+    addParticipant,
+    updateParticipant,
+    deleteParticipant,
+  };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
