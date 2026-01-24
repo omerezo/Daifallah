@@ -344,7 +344,12 @@ export default function ParticipantsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
                           <DropdownMenuItem
-                            onClick={() => handleOpenEditDialog(participant)}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setTimeout(() => {
+                                handleOpenEditDialog(participant);
+                              }, 100);
+                            }}
                           >
                             {t('edit')}
                           </DropdownMenuItem>
@@ -358,8 +363,12 @@ export default function ParticipantsPage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="text-destructive"
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() => setParticipantToDelete(participant)}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setTimeout(() => {
+                                setParticipantToDelete(participant);
+                              }, 100);
+                            }}
                           >
                             {t('delete')}
                           </DropdownMenuItem>
@@ -459,3 +468,5 @@ export default function ParticipantsPage() {
     </>
   );
 }
+
+    

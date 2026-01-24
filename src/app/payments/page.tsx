@@ -314,17 +314,32 @@ export default function PaymentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                          
                           <DropdownMenuItem onClick={() => generateReceipt(payment)}>
                             {t('generate_receipt')}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleOpenEditDialog(payment)}>
+                          
+                          <DropdownMenuItem 
+                            onSelect={(e) => {
+                              e.preventDefault(); 
+                              setTimeout(() => {
+                                handleOpenEditDialog(payment);
+                              }, 100); 
+                            }}
+                          >
                             {t('edit')}
                           </DropdownMenuItem>
+
                           <DropdownMenuSeparator />
+                          
                           <DropdownMenuItem
                             className="text-destructive"
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() => setPaymentToDelete(payment)}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setTimeout(() => {
+                                setPaymentToDelete(payment);
+                              }, 100); 
+                            }}
                           >
                             {t('delete')}
                           </DropdownMenuItem>
