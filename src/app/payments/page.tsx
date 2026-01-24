@@ -70,6 +70,18 @@ const allMonths = [
   'july', 'august', 'september', 'october', 'november', 'december'
 ];
 
+function stripDataUrl(data: string) {
+  // removes "data:...;base64," if present
+  const idx = data.indexOf("base64,");
+  return idx >= 0 ? data.slice(idx + "base64,".length) : data;
+}
+
+
+function detectImageFormat(dataUrl: string): "PNG" | "JPEG" {
+  if (dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")) return "JPEG";
+  return "PNG"; // default
+}
+
 export default function PaymentsPage() {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
@@ -128,15 +140,27 @@ export default function PaymentsPage() {
       const doc = new jsPDF('p', 'mm', 'a4');
   
       // 1. LOAD ARABIC FONT
-      doc.addFileToVFS('Amiri-Regular.ttf', amiriFont);
+      const fontBase64 = stripDataUrl(amiriFont);
+      doc.addFileToVFS('Amiri-Regular.ttf', fontBase64);
       doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
       doc.setFont('Amiri'); // Set the font globally
   
-      // 2. PROFESSIONAL HEADER
-      const imgProps = doc.getImageProperties(logoBase64);
-      const logoWidth = 20;
-      const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-      doc.addImage(logoBase64, 'PNG', 14, 10, logoWidth, logoHeight);
+      // 2. PROFESSIONAL HEADER (SAFE LOGO)
+      try {
+        if (logoBase64?.startsWith("data:image/")) {
+          const format = detectImageFormat(logoBase64);
+          const imgProps = doc.getImageProperties(logoBase64);
+
+
+          const logoWidth = 20;
+          const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+
+
+          doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+        }
+      } catch (err) {
+        console.warn("Logo skipped (addImage failed):", err);
+      }
   
       doc.setFontSize(18);
       doc.setTextColor(40, 40, 40);
@@ -235,12 +259,12 @@ export default function PaymentsPage() {
         title: t('export_successful'),
         description: t('pdf_download_description'),
       });
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("PDF export failed:", e);
       toast({
-        variant: 'destructive',
-        title: t('error'),
-        description: 'PDF export failed.',
+        variant: "destructive",
+        title: t("error"),
+        description: e?.message ? `PDF export failed: ${e.message}` : "PDF export failed.",
       });
     }
   };
@@ -533,7 +557,7 @@ export default function PaymentsPage() {
             {t('payments_management')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            <DropdownMenu modal={false}>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1">
                   <File className="h-3.5 w-3.5" />
