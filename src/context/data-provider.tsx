@@ -7,6 +7,7 @@ import {
   ReactNode,
   useCallback,
   useMemo,
+  useEffect,
 } from 'react';
 import {
   payments as initialPayments,
@@ -37,15 +38,79 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// Helper to safely get data from localStorage
+function getInitialState<T>(key: string, fallback: T[]): T[] {
+  if (typeof window === 'undefined') {
+    return fallback;
+  }
+  try {
+    const item = window.localStorage.getItem(key);
+    if (item) {
+      const parsed = JSON.parse(item);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+    // If no item or item is invalid, set the fallback and return it
+    window.localStorage.setItem(key, JSON.stringify(fallback));
+    return fallback;
+  } catch (error) {
+    console.error(`Error reading from localStorage key “${key}”:`, error);
+    return fallback;
+  }
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [payments, setPayments] = useState<Payment[]>(initialPayments);
-  const [participants, setParticipants] = useState<Participant[]>(
-    initialParticipants
+  const [payments, setPayments] = useState<Payment[]>(() =>
+    getInitialState('payments', initialPayments)
   );
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  const [participants, setParticipants] = useState<Participant[]>(() =>
+    getInitialState('participants', initialParticipants)
+  );
+  const [expenses, setExpenses] = useState<Expense[]>(() =>
+    getInitialState('expenses', initialExpenses)
+  );
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
-    initialRecentActivities
+    () => getInitialState('recentActivities', initialRecentActivities)
   );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('payments', JSON.stringify(payments));
+    } catch (error) {
+      console.error('Failed to save payments to localStorage:', error);
+    }
+  }, [payments]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('participants', JSON.stringify(participants));
+    } catch (error) {
+      console.error('Failed to save participants to localStorage:', error);
+    }
+  }, [participants]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+    } catch (error) {
+      console.error('Failed to save expenses to localStorage:', error);
+    }
+  }, [expenses]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'recentActivities',
+        JSON.stringify(recentActivities)
+      );
+    } catch (error) {
+      console.error(
+        'Failed to save recent activities to localStorage:',
+        error
+      );
+    }
+  }, [recentActivities]);
 
   const addPayment = useCallback((payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
@@ -62,7 +127,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addRecentActivity = useCallback((activity: RecentActivity) => {
-    setRecentActivities((prev) => [activity, ...prev]);
+    setRecentActivities((prev) => [activity, ...prev].slice(0, 20));
   }, []);
 
   const addParticipant = useCallback((participant: Participant) => {
@@ -75,9 +140,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const deleteParticipant = useCallback((participantId: string) => {
-    setParticipants((prev) => prev.filter((p) => p.id !== participantId));
-  }, []);
+  const deleteParticipant = useCallback(
+    (participantId: string) => {
+      const participantToDelete = participants.find(
+        (p) => p.id === participantId
+      );
+      if (participantToDelete) {
+        // Also delete payments associated with this participant
+        setPayments((prevPayments) =>
+          prevPayments.filter(
+            (p) => p.participantName !== participantToDelete.name
+          )
+        );
+      }
+      setParticipants((prev) => prev.filter((p) => p.id !== participantId));
+    },
+    [participants]
+  );
 
   const value = useMemo(
     () => ({
@@ -104,7 +183,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addRecentActivity,
       addParticipant,
       updateParticipant,
-      deleteParticipant
+      deleteParticipant,
     ]
   );
 
