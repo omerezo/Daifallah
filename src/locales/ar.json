@@ -179,7 +179,8 @@
   "export_successful": "تم التصدير بنجاح",
   "csv_download_description": "سيتم تنزيل ملف CSV الخاص بك قريباً.",
   "preparing_pdf": "جارٍ تحضير ملف PDF، يرجى الانتظار...",
-  "pdf_download_description": "سيتم تنزيل تقرير PDF الخاص بك قريبًا."
+  "pdf_download_description": "سيتم تنزيل تقرير PDF الخاص بك قريبًا.",
+  "generated_by": "تم الإنشاء بواسطة"
 }
 
     

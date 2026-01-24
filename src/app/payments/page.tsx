@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
-import { logoBase64, amiriFont } from '@/components/logo';
+import { logoBase64 } from '@/components/logo';
 import type { Payment, Participant } from '@/lib/types';
 import { useState, useCallback, useMemo } from 'react';
 import {
@@ -69,17 +69,6 @@ const allMonths = [
   'january', 'february', 'march', 'april', 'may', 'june', 
   'july', 'august', 'september', 'october', 'november', 'december'
 ];
-
-function stripDataUrl(data: string) {
-  const idx = data?.indexOf("base64,") ?? -1;
-  return idx >= 0 ? data.slice(idx + "base64,".length) : data;
-}
-
-
-function detectImageFormat(dataUrl: string): "PNG" | "JPEG" {
-  if (dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")) return "JPEG";
-  return "PNG"; // default
-}
 
 export default function PaymentsPage() {
   const { t, dir } = useTranslation();
@@ -125,158 +114,129 @@ export default function PaymentsPage() {
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     try {
-      if (filteredData.type === 'message') {
-        toast({
-          variant: 'destructive',
-          title: t('error'),
-          description: t('no_data_to_export'),
-        });
+      if (filteredData.type === "message") {
+        toast({ variant: "destructive", title: t("error"), description: t("no_data_to_export") });
         return;
       }
   
-      const doc = new jsPDF('p', 'mm', 'a4');
-      
-      console.log("amiriFont type:", typeof amiriFont, "length:", amiriFont?.length);
+      toast({ title: t("export"), description: t("preparing_pdf") ?? "Preparing PDF..." });
   
-      // 1) LOAD ARABIC FONT (safe) + fallback
-      try {
-        const fontBase64 = stripDataUrl(amiriFont); // from earlier helper
+      const doc = new jsPDF("p", "mm", "a4");
+  
+      // 1. FETCH THE ARABIC FONT FROM PUBLIC FOLDER
+      // We fetch the file, convert it to Base64 on the fly, and register it.
+      const fontResponse = await fetch("/fonts/Amiri-Regular.ttf");
+      if (!fontResponse.ok) throw new Error("Failed to load Arabic font");
       
-        doc.addFileToVFS("Amiri-Regular.ttf", fontBase64);
+      const fontBlob = await fontResponse.blob();
+      const reader = new FileReader();
+  
+      reader.readAsDataURL(fontBlob);
+      reader.onloadend = () => {
+        const base64Font = (reader.result as string).split(",")[1];
+  
+        // Add font to PDF
+        doc.addFileToVFS("Amiri-Regular.ttf", base64Font);
         doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-      
-        // IMPORTANT: switch font only after registering
-        doc.setFont("Amiri", "normal");
-      } catch (err) {
-        console.warn("Arabic font failed, fallback to Helvetica:", err);
-        doc.setFont("helvetica", "normal"); // fallback so PDF still works
-      }
+        doc.setFont("Amiri"); // Activate the font
   
-      // 2. PROFESSIONAL HEADER (SAFE LOGO)
-      try {
-        if (logoBase64?.startsWith("data:image/")) {
-          const format = detectImageFormat(logoBase64);
-          const imgProps = doc.getImageProperties(logoBase64);
-
-
-          const logoWidth = 20;
-          const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-
-
-          doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+        // 2. PROFESSIONAL HEADER
+        // Add Logo (Top Left) - Adjust width/height as needed
+        const imgProps = doc.getImageProperties(logoBase64);
+        const logoWidth = 25;
+        const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+        doc.addImage(logoBase64, "PNG", 14, 10, logoWidth, logoHeight);
+  
+        // Add Title (Right Aligned)
+        doc.setFontSize(18);
+        doc.setTextColor(40, 40, 40);
+        doc.text(t("payments_report"), 195, 18, { align: "right" });
+  
+        // Add Date & Details
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: "right" });
+        doc.text(`${t('generated_by')}: User Admin`, 195, 30, { align: "right" });
+  
+        // Add Separator Line
+        doc.setDrawColor(220, 220, 220);
+        doc.line(14, 35, 196, 35);
+  
+        // 3. DEFINE COLUMNS AND DATA
+        let head: any[] = [];
+        let body: any[] = [];
+  
+        if (filteredData.type === "payments") {
+          // Define headers in REVERSE order for RTL if needed, but 'right' alignment usually suffices
+          head = [[
+            t("remarks"),
+            t("type"),
+            t("currency"),
+            t("amount"),
+            t("recorded_by"),
+            t("payment_for"),
+            t("participant_name"),
+            t("date"),
+          ]];
+  
+          body = (filteredData.data as Payment[]).map(p => ([
+            p.remarks || "-",
+            t(p.type.toLowerCase()),
+            p.currency,
+            String(p.amount),
+            p.recordedBy,
+            p.paymentFor,
+            p.participantName,
+            p.date,
+          ]));
+        } else if (filteredData.type === "unpaid") {
+          head = [[t("status"), t("monthly_share"), t("phone"), t("name")]];
+          body = (filteredData.data as Participant[]).map(p => ([
+            p.status,
+            String(p.monthlyShare),
+            p.phone,
+            p.name,
+          ]));
         }
-      } catch (err) {
-        console.warn("Logo skipped (addImage failed):", err);
-      }
   
-      doc.setFontSize(18);
-      doc.setTextColor(40, 40, 40);
-      doc.text(t('payments_report'), 195, 18, { align: 'right' });
-  
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 24, {
-        align: 'right',
-      });
-  
-      doc.setDrawColor(200, 200, 200);
-      doc.line(14, 30, 196, 30);
-  
-      // 3. GENERATE TABLE
-      if (filteredData.type === 'payments') {
-        const rows = (filteredData.data as Payment[]).map((p) => [
-          p.date,
-          p.participantName,
-          p.paymentFor,
-          p.recordedBy,
-          String(p.amount),
-          p.currency,
-          t(p.type.toLowerCase()),
-          p.remarks || '-',
-        ]);
-  
+        // 4. GENERATE TABLE
         autoTable(doc, {
-          startY: 35,
-          head: [
-            [
-              t('date'),
-              t('participant_name'),
-              t('payment_for'),
-              t('recorded_by'),
-              t('amount'),
-              t('currency'),
-              t('type'),
-              t('remarks'),
-            ],
-          ],
-          body: rows,
-          styles: {
-            font: doc.getFont().fontName,
-            fontSize: 10,
-            cellPadding: 3,
-            halign: dir === 'rtl' ? 'right' : 'left',
+          startY: 40,
+          head: head,
+          body: body,
+          theme: 'grid',
+          styles: { 
+            font: "Amiri", 
+            fontSize: 10, 
+            cellPadding: 3, 
+            halign: "right", // Right align all text for Arabic
+            valign: "middle"
           },
-          headStyles: {
-            fillColor: [36, 36, 36],
-            textColor: [255, 255, 255],
-            font: doc.getFont().fontName,
+          headStyles: { 
+            fillColor: [36, 36, 36], 
+            textColor: [255, 255, 255], 
             fontStyle: 'bold',
-            halign: dir === 'rtl' ? 'right' : 'left',
+            halign: "right" 
           },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245],
+          alternateRowStyles: { 
+            fillColor: [245, 245, 245] 
           },
         });
   
-        doc.save(`payments_${new Date().toISOString().slice(0, 10)}.pdf`);
-      }
-  
-      if (filteredData.type === 'unpaid') {
-        const rows = (filteredData.data as Participant[]).map((p) => [
-          p.name,
-          p.phone,
-          String(p.monthlyShare),
-          p.status,
-        ]);
-  
-        autoTable(doc, {
-          startY: 35,
-          head: [[t('name'), t('phone'), t('monthly_share'), t('status')]],
-          body: rows,
-          styles: {
-            font: doc.getFont().fontName,
-            fontSize: 10,
-            cellPadding: 3,
-            halign: dir === 'rtl' ? 'right' : 'left',
-          },
-          headStyles: {
-            fillColor: [36, 36, 36],
-            textColor: [255, 255, 255],
-            font: doc.getFont().fontName,
-            fontStyle: 'bold',
-            halign: dir === 'rtl' ? 'right' : 'left',
-          },
-          alternateRowStyles: {
-            fillColor: [245, 245, 245],
-          },
-        });
-  
-        doc.save(`unpaid_${filterMonth}_${filterYear}.pdf`);
-      }
-  
-      toast({
-        title: t('export_successful'),
-        description: t('pdf_download_description'),
-      });
-    } catch (e: any) {
-      console.error("PDF export failed:", e);
-      toast({
-        variant: "destructive",
-        title: t("error"),
-        description: `PDF export failed: ${e?.message ?? "unknown error"}`,
-      });
+        // 5. SAVE FILE
+        const fileName = filteredData.type === "payments" 
+          ? `payments_${new Date().toISOString().slice(0, 10)}.pdf`
+          : `unpaid_${filterMonth}_${filterYear}.pdf`;
+          
+        doc.save(fileName);
+        
+        toast({ title: t("export_successful"), description: t("pdf_download_description") });
+      };
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: t("error"), description: "PDF export failed. Check console logs." });
     }
   };
 
@@ -579,7 +539,7 @@ export default function PaymentsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
-                <DropdownMenuItem onSelect={handleExportPDF}>
+                <DropdownMenuItem onClick={handleExportPDF}>
                   {t('export_pdf')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
