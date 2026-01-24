@@ -30,7 +30,7 @@ import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
 import { logoBase64 } from '@/components/logo';
 import type { Payment } from '@/lib/types';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -47,6 +47,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -84,30 +85,6 @@ export default function PaymentsPage() {
   const [bankTransferFile, setBankTransferFile] = useState<File | null>(null);
   const [remarks, setRemarks] = useState('');
 
-  // Effect to populate form when editing
-  useEffect(() => {
-    if (editingPayment) {
-      const participant = participants.find(p => p.name === editingPayment.participantName);
-      setSelectedParticipantId(participant?.id);
-      setPaymentAmount(String(editingPayment.amount));
-      setPaymentCurrency(editingPayment.currency);
-
-      try {
-        const paymentForDate = new Date(editingPayment.paymentFor);
-        setPaymentMonth(paymentForDate.getMonth());
-        setPaymentYear(paymentForDate.getFullYear());
-      } catch (e) {
-        const [monthName, year] = editingPayment.paymentFor.split(' ');
-        const monthIndex = months.findIndex(m => t(m).toLowerCase() === monthName?.toLowerCase());
-        if (monthIndex !== -1) setPaymentMonth(monthIndex);
-        if (year) setPaymentYear(Number(year));
-      }
-      
-      setRemarks(editingPayment.remarks || '');
-      setBankTransferFile(null); // Always reset file input
-    }
-  }, [editingPayment, participants, t]);
-
   const resetForm = useCallback(() => {
     setEditingPayment(null);
     setSelectedParticipantId(undefined);
@@ -133,6 +110,33 @@ export default function PaymentsPage() {
 
   const handleOpenEditDialog = (payment: Payment) => {
     setEditingPayment(payment);
+  
+    const participant = participants.find(p => p.name === payment.participantName);
+    setSelectedParticipantId(participant?.id);
+    setPaymentAmount(String(payment.amount));
+    setPaymentCurrency(payment.currency);
+  
+    // Safely parse the 'paymentFor' date string
+    try {
+      // `new Date()` can parse "Month Year" format
+      const paymentForDate = new Date(payment.paymentFor);
+      if (!isNaN(paymentForDate.getTime())) {
+        setPaymentMonth(paymentForDate.getMonth());
+        setPaymentYear(paymentForDate.getFullYear());
+      } else {
+        throw new Error('Invalid date');
+      }
+    } catch (e) {
+      // Fallback for older formats or parsing errors
+      const [monthName, year] = payment.paymentFor.split(' ');
+      const monthIndex = months.findIndex(m => t(m).toLowerCase() === monthName?.toLowerCase() || m === monthName?.toLowerCase());
+      if (monthIndex !== -1) setPaymentMonth(monthIndex);
+      if (year && !isNaN(Number(year))) setPaymentYear(Number(year));
+    }
+    
+    setRemarks(payment.remarks || '');
+    setBankTransferFile(null); // Always reset file input
+  
     setIsPaymentDialogOpen(true);
   };
   
@@ -323,15 +327,30 @@ export default function PaymentsPage() {
                             {t('edit')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onSelect={(e) => {
-                                e.preventDefault();
-                                setPaymentToDelete(payment);
-                            }}
-                          >
-                            {t('delete')}
-                          </DropdownMenuItem>
+                           <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onSelect={(e) => e.preventDefault()}
+                                >
+                                  {t('delete')}
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {t('delete_payment_confirm')}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deletePayment(payment.id)}>
+                                    {t('delete')}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
