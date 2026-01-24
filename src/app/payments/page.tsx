@@ -47,7 +47,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -96,7 +95,6 @@ export default function PaymentsPage() {
     setBankTransferFile(null);
   }, []);
 
-  // Handler to clean up form state when the dialog is closed.
   const handleDialogOpenChange = (isOpen: boolean) => {
     setIsPaymentDialogOpen(isOpen);
     if (!isOpen) {
@@ -116,9 +114,7 @@ export default function PaymentsPage() {
     setPaymentAmount(String(payment.amount));
     setPaymentCurrency(payment.currency);
   
-    // Safely parse the 'paymentFor' date string
     try {
-      // `new Date()` can parse "Month Year" format
       const paymentForDate = new Date(payment.paymentFor);
       if (!isNaN(paymentForDate.getTime())) {
         setPaymentMonth(paymentForDate.getMonth());
@@ -127,7 +123,6 @@ export default function PaymentsPage() {
         throw new Error('Invalid date');
       }
     } catch (e) {
-      // Fallback for older formats or parsing errors
       const [monthName, year] = payment.paymentFor.split(' ');
       const monthIndex = months.findIndex(m => t(m).toLowerCase() === monthName?.toLowerCase() || m === monthName?.toLowerCase());
       if (monthIndex !== -1) setPaymentMonth(monthIndex);
@@ -135,7 +130,7 @@ export default function PaymentsPage() {
     }
     
     setRemarks(payment.remarks || '');
-    setBankTransferFile(null); // Always reset file input
+    setBankTransferFile(null);
   
     setIsPaymentDialogOpen(true);
   };
@@ -218,7 +213,6 @@ export default function PaymentsPage() {
       });
     }
     
-    // Just close the dialog, the onOpenChange handler will do the cleanup.
     setIsPaymentDialogOpen(false);
   };
   
@@ -327,30 +321,13 @@ export default function PaymentsPage() {
                             {t('edit')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onSelect={(e) => e.preventDefault()}
-                                >
-                                  {t('delete')}
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {t('delete_payment_confirm')}
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deletePayment(payment.id)}>
-                                    {t('delete')}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => setPaymentToDelete(payment)}
+                          >
+                            {t('delete')}
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -526,3 +503,5 @@ export default function PaymentsPage() {
     </>
   );
 }
+
+    
