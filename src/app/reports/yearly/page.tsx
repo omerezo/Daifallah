@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -37,7 +37,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useReactToPrint } from 'react-to-print';
+import { Logo } from '@/components/logo';
 
 const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
 const months = [
@@ -49,15 +49,13 @@ const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 export default function YearlyReportsPage() {
   const { t, dir } = useTranslation();
   const { payments, expenses } = useData();
-  const printRef = useRef<HTMLDivElement>(null);
 
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedCurrency, setSelectedCurrency] = useState<(typeof currencies)[number]>('USD'); 
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: `${t('yearly_reports')} - ${selectedYear} (${selectedCurrency})`
-  });
+  const handlePrint = () => {
+    window.print();
+  };
 
   const yearlyData = useMemo(() => {
     const filteredPayments = payments.filter((p) => {
@@ -155,8 +153,11 @@ export default function YearlyReportsPage() {
         </div>
       </div>
       
-      <div ref={printRef} className="printable-area space-y-8">
+      <div className="space-y-8">
         <div className="text-center print-only-title">
+            <div className="mx-auto mb-4 h-16 w-16">
+              <Logo />
+            </div>
             <h1 className="font-display text-3xl font-bold">{t('app_name')}</h1>
             <h2 className="text-xl font-semibold">{t('yearly_reports')} - {selectedYear}</h2>
             <p className="text-muted-foreground">{selectedCurrency}</p>
