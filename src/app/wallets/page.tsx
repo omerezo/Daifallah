@@ -228,15 +228,15 @@ export default function WalletsPage() {
           doc.setFont('Amiri', 'normal');
         } catch (err) {
           console.warn('Arabic font failed, fallback to Helvetica:', err);
-          doc.setFont('helvetica', 'normal');
+          doc.setFont('helvetica', 'normal'); // fallback so PDF still works
         }
 
         try {
-          if (logoBase64?.startsWith('data:image/')) {
-            const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+          if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
             const imgProps = doc.getImageProperties(logoBase64);
             const logoWidth = 20;
             const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+            const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
             doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
           }
         } catch (err) {
@@ -380,20 +380,20 @@ export default function WalletsPage() {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    className="flex-1"
-                    onClick={() => openTransactionDialog(wallet, 'add')}
-                  >
-                    <ArrowUpCircle className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
-                    {t('add_amount')}
-                  </Button>
-                  <Button
-                    size="sm"
                     variant="destructive"
                     className="flex-1"
                     onClick={() => openTransactionDialog(wallet, 'consume')}
                   >
-                    <ArrowDownCircle className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                    <ArrowDownCircle className="h-4 w-4" />
                     {t('consume_amount')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openTransactionDialog(wallet, 'add')}
+                  >
+                    <ArrowUpCircle className="h-4 w-4" />
+                    {t('add_amount')}
                   </Button>
                 </div>
               </CardContent>
