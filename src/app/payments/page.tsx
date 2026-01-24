@@ -301,7 +301,7 @@ export default function PaymentsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                       <DropdownMenu>
+                       <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button
                             aria-haspopup="true"
@@ -314,14 +314,11 @@ export default function PaymentsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                          
                           <DropdownMenuItem onClick={() => generateReceipt(payment)}>
                             {t('generate_receipt')}
                           </DropdownMenuItem>
-                          
-                          <DropdownMenuItem 
-                            onSelect={(e) => {
-                              e.preventDefault(); 
+                          <DropdownMenuItem
+                            onSelect={() => {
                               setTimeout(() => {
                                 handleOpenEditDialog(payment);
                               }, 100); 
@@ -329,13 +326,10 @@ export default function PaymentsPage() {
                           >
                             {t('edit')}
                           </DropdownMenuItem>
-
                           <DropdownMenuSeparator />
-                          
                           <DropdownMenuItem
                             className="text-destructive"
-                            onSelect={(e) => {
-                              e.preventDefault();
+                            onSelect={() => {
                               setTimeout(() => {
                                 setPaymentToDelete(payment);
                               }, 100); 

@@ -330,7 +330,7 @@ export default function ParticipantsPage() {
                       {participant.lastPaymentDate || '-'}
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
+                      <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button
                             aria-haspopup="true"
@@ -344,8 +344,7 @@ export default function ParticipantsPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
                           <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
+                            onSelect={() => {
                               setTimeout(() => {
                                 handleOpenEditDialog(participant);
                               }, 100);
@@ -363,8 +362,7 @@ export default function ParticipantsPage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="text-destructive"
-                            onSelect={(e) => {
-                              e.preventDefault();
+                            onSelect={() => {
                               setTimeout(() => {
                                 setParticipantToDelete(participant);
                               }, 100);
@@ -468,5 +466,3 @@ export default function ParticipantsPage() {
     </>
   );
 }
-
-    
