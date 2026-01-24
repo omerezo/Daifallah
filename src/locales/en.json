@@ -185,7 +185,28 @@
   "save_expense": "Save Expense",
   "select_category": "Select a category",
   "expense_description_placeholder": "e.g., Office rent for May",
-  "expenses_report": "Expenses Report"
+  "expenses_report": "Expenses Report",
+  "wallets": "Wallets",
+  "add_wallet": "Add Wallet",
+  "wallet_name": "Wallet Name",
+  "save_wallet": "Save Wallet",
+  "wallet_created": "Wallet Created",
+  "wallet_created_description": "Wallet '{{name}}' was created successfully.",
+  "wallet_name_required": "Wallet name is required.",
+  "current_balance": "Current Balance",
+  "add_amount": "Add Amount",
+  "consume_amount": "Consume Amount",
+  "transaction_successful": "Transaction Successful",
+  "transaction_successful_description": "The transaction was recorded successfully.",
+  "transaction_history": "Transaction History",
+  "view_all_wallet_transactions": "View all transactions across all wallets.",
+  "save_transaction": "Save Transaction",
+  "add": "Add",
+  "consume": "Consume",
+  "all_wallets": "All Wallets",
+  "no_transactions_found": "No transactions found.",
+  "wallets_report": "Wallets Report"
 }
 
     
+

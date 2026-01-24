@@ -50,3 +50,20 @@ export type RecentActivity = {
     date: string;
     amount: string;
 }
+
+export type Wallet = {
+  id: string;
+  name: string;
+  remarks: string;
+  balance: number;
+  currency: 'USD' | 'SAR' | 'EGP' | 'SDG';
+}
+
+export type WalletTransaction = {
+  id: string;
+  walletId: string;
+  date: string;
+  type: 'add' | 'consume';
+  amount: number;
+  description: string;
+}

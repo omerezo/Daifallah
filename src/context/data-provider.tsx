@@ -15,6 +15,8 @@ import {
   expenses as initialExpenses,
   recentActivities as initialRecentActivities,
   users as initialUsers,
+  wallets as initialWallets,
+  walletTransactions as initialWalletTransactions,
 } from '@/lib/placeholder-data';
 import type {
   Payment,
@@ -22,6 +24,8 @@ import type {
   Expense,
   RecentActivity,
   User,
+  Wallet,
+  WalletTransaction,
 } from '@/lib/types';
 
 interface DataContextType {
@@ -30,6 +34,8 @@ interface DataContextType {
   expenses: Expense[];
   recentActivities: RecentActivity[];
   users: User[];
+  wallets: Wallet[];
+  walletTransactions: WalletTransaction[];
   addPayment: (payment: Payment) => void;
   updatePayment: (payment: Payment) => void;
   deletePayment: (paymentId: string) => void;
@@ -38,6 +44,8 @@ interface DataContextType {
   updateParticipant: (participant: Participant) => void;
   deleteParticipant: (participantId: string) => void;
   addExpense: (expense: Expense) => void;
+  addWallet: (wallet: Wallet) => void;
+  addWalletTransaction: (transaction: Omit<WalletTransaction, 'id' | 'date'>) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -80,6 +88,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(() =>
     getInitialState('users', initialUsers)
   );
+  const [wallets, setWallets] = useState<Wallet[]>(() =>
+    getInitialState('wallets', initialWallets)
+  );
+  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>(() =>
+    getInitialState('walletTransactions', initialWalletTransactions)
+  );
 
 
   useEffect(() => {
@@ -104,6 +118,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       JSON.stringify(recentActivities)
     );
   }, [recentActivities]);
+  
+  useEffect(() => {
+    localStorage.setItem('wallets', JSON.stringify(wallets));
+  }, [wallets]);
+  
+  useEffect(() => {
+    localStorage.setItem('walletTransactions', JSON.stringify(walletTransactions));
+  }, [walletTransactions]);
+
 
   const addPayment = useCallback((payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
@@ -157,6 +180,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setExpenses((prev) => [expense, ...prev]);
   }, []);
 
+  const addWallet = useCallback((wallet: Wallet) => {
+    setWallets((prev) => [wallet, ...prev]);
+  }, []);
+  
+  const addWalletTransaction = useCallback((transaction: Omit<WalletTransaction, 'id' | 'date'>) => {
+      const newTransaction: WalletTransaction = {
+          ...transaction,
+          id: `WLTX-${Date.now()}`,
+          date: new Date().toISOString().split('T')[0],
+      };
+      setWalletTransactions(prev => [newTransaction, ...prev]);
+      setWallets(prev => prev.map(w => {
+          if (w.id === transaction.walletId) {
+              const newBalance = transaction.type === 'add'
+                  ? w.balance + transaction.amount
+                  : w.balance - transaction.amount;
+              return { ...w, balance: newBalance };
+          }
+          return w;
+      }));
+  }, []);
+
   const value = useMemo(
     () => ({
       payments,
@@ -164,6 +209,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       expenses,
       recentActivities,
       users,
+      wallets,
+      walletTransactions,
       addPayment,
       updatePayment,
       deletePayment,
@@ -172,6 +219,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateParticipant,
       deleteParticipant,
       addExpense,
+      addWallet,
+      addWalletTransaction,
     }),
     [
       payments,
@@ -179,6 +228,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       expenses,
       recentActivities,
       users,
+      wallets,
+      walletTransactions,
       addPayment,
       updatePayment,
       deletePayment,
@@ -187,6 +238,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateParticipant,
       deleteParticipant,
       addExpense,
+      addWallet,
+      addWalletTransaction,
     ]
   );
 

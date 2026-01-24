@@ -81,6 +81,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         label: t('expenses'),
         icon: Landmark,
       },
+      {
+        href: '/wallets',
+        label: t('wallets'),
+        icon: Wallet,
+      },
     ],
     [t]
   );

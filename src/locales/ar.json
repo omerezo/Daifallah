@@ -185,7 +185,27 @@
   "save_expense": "حفظ المصروف",
   "select_category": "اختر فئة",
   "expense_description_placeholder": "مثال: إيجار المكتب لشهر مايو",
-  "expenses_report": "تقرير المصروفات"
+  "expenses_report": "تقرير المصروفات",
+  "wallets": "المحافظ",
+  "add_wallet": "إضافة محفظة",
+  "wallet_name": "اسم المحفظة",
+  "save_wallet": "حفظ المحفظة",
+  "wallet_created": "تم إنشاء المحفظة",
+  "wallet_created_description": "تم إنشاء محفظة '{{name}}' بنجاح.",
+  "wallet_name_required": "اسم المحفظة مطلوب.",
+  "current_balance": "الرصيد الحالي",
+  "add_amount": "إضافة رصيد",
+  "consume_amount": "سحب رصيد",
+  "transaction_successful": "نجحت العملية",
+  "transaction_successful_description": "تم تسجيل الحركة المالية بنجاح.",
+  "transaction_history": "سجل الحركات",
+  "view_all_wallet_transactions": "عرض جميع الحركات المالية على المحافظ.",
+  "save_transaction": "حفظ الحركة",
+  "add": "إضافة",
+  "consume": "سحب",
+  "all_wallets": "كل المحافظ",
+  "no_transactions_found": "لم يتم العثور على حركات مالية.",
+  "wallets_report": "تقرير المحافظ"
 }
-
     
+

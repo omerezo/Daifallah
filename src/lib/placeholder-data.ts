@@ -1,4 +1,4 @@
-import type { Payment, Participant, Expense, User, RecentActivity } from './types';
+import type { Payment, Participant, Expense, User, RecentActivity, Wallet, WalletTransaction } from './types';
 
 export const payments: Payment[] = [
   {
@@ -149,3 +149,6 @@ export const recentActivities: RecentActivity[] = [
     { id: "3", name: 'Khalid Mohamed', email: 'khalid.m@example.com', type: 'Expense', status: 'Processed', date: '2023-05-03', amount: '-$75.00' },
     { id: "4", name: 'Noura Hassan', email: 'noura.h@example.com', type: 'Payment', status: 'Paid', date: '2023-05-04', amount: '$100.00' },
 ];
+
+export const wallets: Wallet[] = [];
+export const walletTransactions: WalletTransaction[] = [];
