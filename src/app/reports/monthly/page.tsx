@@ -39,7 +39,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useReactToPrint } from 'react-to-print';
 
-const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
 const months = [
   'january', 'february', 'march', 'april', 'may', 'june', 
   'july', 'august', 'september', 'october', 'november', 'december'
