@@ -150,32 +150,18 @@ export default function YearlyReportsPage() {
   
         doc.setDrawColor(220, 220, 220);
         doc.line(14, 35, 196, 35);
-        
-        let currentY = 42;
-  
-        doc.setFontSize(12);
-        doc.setTextColor(40, 40, 40);
-        doc.text(`${t('total_collected_month').replace(t('month'), t('year'))}: ${yearlyData.totalIncome.toLocaleString()} ${selectedCurrency}`, 195, currentY, { align: 'right' });
-        currentY += 7;
-        doc.text(`${t('total_expenses')}: ${yearlyData.totalExpenses.toLocaleString()} ${selectedCurrency}`, 195, currentY, { align: 'right' });
-        currentY += 7;
-        doc.setFontSize(14);
-        doc.setFont('Amiri', 'bold');
-        doc.text(`${t('net_balance')}: ${yearlyData.netBalance.toLocaleString()} ${selectedCurrency}`, 195, currentY, { align: 'right' });
-        doc.setFont('Amiri', 'normal');
-        currentY += 10;
   
         const head = [[t('amount'), t('type'), t('description'), t('participant_name'), t('date')]];
         const body = yearlyData.allTransactions.map(tx => ([
           `${tx.transactionType === 'Expense' ? '-' : ''}${tx.amount.toLocaleString()} ${tx.currency}`,
           t(tx.transactionType.toLowerCase()),
-          tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description,
+          tx.transactionType === 'Income' ? `${t('payment_for')} ${tx.paymentFor}` : tx.description,
           tx.participantName,
-          new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { timeZone: 'UTC' })
+          tx.date
         ]));
   
         autoTable(doc, {
-          startY: currentY,
+          startY: 40,
           head: head,
           body: body,
           theme: 'grid',
