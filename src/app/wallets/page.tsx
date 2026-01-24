@@ -43,7 +43,7 @@ import type { Wallet, WalletTransaction } from '@/lib/types';
 import { useState, useMemo } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { logoBase64, amiriFont } from '@/components/logo';
+import { logoBase64 } from '@/components/logo';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
@@ -200,80 +200,102 @@ export default function WalletsPage() {
   };
 
   const handleExportPDF = async () => {
+    if (filteredTransactions.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('no_data_to_export'),
+      });
+      return;
+    }
+
     toast({ title: t('export'), description: t('preparing_pdf') });
     const doc = new jsPDF('p', 'mm', 'a4');
-    
-    function stripDataUrl(data: string) {
-      const idx = data?.indexOf('base64,') ?? -1;
-      return idx >= 0 ? data.slice(idx + 'base64,'.length) : data;
-    }
 
     try {
-      const fontBase64 = stripDataUrl(amiriFont);
-      doc.addFileToVFS('Amiri-Regular.ttf', fontBase64);
-      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-      doc.setFont('Amiri', 'normal');
-    } catch (err) {
-      console.warn('Arabic font failed, fallback to Helvetica:', err);
-      doc.setFont('helvetica', 'normal');
-    }
+      const fontResponse = await fetch('/fonts/Amiri-Regular.ttf');
+      if (!fontResponse.ok) throw new Error('Failed to load Arabic font');
 
-    try {
-        if (logoBase64?.startsWith("data:image/")) {
-            const format = logoBase64.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+      const fontBlob = await fontResponse.blob();
+      const reader = new FileReader();
+
+      reader.readAsDataURL(fontBlob);
+      reader.onloadend = () => {
+        try {
+          const base64Font = (reader.result as string).split(',')[1];
+          doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
+          doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+          doc.setFont('Amiri', 'normal');
+        } catch (err) {
+          console.warn('Arabic font failed, fallback to Helvetica:', err);
+          doc.setFont('helvetica', 'normal');
+        }
+
+        try {
+          if (logoBase64?.startsWith('data:image/')) {
+            const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
             const imgProps = doc.getImageProperties(logoBase64);
             const logoWidth = 20;
             const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
             doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+          }
+        } catch (err) {
+          console.warn('Logo skipped (addImage failed):', err);
         }
-    } catch (err) {
-        console.warn("Logo skipped (addImage failed):", err);
-    }
-    
-    doc.setFontSize(18);
-    doc.setTextColor(40, 40, 40);
-    doc.text(t('wallets_report'), 195, 18, { align: 'right' });
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
-    doc.setDrawColor(220, 220, 220);
-    doc.line(14, 35, 196, 35);
 
-    const head = [[t('amount'), t('description'), t('type'), t('wallet_name'), t('date')]];
-    const body = filteredTransactions.map(tx => {
-        const wallet = wallets.find(w => w.id === tx.walletId);
-        return [
+        doc.setFontSize(18);
+        doc.setTextColor(40, 40, 40);
+        doc.text(t('wallets_report'), 195, 18, { align: 'right' });
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
+        doc.setDrawColor(220, 220, 220);
+        doc.line(14, 35, 196, 35);
+
+        const head = [[t('amount'), t('description'), t('type'), t('wallet_name'), t('date')]];
+        const body = filteredTransactions.map((tx) => {
+          const wallet = wallets.find((w) => w.id === tx.walletId);
+          return [
             `${tx.type === 'consume' ? '-' : ''}${tx.amount.toLocaleString()} ${wallet?.currency}`,
             tx.description,
             t(tx.type),
             wallet?.name || tx.walletId,
             tx.date,
-        ];
-    });
+          ];
+        });
 
-    autoTable(doc, {
-        startY: 40,
-        head: head,
-        body: body,
-        theme: 'grid',
-        styles: { 
+        autoTable(doc, {
+          startY: 40,
+          head: head,
+          body: body,
+          theme: 'grid',
+          styles: {
             font: doc.getFont().fontName,
-            fontSize: 10, 
-            cellPadding: 3, 
+            fontSize: 10,
+            cellPadding: 3,
             halign: dir === 'rtl' ? 'right' : 'left',
-        },
-        headStyles: {
+          },
+          headStyles: {
             font: doc.getFont().fontName,
             fontStyle: 'bold',
             halign: dir === 'rtl' ? 'right' : 'left',
-            fillColor: [36, 36, 36], 
-            textColor: [255, 255, 255], 
-        },
-        alternateRowStyles: { fillColor: [245, 245, 245] },
-    });
+            fillColor: [36, 36, 36],
+            textColor: [255, 255, 255],
+          },
+          alternateRowStyles: { fillColor: [245, 245, 245] },
+        });
 
-    doc.save('wallet-transactions.pdf');
-    toast({ title: t('export_successful'), description: t('pdf_download_description') });
+        doc.save('wallet-transactions.pdf');
+        toast({ title: t('export_successful'), description: t('pdf_download_description') });
+      };
+    } catch (e: any) {
+      console.error('PDF export failed:', e);
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: e.message || 'PDF export failed. Check console logs.',
+      });
+    }
   };
 
 
