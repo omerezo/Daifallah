@@ -139,11 +139,19 @@ export default function PaymentsPage() {
   
       const doc = new jsPDF('p', 'mm', 'a4');
   
-      // 1. LOAD ARABIC FONT
-      const fontBase64 = stripDataUrl(amiriFont);
-      doc.addFileToVFS('Amiri-Regular.ttf', fontBase64);
-      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-      doc.setFont('Amiri'); // Set the font globally
+      // 1) LOAD ARABIC FONT (safe) + fallback
+      try {
+        const fontBase64 = stripDataUrl(amiriFont); // from earlier helper
+      
+        doc.addFileToVFS("Amiri-Regular.ttf", fontBase64);
+        doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
+      
+        // IMPORTANT: switch font only after registering
+        doc.setFont("Amiri", "normal");
+      } catch (err) {
+        console.warn("Arabic font failed, fallback to Helvetica:", err);
+        doc.setFont("helvetica", "normal"); // fallback so PDF still works
+      }
   
       // 2. PROFESSIONAL HEADER (SAFE LOGO)
       try {
@@ -204,16 +212,17 @@ export default function PaymentsPage() {
           ],
           body: rows,
           styles: {
-            font: 'Amiri',
+            font: doc.getFont().fontName,
             fontSize: 10,
             cellPadding: 3,
-            halign: 'right',
+            halign: dir === 'rtl' ? 'right' : 'left',
           },
           headStyles: {
             fillColor: [36, 36, 36],
             textColor: [255, 255, 255],
+            font: doc.getFont().fontName,
             fontStyle: 'bold',
-            halign: 'right',
+            halign: dir === 'rtl' ? 'right' : 'left',
           },
           alternateRowStyles: {
             fillColor: [245, 245, 245],
@@ -236,16 +245,17 @@ export default function PaymentsPage() {
           head: [[t('name'), t('phone'), t('monthly_share'), t('status')]],
           body: rows,
           styles: {
-            font: 'Amiri',
+            font: doc.getFont().fontName,
             fontSize: 10,
             cellPadding: 3,
-            halign: 'right',
+            halign: dir === 'rtl' ? 'right' : 'left',
           },
           headStyles: {
             fillColor: [36, 36, 36],
             textColor: [255, 255, 255],
+            font: doc.getFont().fontName,
             fontStyle: 'bold',
-            halign: 'right',
+            halign: dir === 'rtl' ? 'right' : 'left',
           },
           alternateRowStyles: {
             fillColor: [245, 245, 245],
@@ -557,7 +567,7 @@ export default function PaymentsPage() {
             {t('payments_management')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1">
                   <File className="h-3.5 w-3.5" />
