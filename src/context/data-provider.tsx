@@ -6,6 +6,8 @@ import {
   useState,
   ReactNode,
   useEffect,
+  useCallback,
+  useMemo,
 } from 'react';
 import {
   payments as initialPayments,
@@ -91,62 +93,82 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   }, [recentActivities]);
 
-  const addPayment = (payment: Payment) => {
+  const addPayment = useCallback((payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
-  };
+  }, []);
 
-  const updatePayment = (updatedPayment: Payment) => {
+  const updatePayment = useCallback((updatedPayment: Payment) => {
     setPayments((prev) =>
       prev.map((p) => (p.id === updatedPayment.id ? updatedPayment : p))
     );
-  };
+  }, []);
 
-  const deletePayment = (paymentId: string) => {
+  const deletePayment = useCallback((paymentId: string) => {
     setPayments((prev) => prev.filter((p) => p.id !== paymentId));
-  };
+  }, []);
 
-  const addRecentActivity = (activity: RecentActivity) => {
+  const addRecentActivity = useCallback((activity: RecentActivity) => {
     setRecentActivities((prev) => [activity, ...prev].slice(0, 20));
-  };
+  }, []);
 
-  const addParticipant = (participant: Participant) => {
+  const addParticipant = useCallback((participant: Participant) => {
     setParticipants((prev) => [participant, ...prev]);
-  };
+  }, []);
 
-  const updateParticipant = (updatedParticipant: Participant) => {
+  const updateParticipant = useCallback((updatedParticipant: Participant) => {
     setParticipants((prev) =>
       prev.map((p) => (p.id === updatedParticipant.id ? updatedParticipant : p))
     );
-  };
+  }, []);
 
-  const deleteParticipant = (participantId: string) => {
-    const participantToDelete = participants.find(
-      (p) => p.id === participantId
-    );
-    if (participantToDelete) {
-      // Also delete payments associated with this participant
-      setPayments((prevPayments) =>
-        prevPayments.filter(
-          (p) => p.participantName !== participantToDelete.name
-        )
-      );
-    }
-    setParticipants((prev) => prev.filter((p) => p.id !== participantId));
-  };
+  const deleteParticipant = useCallback(
+    (participantId: string) => {
+      setParticipants((prevParticipants) => {
+        const participantToDelete = prevParticipants.find(
+          (p) => p.id === participantId
+        );
+        if (participantToDelete) {
+          // Also delete payments associated with this participant
+          setPayments((prevPayments) =>
+            prevPayments.filter(
+              (p) => p.participantName !== participantToDelete.name
+            )
+          );
+        }
+        return prevParticipants.filter((p) => p.id !== participantId);
+      });
+    },
+    [] // `setPayments` is stable and doesn't need to be a dependency
+  );
 
-  const value = {
-    payments,
-    participants,
-    expenses,
-    recentActivities,
-    addPayment,
-    updatePayment,
-    deletePayment,
-    addRecentActivity,
-    addParticipant,
-    updateParticipant,
-    deleteParticipant,
-  };
+  const value = useMemo(
+    () => ({
+      payments,
+      participants,
+      expenses,
+      recentActivities,
+      addPayment,
+      updatePayment,
+      deletePayment,
+      addRecentActivity,
+      addParticipant,
+      updateParticipant,
+      deleteParticipant,
+    }),
+    [
+      payments,
+      participants,
+      expenses,
+      recentActivities,
+      addPayment,
+      updatePayment,
+      deletePayment,
+      addRecentActivity,
+      addParticipant,
+      updateParticipant,
+      deleteParticipant,
+    ]
+  );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
