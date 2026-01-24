@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
-// ... (Your existing UI imports remain the same)
 import {
   Card,
   CardContent,
@@ -247,7 +246,6 @@ export default function PaymentsPage() {
   };
 
   const handleExportCSV = () => {
-    // ... (Your existing CSV logic remains unchanged) ...
     if (filteredData.data.length === 0 && filteredData.type !== 'message') {
         toast({ variant: 'destructive', title: t('error'), description: t('no_data_to_export') });
         return;
@@ -294,7 +292,6 @@ export default function PaymentsPage() {
   };
 
   const generateReceipt = (payment: Payment) => {
-    // ... (Your existing receipt generation logic remains unchanged) ...
     const paidStampBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQwIDk2Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LCA0KSI+PHJlY3Qgd2lkdGg9IjIzMiIgaGVpZ2h0PSI4OCIgc3R5bGU9ImZpbGw6bm9uZTsgc3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlOiNkNDAwMDA7IiByeD0iOCIgcnk9IjgiLz48dGV4dCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMTYsIDYwKSIgc3R5bGU9ImZvbnQtZmFtaWx5OkFyaWFsLCBIZWx2ZXRpY2E7Zm9udC1zaXplOjQ4cHg7ZmlsbDojZDQwMDAwO2ZvbnQtd2VpZ2h0OmJvbGQ7dGV4dC1hbmNob3I6bWlkZGxlIj5QQUlEPC90ZXh0PjwvZz48L3N2Zz4=";
 
     const receiptContent = `
@@ -369,7 +366,6 @@ export default function PaymentsPage() {
   };
 
   const handleOpenEditDialog = (payment: Payment) => {
-    // ... (Your existing Edit Dialog logic remains unchanged) ...
     setEditingPayment(payment);
   
     const participant = participants.find(p => p.name === payment.participantName);
@@ -404,7 +400,6 @@ export default function PaymentsPage() {
   };
 
   const handleSavePayment = async () => {
-    // ... (Your existing Save Payment logic remains unchanged) ...
     if (!selectedParticipantId || !paymentAmount) {
       toast({
         variant: 'destructive',
@@ -492,7 +487,6 @@ export default function PaymentsPage() {
   };
 
   const filteredData = useMemo(() => {
-    // ... (Your existing filtering logic remains unchanged) ...
     if (view === 'unpaid') {
       const month = parseInt(filterMonth, 10);
       const year = parseInt(filterYear, 10);
@@ -550,11 +544,9 @@ export default function PaymentsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
-                
                 <DropdownMenuItem onSelect={handleExportPDF}>
                   {t('export_pdf')}
                 </DropdownMenuItem>
-                
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
@@ -753,7 +745,6 @@ export default function PaymentsPage() {
           </Card>
       </div>
 
-      {/* Add/Edit Dialog & Delete Alert Dialog (Remain unchanged) */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -916,4 +907,3 @@ export default function PaymentsPage() {
     </>
   );
 }
-```
