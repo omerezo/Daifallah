@@ -406,7 +406,7 @@ export default function PaymentsPage() {
                  <SelectTrigger>
                     <SelectValue placeholder={t('month')} />
                   </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="item-aligned">
                   {view === 'payments' && <SelectItem value="all">{t('all_months')}</SelectItem>}
                   {allMonths.map((m, i) => <SelectItem key={i} value={String(i)}>{t(m)}</SelectItem>)}
                 </SelectContent>
@@ -415,7 +415,7 @@ export default function PaymentsPage() {
                  <SelectTrigger>
                     <SelectValue placeholder={t('year')} />
                   </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="item-aligned">
                    {view === 'payments' && <SelectItem value="all">{t('all_years')}</SelectItem>}
                   {allYears.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                 </SelectContent>
