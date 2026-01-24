@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
@@ -558,14 +559,14 @@ export default function PaymentsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => generateReceipt(payment)}>
+                              <DropdownMenuItem onSelect={() => generateReceipt(payment)}>
                                 {t('generate_receipt')}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onSelect={() => {
                                   setTimeout(() => {
                                     handleOpenEditDialog(payment);
-                                  }, 100); 
+                                  }, 100);
                                 }}
                               >
                                 {t('edit')}
