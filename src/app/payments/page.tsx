@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, File, Upload } from 'lucide-react';
+import { PlusCircle, File, Upload, MoreHorizontal } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -26,12 +26,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
 import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
 import { logoBase64 } from '@/components/logo';
 import type { Payment } from '@/lib/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -77,19 +76,17 @@ export default function PaymentsPage() {
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
 
   // Form state
-  const [selectedParticipantId, setSelectedParticipantId] = useState<
-    string | undefined
-  >();
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | undefined>();
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentCurrency, setPaymentCurrency] =
-    useState<(typeof currencies)[number]>('USD');
+  const [paymentCurrency, setPaymentCurrency] = useState<(typeof currencies)[number]>('USD');
   const [paymentMonth, setPaymentMonth] = useState(new Date().getMonth());
   const [paymentYear, setPaymentYear] = useState(new Date().getFullYear());
   const [bankTransferFile, setBankTransferFile] = useState<File | null>(null);
   const [remarks, setRemarks] = useState('');
 
+  // Effect to populate form when editing
   useEffect(() => {
-    if (isPaymentDialogOpen && editingPayment) {
+    if (editingPayment) {
       const participant = participants.find(p => p.name === editingPayment.participantName);
       setSelectedParticipantId(participant?.id);
       setPaymentAmount(String(editingPayment.amount));
@@ -107,18 +104,29 @@ export default function PaymentsPage() {
       }
       
       setRemarks(editingPayment.remarks || '');
-      setBankTransferFile(null);
-    } else if (!isPaymentDialogOpen) {
-      setSelectedParticipantId(undefined);
-      setPaymentAmount('');
-      setPaymentCurrency('USD');
-      setPaymentMonth(new Date().getMonth());
-      setPaymentYear(new Date().getFullYear());
-      setRemarks('');
-      setBankTransferFile(null);
+      setBankTransferFile(null); // Always reset file input
     }
-  }, [editingPayment, isPaymentDialogOpen, participants, t]);
+  }, [editingPayment, participants, t]);
 
+  const resetForm = useCallback(() => {
+    setEditingPayment(null);
+    setSelectedParticipantId(undefined);
+    setPaymentAmount('');
+    setPaymentCurrency('USD');
+    setPaymentMonth(new Date().getMonth());
+    setPaymentYear(new Date().getFullYear());
+    setRemarks('');
+    setBankTransferFile(null);
+  }, []);
+
+  // Handler to clean up form state when the dialog is closed.
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    setIsPaymentDialogOpen(isOpen);
+    if (!isOpen) {
+      resetForm();
+    }
+  };
+  
   const generateReceipt = (payment: Payment) => {
     // ... (receipt generation logic remains the same)
   };
@@ -129,7 +137,7 @@ export default function PaymentsPage() {
   };
   
   const handleOpenAddDialog = () => {
-    setEditingPayment(null);
+    resetForm();
     setIsPaymentDialogOpen(true);
   };
 
@@ -206,8 +214,8 @@ export default function PaymentsPage() {
       });
     }
     
+    // Just close the dialog, the onOpenChange handler will do the cleanup.
     setIsPaymentDialogOpen(false);
-    setEditingPayment(null);
   };
   
   const handleConfirmDelete = () => {
@@ -295,7 +303,7 @@ export default function PaymentsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
+                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             aria-haspopup="true"
@@ -317,8 +325,10 @@ export default function PaymentsPage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() => setPaymentToDelete(payment)}
+                            onSelect={(e) => {
+                                e.preventDefault();
+                                setPaymentToDelete(payment);
+                            }}
                           >
                             {t('delete')}
                           </DropdownMenuItem>
@@ -334,7 +344,7 @@ export default function PaymentsPage() {
       </div>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+      <Dialog open={isPaymentDialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
@@ -478,7 +488,7 @@ export default function PaymentsPage() {
       </Dialog>
       
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!paymentToDelete} onOpenChange={(isOpen) => !isOpen && setPaymentToDelete(null)}>
+       <AlertDialog open={!!paymentToDelete} onOpenChange={(isOpen) => !isOpen && setPaymentToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
