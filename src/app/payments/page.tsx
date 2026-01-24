@@ -103,46 +103,55 @@ export default function PaymentsPage() {
   };
   
   const generateReceipt = (payment: Payment) => {
+    const paidStampBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQwIDk2Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LCA0KSI+PHJlY3Qgd2lkdGg9IjIzMiIgaGVpZ2h0PSI4OCIgc3R5bGU9ImZpbGw6bm9uZTsgc3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlOiNkNDAwMDA7IiByeD0iOCIgcnk9IjgiLz48dGV4dCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMTYsIDYwKSIgc3R5bGU9ImZvbnQtZmFtaWx5OkFyaWFsLCBIZWx2ZXRpY2E7Zm9udC1zaXplOjQ4cHg7ZmlsbDojZDQwMDAwO2ZvbnQtd2VpZ2h0OmJvbGQ7dGV4dC1hbmNob3I6bWlkZGxlIj5QQUlEPC90ZXh0PjwvZz48L3N2Zz4=";
+
     const receiptContent = `
       <html>
         <head>
           <title>${t('payment_receipt')}</title>
           <style>
             body { font-family: sans-serif; direction: ${dir}; margin: 0; padding: 2rem; background-color: #f9fafb; color: #111827; }
-            .container { max-width: 600px; margin: auto; padding: 2rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background-color: white; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+            .container { position: relative; max-width: 600px; margin: auto; padding: 2rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background-color: white; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); overflow: hidden; }
+            .content-wrapper { position: relative; z-index: 10; }
+            .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); opacity: 0.08; font-size: 10rem; font-weight: bold; color: #777; pointer-events: none; z-index: 1; text-transform: uppercase; }
+            .stamp { position: absolute; bottom: 1.5rem; ${dir === 'rtl' ? 'left' : 'right'}: 1.5rem; width: 140px; height: auto; z-index: 20; opacity: 0.85; }
             .header { text-align: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
             .header img { width: 80px; height: 80px; }
             .header h1 { font-size: 1.5rem; margin: 0.5rem 0 0; }
             .details-grid { display: grid; grid-template-columns: auto 1fr; gap: 1rem 2rem; }
             .details-grid dt { font-weight: 500; color: #6b7280; }
             .details-grid dd { margin: 0; font-weight: 600; }
-            .amount-total { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: right; }
+            .amount-total { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
             .amount-total p { margin: 0; font-size: 1.25rem; font-weight: bold; }
             .footer { margin-top: 2rem; text-align: center; font-size: 0.875rem; color: #6b7280; }
           </style>
         </head>
         <body>
           <div class="container">
-            <div class="header">
-              <img src="${logoBase64}" alt="Logo">
-              <h1>${t('payment_receipt')}</h1>
+            <div class="watermark">${t('paid_stamp')}</div>
+            <div class="content-wrapper">
+              <div class="header">
+                <img src="${logoBase64}" alt="Logo">
+                <h1>${t('payment_receipt')}</h1>
+              </div>
+              <div class="details-grid">
+                <dt>${t('receipt_id')}:</dt>
+                <dd>${payment.id}</dd>
+                <dt>${t('date')}:</dt>
+                <dd>${new Date(payment.date).toLocaleDateString()}</dd>
+                <dt>${t('participant_name')}:</dt>
+                <dd>${payment.participantName}</dd>
+                <dt>${t('payment_for')}:</dt>
+                <dd>${payment.paymentFor}</dd>
+              </div>
+              <div class="amount-total">
+                <p>${t('amount')}: ${payment.amount.toLocaleString()} ${payment.currency}</p>
+              </div>
+              <div class="footer">
+                <p>${t('thank_you_contribution')}</p>
+              </div>
             </div>
-            <div class="details-grid">
-              <dt>${t('receipt_id')}:</dt>
-              <dd>${payment.id}</dd>
-              <dt>${t('date')}:</dt>
-              <dd>${new Date(payment.date).toLocaleDateString()}</dd>
-              <dt>${t('participant_name')}:</dt>
-              <dd>${payment.participantName}</dd>
-              <dt>${t('payment_for')}:</dt>
-              <dd>${payment.paymentFor}</dd>
-            </div>
-            <div class="amount-total">
-              <p>${t('amount')}: ${payment.amount.toLocaleString()} ${payment.currency}</p>
-            </div>
-            <div class="footer">
-              <p>${t('thank_you_contribution')}</p>
-            </div>
+            <img src="${paidStampBase64}" class="stamp" alt="${t('paid_stamp')}">
           </div>
         </body>
       </html>

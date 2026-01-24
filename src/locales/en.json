@@ -162,5 +162,6 @@
   "payment_deleted_description": "The payment has been successfully deleted.",
   "delete_participant_confirm": "Are you sure you want to delete {{name}}? This will also delete all their associated payments.",
   "participant_deleted": "Participant Deleted",
-  "participant_deleted_description": "{{name}} has been removed from the list of participants."
+  "participant_deleted_description": "{{name}} has been removed from the list of participants.",
+  "paid_stamp": "PAID"
 }

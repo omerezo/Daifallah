@@ -162,5 +162,6 @@
   "payment_deleted_description": "تم حذف الدفعة بنجاح.",
   "delete_participant_confirm": "هل أنت متأكد أنك تريد حذف {{name}}؟ سيؤدي هذا أيضًا إلى حذف جميع مدفوعاتهم المرتبطة.",
   "participant_deleted": "تم حذف المشارك",
-  "participant_deleted_description": "تمت إزالة {{name}} من قائمة المشاركين."
+  "participant_deleted_description": "تمت إزالة {{name}} من قائمة المشاركين.",
+  "paid_stamp": "مدفوع"
 }
