@@ -103,7 +103,68 @@ export default function PaymentsPage() {
   };
   
   const generateReceipt = (payment: Payment) => {
-    // ... (receipt generation logic remains the same)
+    const receiptContent = `
+      <html>
+        <head>
+          <title>${t('payment_receipt')}</title>
+          <style>
+            body { font-family: sans-serif; direction: ${dir}; margin: 0; padding: 2rem; background-color: #f9fafb; color: #111827; }
+            .container { max-width: 600px; margin: auto; padding: 2rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background-color: white; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+            .header { text-align: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+            .header img { width: 80px; height: 80px; }
+            .header h1 { font-size: 1.5rem; margin: 0.5rem 0 0; }
+            .details-grid { display: grid; grid-template-columns: auto 1fr; gap: 1rem 2rem; }
+            .details-grid dt { font-weight: 500; color: #6b7280; }
+            .details-grid dd { margin: 0; font-weight: 600; }
+            .amount-total { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: right; }
+            .amount-total p { margin: 0; font-size: 1.25rem; font-weight: bold; }
+            .footer { margin-top: 2rem; text-align: center; font-size: 0.875rem; color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <img src="${logoBase64}" alt="Logo">
+              <h1>${t('payment_receipt')}</h1>
+            </div>
+            <div class="details-grid">
+              <dt>${t('receipt_id')}:</dt>
+              <dd>${payment.id}</dd>
+              <dt>${t('date')}:</dt>
+              <dd>${new Date(payment.date).toLocaleDateString()}</dd>
+              <dt>${t('participant_name')}:</dt>
+              <dd>${payment.participantName}</dd>
+              <dt>${t('payment_for')}:</dt>
+              <dd>${payment.paymentFor}</dd>
+            </div>
+            <div class="amount-total">
+              <p>${t('amount')}: ${payment.amount.toLocaleString()} ${payment.currency}</p>
+            </div>
+            <div class="footer">
+              <p>${t('thank_you_contribution')}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(receiptContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      toast({
+        title: t('receipt_generated'),
+        description: t('receipt_generated_description', { name: payment.participantName }),
+      });
+    } else {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('popup_blocked_error'),
+      });
+    }
   };
 
   const handleOpenEditDialog = (payment: Payment) => {
