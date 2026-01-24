@@ -418,13 +418,24 @@ export default function PaymentsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
-                <DropdownMenuItem onSelect={(e) => {
-                    e.preventDefault();
-                    handlePrint();
-                }}>
-                    {t('export_pdf')}
+                <DropdownMenuItem onSelect={handleExportCSV}>
+                  {t('export_csv')}
                 </DropdownMenuItem>
+
+                {/* FIXED SECTION STARTS HERE */}
+                <DropdownMenuItem
+                  onSelect={() => {
+                    // 1. We removed e.preventDefault() so the menu closes immediately.
+                    // 2. We wait 100ms for the menu to disappear, then print.
+                    setTimeout(() => {
+                      handlePrint();
+                    }, 100);
+                  }}
+                >
+                  {t('export_pdf')}
+                </DropdownMenuItem>
+                {/* FIXED SECTION ENDS HERE */}
+                
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
@@ -564,11 +575,7 @@ export default function PaymentsPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
                               <DropdownMenuItem
-                                onSelect={() => {
-                                  setTimeout(() => {
-                                    generateReceipt(payment);
-                                  }, 100);
-                                }}
+                                onClick={() => generateReceipt(payment)}
                               >
                                 {t('generate_receipt')}
                               </DropdownMenuItem>
