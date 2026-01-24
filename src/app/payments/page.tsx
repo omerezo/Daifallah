@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
-import { logoBase64 } from '@/components/logo';
+import { logoBase64, amiriFont } from '@/components/logo';
 import type { Payment, Participant } from '@/lib/types';
 import { useState, useCallback, useMemo } from 'react';
 import {
@@ -125,13 +125,21 @@ export default function PaymentsPage() {
   
   
       const doc = new jsPDF("p", "mm", "a4");
-  
+
+      // Add Amiri font for Arabic support
+      doc.addFileToVFS("Amiri-Regular.ttf", amiriFont);
+      doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
+      doc.setFont("Amiri");
+
+      const isRtl = dir === 'rtl';
+      const titleX = isRtl ? doc.internal.pageSize.getWidth() - 14 : 14;
+      const align = isRtl ? 'right' : 'left';
   
       // Title
       doc.setFontSize(14);
-      doc.text(t("payments_report"), 14, 14);
+      doc.text(t("payments_report"), titleX, 14, { align });
       doc.setFontSize(10);
-      doc.text(new Date().toLocaleDateString(), 14, 20);
+      doc.text(new Date().toLocaleDateString(), titleX, 20, { align });
   
   
       if (filteredData.type === "payments") {
@@ -160,8 +168,13 @@ export default function PaymentsPage() {
             t("remarks"),
           ]],
           body: rows,
-          styles: { fontSize: 9, cellPadding: 2 },
-          headStyles: { fillColor: [240, 240, 240] }, // light gray
+          styles: { font: "Amiri", fontSize: 9, cellPadding: 2 },
+          headStyles: { font: "Amiri", fillColor: [240, 240, 240] },
+          didParseCell: function (data) {
+            if (isRtl) {
+                data.cell.styles.halign = 'right';
+            }
+          }
         });
   
   
@@ -182,8 +195,13 @@ export default function PaymentsPage() {
           startY: 26,
           head: [[t("name"), t("phone"), t("monthly_share"), t("status")]],
           body: rows,
-          styles: { fontSize: 9, cellPadding: 2 },
-          headStyles: { fillColor: [240, 240, 240] },
+          styles: { font: "Amiri", fontSize: 9, cellPadding: 2 },
+          headStyles: { font: "Amiri", fillColor: [240, 240, 240] },
+           didParseCell: function (data) {
+            if (isRtl) {
+                data.cell.styles.halign = 'right';
+            }
+          }
         });
   
   
