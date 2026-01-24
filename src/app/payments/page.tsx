@@ -32,7 +32,7 @@ import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
 import { logoBase64 } from '@/components/logo';
 import type { Payment, Participant } from '@/lib/types';
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -61,10 +61,9 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-// --- NEW IMPORTS ---
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 const allYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
@@ -77,7 +76,6 @@ export default function PaymentsPage() {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
   const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity } = useData();
-  const printRef = useRef<HTMLDivElement>(null);
 
   // Dialog states
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -118,67 +116,84 @@ export default function PaymentsPage() {
     }
   };
 
-  // --- NEW PDF EXPORT FUNCTION ---
-  const handleExportPDF = async () => {
-    if (!printRef.current) {
-      toast({ variant: "destructive", title: t("error"), description: "Print area not found." });
-      return;
-    }
-
+  const handleExportPDF = () => {
     try {
-      toast({ title: t("export"), description: t("preparing_pdf") ?? "Preparing PDF..." });
-
-      // Important: ensure images are loaded
-      await new Promise((r) => requestAnimationFrame(() => r(null)));
-
-      const element = printRef.current;
-
-      // Capture the element as canvas
-      const canvas = await html2canvas(element, {
-        scale: 2, // sharper text
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        windowWidth: element.scrollWidth, // Ensures full width is captured
-        windowHeight: element.scrollHeight, // Ensures full height is captured
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-
-      // Create PDF (A4)
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      // Convert canvas px -> mm with aspect ratio
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = pageWidth;
-      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-      let position = 0;
-      let heightLeft = imgHeight;
-
-      // First page
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Extra pages if needed
-      while (heightLeft > 0) {
-        position = - (imgHeight - heightLeft); // Move position up
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      if (filteredData.type === "message") {
+        toast({ variant: "destructive", title: t("error"), description: t("no_data_to_export") });
+        return;
       }
-
-      const fileName =
-        view === "payments"
-          ? `payments_${new Date().toISOString().slice(0, 10)}.pdf`
-          : `unpaid_${filterMonth}_${filterYear}.pdf`;
-
-      pdf.save(fileName);
-
+  
+  
+      const doc = new jsPDF("p", "mm", "a4");
+  
+  
+      // Title
+      doc.setFontSize(14);
+      doc.text(t("payments_report"), 14, 14);
+      doc.setFontSize(10);
+      doc.text(new Date().toLocaleDateString(), 14, 20);
+  
+  
+      if (filteredData.type === "payments") {
+        const rows = (filteredData.data as Payment[]).map(p => ([
+          p.date,
+          p.participantName,
+          p.paymentFor,
+          p.recordedBy,
+          String(p.amount),
+          p.currency,
+          p.type,
+          p.remarks || "-"
+        ]));
+  
+  
+        autoTable(doc, {
+          startY: 26,
+          head: [[
+            t("date"),
+            t("participant_name"),
+            t("payment_for"),
+            t("recorded_by"),
+            t("amount"),
+            t("currency"),
+            t("type"),
+            t("remarks"),
+          ]],
+          body: rows,
+          styles: { fontSize: 9, cellPadding: 2 },
+          headStyles: { fillColor: [240, 240, 240] }, // light gray
+        });
+  
+  
+        doc.save(`payments_${new Date().toISOString().slice(0, 10)}.pdf`);
+      }
+  
+  
+      if (filteredData.type === "unpaid") {
+        const rows = (filteredData.data as Participant[]).map(p => ([
+          p.name,
+          p.phone,
+          String(p.monthlyShare),
+          p.status
+        ]));
+  
+  
+        autoTable(doc, {
+          startY: 26,
+          head: [[t("name"), t("phone"), t("monthly_share"), t("status")]],
+          body: rows,
+          styles: { fontSize: 9, cellPadding: 2 },
+          headStyles: { fillColor: [240, 240, 240] },
+        });
+  
+  
+        doc.save(`unpaid_${filterMonth}_${filterYear}.pdf`);
+      }
+  
+  
       toast({ title: t("export_successful"), description: t("pdf_download_description") ?? "PDF downloaded." });
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
       toast({ variant: "destructive", title: t("error"), description: "PDF export failed. Check console logs." });
     }
   };
@@ -471,7 +486,7 @@ export default function PaymentsPage() {
   return (
     <>
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="flex items-center no-print">
+        <div className="flex items-center">
           <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
             {t('payments_management')}
           </h1>
@@ -488,15 +503,7 @@ export default function PaymentsPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
                 
-                {/* --- UPDATED PDF MENU ITEM --- */}
-                <DropdownMenuItem 
-                  onSelect={(e) => {
-                    e.preventDefault(); 
-                    setTimeout(() => {
-                      handleExportPDF();
-                    }, 0);
-                  }}
-                >
+                <DropdownMenuItem onSelect={handleExportPDF}>
                   {t('export_pdf')}
                 </DropdownMenuItem>
                 
@@ -511,8 +518,7 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        <Card className="no-print">
-          {/* ... (Your filters card remains unchanged) ... */}
+        <Card>
           <CardHeader>
             <CardTitle>{t('filters')}</CardTitle>
           </CardHeader>
@@ -567,14 +573,7 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
         
-        {/* --- PRINTABLE AREA (Targeted by html2canvas) --- */}
-        <div ref={printRef} className="printable-area bg-white p-4">
-          <div className="text-center print-only-title mb-4">
-              <h1 className="font-display text-3xl font-bold">{t('app_name')}</h1>
-              <h2 className="text-xl font-semibold">{t('payments_report')}</h2>
-              <p className="text-muted-foreground">{new Date().toLocaleDateString()}</p>
-          </div>
-          <Card className="border-0 shadow-none">
+        <Card>
             <CardHeader>
               <CardTitle>{view === 'payments' ? t('all_payments') : t('unpaid_for_month', { month: t(allMonths[parseInt(filterMonth)]), year: filterYear })}</CardTitle>
               <CardDescription>
@@ -673,7 +672,6 @@ export default function PaymentsPage() {
                   </TableBody>
                 </Table>
               )}
-              {/* ... (Unpaid table and empty state remain the same) ... */}
               {filteredData.type === 'unpaid' && (
                 <Table>
                   <TableHeader>
@@ -705,7 +703,6 @@ export default function PaymentsPage() {
               )}
             </CardContent>
           </Card>
-        </div>
       </div>
 
       {/* Add/Edit Dialog & Delete Alert Dialog (Remain unchanged) */}
@@ -871,5 +868,3 @@ export default function PaymentsPage() {
     </>
   );
 }
-
-    
