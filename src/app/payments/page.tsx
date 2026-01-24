@@ -116,7 +116,7 @@ export default function PaymentsPage() {
   };
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    contentRef: printRef,
     documentTitle: `${t('payments_report')} - ${new Date().toLocaleDateString()}`
   });
 
@@ -408,7 +408,7 @@ export default function PaymentsPage() {
             {t('payments_management')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1">
                   <File className="h-3.5 w-3.5" />
