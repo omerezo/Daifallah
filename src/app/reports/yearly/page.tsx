@@ -37,7 +37,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Logo } from '@/components/logo';
+import { logoBase64 } from '@/components/logo';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { useToast } from '@/hooks/use-toast';
 
 const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
 const months = [
@@ -49,13 +52,10 @@ const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 export default function YearlyReportsPage() {
   const { t, dir } = useTranslation();
   const { payments, expenses } = useData();
+  const { toast } = useToast();
 
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedCurrency, setSelectedCurrency] = useState<(typeof currencies)[number]>('USD'); 
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   const yearlyData = useMemo(() => {
     const filteredPayments = payments.filter((p) => {
@@ -102,6 +102,112 @@ export default function YearlyReportsPage() {
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };
   }, [payments, expenses, selectedYear, selectedCurrency, t]);
 
+  const handleExportPDF = async () => {
+    try {
+      if (yearlyData.allTransactions.length === 0) {
+        toast({ variant: 'destructive', title: t('error'), description: t('no_data_to_export') });
+        return;
+      }
+  
+      toast({ title: t('export'), description: t('preparing_pdf') });
+  
+      const doc = new jsPDF('p', 'mm', 'a4');
+  
+      const fontResponse = await fetch('/fonts/Amiri-Regular.ttf');
+      if (!fontResponse.ok) throw new Error('Failed to load Arabic font');
+      
+      const fontBlob = await fontResponse.blob();
+      const reader = new FileReader();
+  
+      reader.readAsDataURL(fontBlob);
+      reader.onloadend = () => {
+        const base64Font = (reader.result as string).split(',')[1];
+  
+        doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
+        doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+        doc.setFont('Amiri');
+  
+        try {
+            if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
+                const imgProps = doc.getImageProperties(logoBase64);
+                const logoWidth = 25;
+                const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+                const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+                doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+            }
+        } catch (e) {
+            console.warn('Could not add logo to PDF, skipping.', e);
+        }
+  
+        doc.setFontSize(18);
+        doc.setTextColor(40, 40, 40);
+        doc.text(`${t('yearly_reports')} - ${selectedYear}`, 195, 18, { align: 'right' });
+  
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
+        doc.text(`${t('currency')}: ${selectedCurrency}`, 195, 30, { align: 'right' });
+  
+        doc.setDrawColor(220, 220, 220);
+        doc.line(14, 35, 196, 35);
+        
+        let currentY = 42;
+  
+        doc.setFontSize(12);
+        doc.setTextColor(40, 40, 40);
+        doc.text(`${t('total_collected_month').replace(t('month'), t('year'))}: ${yearlyData.totalIncome.toLocaleString()} ${selectedCurrency}`, 195, currentY, { align: 'right' });
+        currentY += 7;
+        doc.text(`${t('total_expenses')}: ${yearlyData.totalExpenses.toLocaleString()} ${selectedCurrency}`, 195, currentY, { align: 'right' });
+        currentY += 7;
+        doc.setFontSize(14);
+        doc.setFont('Amiri', 'bold');
+        doc.text(`${t('net_balance')}: ${yearlyData.netBalance.toLocaleString()} ${selectedCurrency}`, 195, currentY, { align: 'right' });
+        doc.setFont('Amiri', 'normal');
+        currentY += 10;
+  
+        const head = [[t('amount'), t('type'), t('description'), t('participant_name'), t('date')]];
+        const body = yearlyData.allTransactions.map(tx => ([
+          `${tx.transactionType === 'Expense' ? '-' : ''}${tx.amount.toLocaleString()} ${tx.currency}`,
+          t(tx.transactionType.toLowerCase()),
+          tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description,
+          tx.participantName,
+          new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { timeZone: 'UTC' })
+        ]));
+  
+        autoTable(doc, {
+          startY: currentY,
+          head: head,
+          body: body,
+          theme: 'grid',
+          styles: { 
+            font: 'Amiri', 
+            fontSize: 10, 
+            cellPadding: 3, 
+            halign: 'right',
+            valign: 'middle'
+          },
+          headStyles: { 
+            fillColor: [36, 36, 36], 
+            textColor: [255, 255, 255], 
+            fontStyle: 'bold',
+            halign: 'right' 
+          },
+          alternateRowStyles: { 
+            fillColor: [245, 245, 245] 
+          },
+        });
+  
+        const fileName = `yearly-report_${selectedYear}.pdf`;
+        doc.save(fileName);
+        
+        toast({ title: t('export_successful'), description: t('pdf_download_description') });
+      };
+    } catch (e: any) {
+      console.error('PDF Export failed:', e);
+      toast({ variant: 'destructive', title: t('error'), description: e.message || 'PDF export failed. Check console logs.' });
+    }
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div className="flex flex-col md:flex-row md:items-center gap-4 no-print">
@@ -144,7 +250,7 @@ export default function YearlyReportsPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="outline" className="h-10 gap-1" onClick={handlePrint}>
+          <Button size="sm" variant="outline" className="h-10 gap-1" onClick={handleExportPDF}>
             <File className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
               {t('export_pdf')}
@@ -154,15 +260,6 @@ export default function YearlyReportsPage() {
       </div>
       
       <div className="space-y-8">
-        <div className="text-center print-only-title">
-            <div className="mx-auto mb-4 h-16 w-16">
-              <Logo />
-            </div>
-            <h1 className="font-display text-3xl font-bold">{t('app_name')}</h1>
-            <h2 className="text-xl font-semibold">{t('yearly_reports')} - {selectedYear}</h2>
-            <p className="text-muted-foreground">{selectedCurrency}</p>
-        </div>
-
         <div className="grid gap-4 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
