@@ -184,7 +184,8 @@
   "expense_added_description": "The expense '{{description}}' has been successfully recorded.",
   "save_expense": "Save Expense",
   "select_category": "Select a category",
-  "expense_description_placeholder": "e.g., Office rent for May"
+  "expense_description_placeholder": "e.g., Office rent for May",
+  "expenses_report": "Expenses Report"
 }
 
     

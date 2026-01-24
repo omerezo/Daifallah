@@ -49,6 +49,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
 import { useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { logoBase64 } from '@/components/logo';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 const categories: Expense['category'][] = [
@@ -59,7 +62,7 @@ const categories: Expense['category'][] = [
 ];
 
 export default function ExpensesPage() {
-  const { t } = useTranslation();
+  const { t, dir } = useTranslation();
   const { expenses, addExpense } = useData();
   const { toast } = useToast();
 
@@ -70,6 +73,135 @@ export default function ExpensesPage() {
   );
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<(typeof currencies)[number]>('USD');
+
+  const handleExportCSV = () => {
+    if (expenses.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('no_data_to_export'),
+      });
+      return;
+    }
+
+    const headers = [
+      t('date'),
+      t('description'),
+      t('category'),
+      t('amount'),
+      t('currency'),
+    ];
+    const data = expenses.map((e) => [
+      e.date,
+      e.description,
+      t(e.category.toLowerCase().replace(' ', '_')),
+      e.amount,
+      e.currency,
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...data.map((row) =>
+        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'expenses.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: t('export_successful'),
+      description: t('csv_download_description'),
+    });
+  };
+
+  const handleExportPDF = async () => {
+    if (expenses.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('no_data_to_export'),
+      });
+      return;
+    }
+
+    toast({ title: t('export'), description: t('preparing_pdf') });
+    const doc = new jsPDF('p', 'mm', 'a4');
+
+    try {
+      const fontResponse = await fetch('/fonts/Amiri-Regular.ttf');
+      if (!fontResponse.ok) throw new Error('Failed to load Arabic font');
+      const fontBlob = await fontResponse.blob();
+      const reader = new FileReader();
+      reader.readAsDataURL(fontBlob);
+      reader.onloadend = () => {
+        const base64Font = (reader.result as string).split(',')[1];
+        doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
+        doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+        doc.setFont('Amiri');
+
+        // Header
+        try {
+          if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
+            const imgProps = doc.getImageProperties(logoBase64);
+            const logoWidth = 25;
+            const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+            const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+            doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+          }
+        } catch (e) {
+          console.warn('Could not add logo to PDF, skipping.', e);
+        }
+
+        doc.setFontSize(18);
+        doc.setTextColor(40, 40, 40);
+        doc.text(t('expenses_report'), 195, 18, { align: 'right' });
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
+        doc.setDrawColor(220, 220, 220);
+        doc.line(14, 35, 196, 35);
+
+        // Table
+        const head = [
+          [t('currency'), t('amount'), t('category'), t('description'), t('date')],
+        ];
+        const body = expenses.map((e) => [
+          e.currency,
+          e.amount.toLocaleString(),
+          t(e.category.toLowerCase().replace(' ', '_')),
+          e.description,
+          e.date,
+        ]);
+
+        autoTable(doc, {
+          startY: 40,
+          head: head,
+          body: body,
+          theme: 'grid',
+          styles: { font: 'Amiri', fontSize: 10, cellPadding: 3, halign: 'right', valign: 'middle' },
+          headStyles: { fillColor: [36, 36, 36], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'right' },
+          alternateRowStyles: { fillColor: [245, 245, 245] },
+        });
+
+        doc.save('expenses.pdf');
+        toast({ title: t('export_successful'), description: t('pdf_download_description') });
+      };
+    } catch (e: any) {
+      console.error('PDF Export failed:', e);
+      toast({ variant: 'destructive', title: t('error'), description: e.message || 'PDF export failed.' });
+    }
+  };
+
 
   const handleAddExpense = () => {
     if (!description || !amount) {
@@ -111,12 +243,24 @@ export default function ExpensesPage() {
           {t('expenses_management')}
         </h1>
         <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-          <Button size="sm" variant="outline" className="h-8 gap-1">
-            <File className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-              {t('export')}
-            </span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8 gap-1">
+                <File className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  {t('export')}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportCSV}>
+                {t('export_csv')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportPDF}>
+                {t('export_pdf')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="h-8 gap-1">

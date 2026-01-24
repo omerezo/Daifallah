@@ -184,7 +184,8 @@
   "expense_added_description": "تم تسجيل المصروف '{{description}}' بنجاح.",
   "save_expense": "حفظ المصروف",
   "select_category": "اختر فئة",
-  "expense_description_placeholder": "مثال: إيجار المكتب لشهر مايو"
+  "expense_description_placeholder": "مثال: إيجار المكتب لشهر مايو",
+  "expenses_report": "تقرير المصروفات"
 }
 
     
