@@ -166,7 +166,6 @@
   "participant_deleted_description": "تمت إزالة {{name}} من قائمة المشاركين.",
   "paid_stamp": "مدفوع",
   "filters": "عوامل التصفية",
-  "all_participants": "كل المشاركين",
   "all_collectors": "كل المحصلين",
   "all_months": "كل الشهور",
   "all_years": "كل السنوات",
@@ -180,7 +179,12 @@
   "csv_download_description": "سيتم تنزيل ملف CSV الخاص بك قريباً.",
   "preparing_pdf": "جارٍ تحضير ملف PDF، يرجى الانتظار...",
   "pdf_download_description": "سيتم تنزيل تقرير PDF الخاص بك قريبًا.",
-  "generated_by": "تم الإنشاء بواسطة"
+  "generated_by": "تم الإنشاء بواسطة",
+  "expense_added": "تمت إضافة المصروف",
+  "expense_added_description": "تم تسجيل المصروف '{{description}}' بنجاح.",
+  "save_expense": "حفظ المصروف",
+  "select_category": "اختر فئة",
+  "expense_description_placeholder": "مثال: إيجار المكتب لشهر مايو"
 }
 
     

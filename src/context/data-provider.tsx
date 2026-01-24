@@ -37,6 +37,7 @@ interface DataContextType {
   addParticipant: (participant: Participant) => void;
   updateParticipant: (participant: Participant) => void;
   deleteParticipant: (participantId: string) => void;
+  addExpense: (expense: Expense) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -151,6 +152,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     },
     [] // `setPayments` is stable and doesn't need to be a dependency
   );
+  
+  const addExpense = useCallback((expense: Expense) => {
+    setExpenses((prev) => [expense, ...prev]);
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -166,6 +171,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addParticipant,
       updateParticipant,
       deleteParticipant,
+      addExpense,
     }),
     [
       payments,
@@ -180,6 +186,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addParticipant,
       updateParticipant,
       deleteParticipant,
+      addExpense,
     ]
   );
 
