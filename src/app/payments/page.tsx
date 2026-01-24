@@ -420,7 +420,12 @@ export default function PaymentsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
-                <DropdownMenuItem onSelect={handlePrint}>{t('export_pdf')}</DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => {
+                    e.preventDefault();
+                    handlePrint();
+                }}>
+                    {t('export_pdf')}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
@@ -559,7 +564,13 @@ export default function PaymentsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                              <DropdownMenuItem onSelect={() => generateReceipt(payment)}>
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  setTimeout(() => {
+                                    generateReceipt(payment);
+                                  }, 100);
+                                }}
+                              >
                                 {t('generate_receipt')}
                               </DropdownMenuItem>
                               <DropdownMenuItem

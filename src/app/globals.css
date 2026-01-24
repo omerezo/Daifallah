@@ -233,17 +233,31 @@
 }
 
 @media print {
-  [role="none"], 
-  .print-hidden,
-  .no-print,
-  nav,
-  aside,
-  header:not(.print-show),
-  button:not(.print-show),
-  .sidebar-container {
+  /* Hide everything by default using visibility */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Make only the printable area and its contents visible */
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+  
+  /* Ensure the printable area is positioned correctly */
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 1rem !important;
+  }
+  
+  /* Still useful to have a class to force-hide some elements */
+  .no-print, .print-hidden {
     display: none !important;
   }
-    
+
   body {
     background-color: white !important;
     color: black !important;
@@ -251,22 +265,9 @@
     padding: 0 !important;
   }
 
-  main {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    position: static !important;
-  }
-
-  .print-m-0 { margin: 0 !important; }
-  .print-p-0 { padding: 0 !important; }
-
-  .printable-area {
-    padding: 1rem;
-  }
-
   .print-only-title {
     display: block !important;
+    visibility: visible !important; /* Ensure it's visible */
     margin-bottom: 2rem;
   }
 
