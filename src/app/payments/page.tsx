@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
+// ... (Your existing UI imports remain the same)
 import {
   Card,
   CardContent,
@@ -60,6 +62,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 
+// --- NEW IMPORTS ---
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 const allYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
@@ -95,7 +100,6 @@ export default function PaymentsPage() {
   const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
   const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
 
-
   const resetForm = useCallback(() => {
     setEditingPayment(null);
     setSelectedParticipantId(undefined);
@@ -114,11 +118,73 @@ export default function PaymentsPage() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  // --- NEW PDF EXPORT FUNCTION ---
+  const handleExportPDF = async () => {
+    if (!printRef.current) {
+      toast({ variant: "destructive", title: t("error"), description: "Print area not found." });
+      return;
+    }
+
+    try {
+      toast({ title: t("export"), description: t("preparing_pdf") ?? "Preparing PDF..." });
+
+      // Important: ensure images are loaded
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+
+      const element = printRef.current;
+
+      // Capture the element as canvas
+      const canvas = await html2canvas(element, {
+        scale: 2, // sharper text
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: element.scrollWidth, // Ensures full width is captured
+        windowHeight: element.scrollHeight, // Ensures full height is captured
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      // Create PDF (A4)
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Convert canvas px -> mm with aspect ratio
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgWidth = pageWidth;
+      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+      let position = 0;
+      let heightLeft = imgHeight;
+
+      // First page
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Extra pages if needed
+      while (heightLeft > 0) {
+        position = - (imgHeight - heightLeft); // Move position up
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName =
+        view === "payments"
+          ? `payments_${new Date().toISOString().slice(0, 10)}.pdf`
+          : `unpaid_${filterMonth}_${filterYear}.pdf`;
+
+      pdf.save(fileName);
+
+      toast({ title: t("export_successful"), description: t("pdf_download_description") ?? "PDF downloaded." });
+    } catch (err) {
+      console.error(err);
+      toast({ variant: "destructive", title: t("error"), description: "PDF export failed. Check console logs." });
+    }
   };
 
   const handleExportCSV = () => {
+    // ... (Your existing CSV logic remains unchanged) ...
     if (filteredData.data.length === 0 && filteredData.type !== 'message') {
         toast({ variant: 'destructive', title: t('error'), description: t('no_data_to_export') });
         return;
@@ -133,7 +199,7 @@ export default function PaymentsPage() {
         headers = ['ID', t('date'), t('participant_name'), t('payment_for'), t('recorded_by'), t('amount'), t('currency'), t('type'), t('remarks')];
         data = paymentData.map(p => [p.id, p.date, p.participantName, p.paymentFor, p.recordedBy, p.amount, p.currency, p.type, p.remarks || '']);
         filename = 'payments.csv';
-    } else if (filteredData.type === 'unpaid') { // unpaid
+    } else if (filteredData.type === 'unpaid') {
         const participantData = filteredData.data as Participant[];
         headers = [t('name'), t('phone'), t('monthly_share'), t('status')];
         data = participantData.map(p => [p.name, p.phone, p.monthlyShare, p.status]);
@@ -150,7 +216,7 @@ export default function PaymentsPage() {
         ...data.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
 
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' }); // Add BOM for Excel
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
@@ -162,9 +228,10 @@ export default function PaymentsPage() {
     URL.revokeObjectURL(url);
     
     toast({ title: t('export_successful'), description: t('csv_download_description') });
-  }
+  };
 
   const generateReceipt = (payment: Payment) => {
+    // ... (Your existing receipt generation logic remains unchanged) ...
     const paidStampBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQwIDk2Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LCA0KSI+PHJlY3Qgd2lkdGg9IjIzMiIgaGVpZ2h0PSI4OCIgc3R5bGU9ImZpbGw6bm9uZTsgc3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlOiNkNDAwMDA7IiByeD0iOCIgcnk9IjgiLz48dGV4dCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMTYsIDYwKSIgc3R5bGU9ImZvbnQtZmFtaWx5OkFyaWFsLCBIZWx2ZXRpY2E7Zm9udC1zaXplOjQ4cHg7ZmlsbDojZDQwMDAwO2ZvbnQtd2VpZ2h0OmJvbGQ7dGV4dC1hbmNob3I6bWlkZGxlIj5QQUlEPC90ZXh0PjwvZz48L3N2Zz4=";
 
     const receiptContent = `
@@ -239,6 +306,7 @@ export default function PaymentsPage() {
   };
 
   const handleOpenEditDialog = (payment: Payment) => {
+    // ... (Your existing Edit Dialog logic remains unchanged) ...
     setEditingPayment(payment);
   
     const participant = participants.find(p => p.name === payment.participantName);
@@ -273,6 +341,7 @@ export default function PaymentsPage() {
   };
 
   const handleSavePayment = async () => {
+    // ... (Your existing Save Payment logic remains unchanged) ...
     if (!selectedParticipantId || !paymentAmount) {
       toast({
         variant: 'destructive',
@@ -360,6 +429,7 @@ export default function PaymentsPage() {
   };
 
   const filteredData = useMemo(() => {
+    // ... (Your existing filtering logic remains unchanged) ...
     if (view === 'unpaid') {
       const month = parseInt(filterMonth, 10);
       const year = parseInt(filterYear, 10);
@@ -400,29 +470,6 @@ export default function PaymentsPage() {
 
   return (
     <>
-      <style jsx global>{`
-        @media print {
-          /* Hide everything by default */
-          body * {
-            visibility: hidden;
-          }
-          /* Show only the printable area */
-          .printable-area, .printable-area * {
-            visibility: visible;
-          }
-          /* Position the print area at top left */
-          .printable-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          /* Force hide elements with no-print class */
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center no-print">
           <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
@@ -439,18 +486,20 @@ export default function PaymentsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={handleExportCSV}>
-                  {t('export_csv')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => {
+                <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
+                
+                {/* --- UPDATED PDF MENU ITEM --- */}
+                <DropdownMenuItem 
+                  onSelect={(e) => {
+                    e.preventDefault(); 
                     setTimeout(() => {
-                      handlePrint();
-                    }, 100);
+                      handleExportPDF();
+                    }, 0);
                   }}
                 >
                   {t('export_pdf')}
                 </DropdownMenuItem>
+                
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
@@ -463,6 +512,7 @@ export default function PaymentsPage() {
         </div>
 
         <Card className="no-print">
+          {/* ... (Your filters card remains unchanged) ... */}
           <CardHeader>
             <CardTitle>{t('filters')}</CardTitle>
           </CardHeader>
@@ -496,7 +546,7 @@ export default function PaymentsPage() {
                 </SelectContent>
               </Select>
               <Select value={filterMonth} onValueChange={setFilterMonth}>
-                 <SelectTrigger>
+                  <SelectTrigger>
                     <SelectValue placeholder={t('month')} />
                   </SelectTrigger>
                 <SelectContent position="item-aligned">
@@ -504,12 +554,12 @@ export default function PaymentsPage() {
                   {allMonths.map((m, i) => <SelectItem key={i} value={String(i)}>{t(m)}</SelectItem>)}
                 </SelectContent>
               </Select>
-               <Select value={filterYear} onValueChange={setFilterYear}>
-                 <SelectTrigger>
+                <Select value={filterYear} onValueChange={setFilterYear}>
+                  <SelectTrigger>
                     <SelectValue placeholder={t('year')} />
                   </SelectTrigger>
                 <SelectContent position="item-aligned">
-                   {view === 'payments' && <SelectItem value="all">{t('all_years')}</SelectItem>}
+                    {view === 'payments' && <SelectItem value="all">{t('all_years')}</SelectItem>}
                   {allYears.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -517,13 +567,14 @@ export default function PaymentsPage() {
           </CardContent>
         </Card>
         
-        <div ref={printRef} className="printable-area">
-          <div className="text-center print-only-title">
+        {/* --- PRINTABLE AREA (Targeted by html2canvas) --- */}
+        <div ref={printRef} className="printable-area bg-white p-4">
+          <div className="text-center print-only-title mb-4">
               <h1 className="font-display text-3xl font-bold">{t('app_name')}</h1>
               <h2 className="text-xl font-semibold">{t('payments_report')}</h2>
               <p className="text-muted-foreground">{new Date().toLocaleDateString()}</p>
           </div>
-          <Card>
+          <Card className="border-0 shadow-none">
             <CardHeader>
               <CardTitle>{view === 'payments' ? t('all_payments') : t('unpaid_for_month', { month: t(allMonths[parseInt(filterMonth)]), year: filterYear })}</CardTitle>
               <CardDescription>
@@ -622,6 +673,7 @@ export default function PaymentsPage() {
                   </TableBody>
                 </Table>
               )}
+              {/* ... (Unpaid table and empty state remain the same) ... */}
               {filteredData.type === 'unpaid' && (
                 <Table>
                   <TableHeader>
@@ -656,7 +708,7 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {/* Add/Edit Dialog */}
+      {/* Add/Edit Dialog & Delete Alert Dialog (Remain unchanged) */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -800,7 +852,6 @@ export default function PaymentsPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
        <AlertDialog open={!!paymentToDelete} onOpenChange={(isOpen) => !isOpen && setPaymentToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -820,3 +871,5 @@ export default function PaymentsPage() {
     </>
   );
 }
+
+    

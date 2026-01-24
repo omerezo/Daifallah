@@ -1,3 +1,4 @@
+
 {
   "app_name": "جمعية ابناء ضيف الله الخيرية",
   "dashboard": "لوحة المعلومات",
@@ -176,5 +177,9 @@
   "payments_report": "تقرير المدفوعات",
   "no_data_to_export": "لا توجد بيانات لتصديرها حسب الفلاتر الحالية.",
   "export_successful": "تم التصدير بنجاح",
-  "csv_download_description": "سيتم تنزيل ملف CSV الخاص بك قريباً."
+  "csv_download_description": "سيتم تنزيل ملف CSV الخاص بك قريباً.",
+  "preparing_pdf": "جارٍ تحضير ملف PDF، يرجى الانتظار...",
+  "pdf_download_description": "سيتم تنزيل تقرير PDF الخاص بك قريبًا."
 }
+
+    

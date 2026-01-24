@@ -1,3 +1,4 @@
+
 {
   "app_name": "Dhaifallah Sons Charity",
   "dashboard": "Dashboard",
@@ -176,5 +177,9 @@
   "payments_report": "Payments Report",
   "no_data_to_export": "There is no data to export for the current filters.",
   "export_successful": "Export Successful",
-  "csv_download_description": "Your CSV file will be downloaded shortly."
+  "csv_download_description": "Your CSV file will be downloaded shortly.",
+  "preparing_pdf": "Preparing your PDF, please wait...",
+  "pdf_download_description": "Your PDF report will be downloaded shortly."
 }
+
+    
