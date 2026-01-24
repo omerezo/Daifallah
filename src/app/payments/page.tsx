@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
@@ -118,101 +117,132 @@ export default function PaymentsPage() {
 
   const handleExportPDF = () => {
     try {
-      if (filteredData.type === "message") {
-        toast({ variant: "destructive", title: t("error"), description: t("no_data_to_export") });
+      if (filteredData.type === 'message') {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('no_data_to_export'),
+        });
         return;
       }
   
+      const doc = new jsPDF('p', 'mm', 'a4');
   
-      const doc = new jsPDF("p", "mm", "a4");
-
-      // Add Amiri font for Arabic support
-      doc.addFileToVFS("Amiri-Regular.ttf", amiriFont);
-      doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-      doc.setFont("Amiri");
-
-      const isRtl = dir === 'rtl';
-      const titleX = isRtl ? doc.internal.pageSize.getWidth() - 14 : 14;
-      const align = isRtl ? 'right' : 'left';
+      // 1. LOAD ARABIC FONT
+      doc.addFileToVFS('Amiri-Regular.ttf', amiriFont);
+      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+      doc.setFont('Amiri'); // Set the font globally
   
-      // Title
-      doc.setFontSize(14);
-      doc.text(t("payments_report"), titleX, 14, { align });
+      // 2. PROFESSIONAL HEADER
+      const imgProps = doc.getImageProperties(logoBase64);
+      const logoWidth = 20;
+      const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+      doc.addImage(logoBase64, 'PNG', 14, 10, logoWidth, logoHeight);
+  
+      doc.setFontSize(18);
+      doc.setTextColor(40, 40, 40);
+      doc.text(t('payments_report'), 195, 18, { align: 'right' });
+  
       doc.setFontSize(10);
-      doc.text(new Date().toLocaleDateString(), titleX, 20, { align });
+      doc.setTextColor(100, 100, 100);
+      doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 24, {
+        align: 'right',
+      });
   
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, 30, 196, 30);
   
-      if (filteredData.type === "payments") {
-        const rows = (filteredData.data as Payment[]).map(p => ([
-          p.date,
-          p.participantName,
-          p.paymentFor,
-          p.recordedBy,
-          String(p.amount),
+      // 3. GENERATE TABLE
+      if (filteredData.type === 'payments') {
+        const rows = (filteredData.data as Payment[]).map((p) => [
+          p.remarks || '-',
+          t(p.type.toLowerCase()),
           p.currency,
-          p.type,
-          p.remarks || "-"
-        ]));
-  
+          String(p.amount),
+          p.recordedBy,
+          p.paymentFor,
+          p.participantName,
+          p.date,
+        ]);
   
         autoTable(doc, {
-          startY: 26,
-          head: [[
-            t("date"),
-            t("participant_name"),
-            t("payment_for"),
-            t("recorded_by"),
-            t("amount"),
-            t("currency"),
-            t("type"),
-            t("remarks"),
-          ]],
+          startY: 35,
+          head: [
+            [
+              t('remarks'),
+              t('type'),
+              t('currency'),
+              t('amount'),
+              t('recorded_by'),
+              t('payment_for'),
+              t('participant_name'),
+              t('date'),
+            ],
+          ],
           body: rows,
-          styles: { font: "Amiri", fontSize: 9, cellPadding: 2 },
-          headStyles: { font: "Amiri", fillColor: [240, 240, 240] },
-          didParseCell: function (data) {
-            if (isRtl) {
-                data.cell.styles.halign = 'right';
-            }
-          }
+          styles: {
+            font: 'Amiri',
+            fontSize: 10,
+            cellPadding: 3,
+            halign: 'right',
+          },
+          headStyles: {
+            fillColor: [36, 36, 36],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'right',
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
         });
-  
   
         doc.save(`payments_${new Date().toISOString().slice(0, 10)}.pdf`);
       }
   
-  
-      if (filteredData.type === "unpaid") {
-        const rows = (filteredData.data as Participant[]).map(p => ([
-          p.name,
-          p.phone,
+      if (filteredData.type === 'unpaid') {
+        const rows = (filteredData.data as Participant[]).map((p) => [
+          p.status,
           String(p.monthlyShare),
-          p.status
-        ]));
-  
+          p.phone,
+          p.name,
+        ]);
   
         autoTable(doc, {
-          startY: 26,
-          head: [[t("name"), t("phone"), t("monthly_share"), t("status")]],
+          startY: 35,
+          head: [[t('status'), t('monthly_share'), t('phone'), t('name')]],
           body: rows,
-          styles: { font: "Amiri", fontSize: 9, cellPadding: 2 },
-          headStyles: { font: "Amiri", fillColor: [240, 240, 240] },
-           didParseCell: function (data) {
-            if (isRtl) {
-                data.cell.styles.halign = 'right';
-            }
-          }
+          styles: {
+            font: 'Amiri',
+            fontSize: 10,
+            cellPadding: 3,
+            halign: 'right',
+          },
+          headStyles: {
+            fillColor: [36, 36, 36],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'right',
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245],
+          },
         });
-  
   
         doc.save(`unpaid_${filterMonth}_${filterYear}.pdf`);
       }
   
-  
-      toast({ title: t("export_successful"), description: t("pdf_download_description") ?? "PDF downloaded." });
+      toast({
+        title: t('export_successful'),
+        description: t('pdf_download_description'),
+      });
     } catch (e) {
       console.error(e);
-      toast({ variant: "destructive", title: t("error"), description: "PDF export failed. Check console logs." });
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: 'PDF export failed.',
+      });
     }
   };
 
