@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -97,6 +98,58 @@ export default function ParticipantsPage() {
     }
   }, [editingParticipant]);
 
+  const handleExportCSV = () => {
+    if (participants.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('no_data_to_export'),
+      });
+      return;
+    }
+
+    const headers = [
+      t('name'),
+      t('phone'),
+      t('monthly_share'),
+      t('status'),
+      t('last_payment_date'),
+    ];
+
+    const data = participants.map((p) => [
+      p.name,
+      p.phone,
+      p.monthlyShare,
+      t(p.status.toLowerCase()),
+      p.lastPaymentDate || '-',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...data.map((row) =>
+        row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'participants.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: t('export_successful'),
+      description: t('csv_download_description'),
+    });
+  };
+
   const handleAddParticipant = () => {
     if (!name || !phone || !shareAmount) {
       toast({
@@ -195,7 +248,7 @@ export default function ParticipantsPage() {
             {t('participants_management')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            <Button size="sm" variant="outline" className="h-8 gap-1">
+            <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleExportCSV}>
               <File className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 {t('export_csv')}
