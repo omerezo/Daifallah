@@ -143,11 +143,19 @@ export default function PaymentsPage() {
         doc.setFont("Amiri"); // Activate the font
   
         // 2. PROFESSIONAL HEADER
-        // Add Logo (Top Left) - Adjust width/height as needed
-        const imgProps = doc.getImageProperties(logoBase64);
-        const logoWidth = 25;
-        const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-        doc.addImage(logoBase64, "PNG", 14, 10, logoWidth, logoHeight);
+        try {
+            // jsPDF does not support SVG. We skip it to avoid a crash.
+            if (logoBase64 && !logoBase64.startsWith("data:image/svg")) {
+                const imgProps = doc.getImageProperties(logoBase64);
+                const logoWidth = 25;
+                const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+                // Determine format, defaulting to PNG
+                const format = logoBase64.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+                doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+            }
+        } catch (e) {
+            console.warn("Could not add logo to PDF, skipping.", e);
+        }
   
         // Add Title (Right Aligned)
         doc.setFontSize(18);
@@ -169,7 +177,6 @@ export default function PaymentsPage() {
         let body: any[] = [];
   
         if (filteredData.type === "payments") {
-          // Define headers in REVERSE order for RTL if needed, but 'right' alignment usually suffices
           head = [[
             t("remarks"),
             t("type"),
@@ -234,9 +241,9 @@ export default function PaymentsPage() {
         
         toast({ title: t("export_successful"), description: t("pdf_download_description") });
       };
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast({ variant: "destructive", title: t("error"), description: "PDF export failed. Check console logs." });
+      toast({ variant: "destructive", title: t("error"), description: `PDF export failed: ${e?.message ?? 'unknown error'}` });
     }
   };
 
@@ -528,7 +535,7 @@ export default function PaymentsPage() {
             {t('payments_management')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            <DropdownMenu modal={false}>
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 gap-1">
                   <File className="h-3.5 w-3.5" />
@@ -538,7 +545,7 @@ export default function PaymentsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportPDF}>
                   {t('export_pdf')}
                 </DropdownMenuItem>
