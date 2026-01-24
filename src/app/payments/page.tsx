@@ -71,8 +71,7 @@ const allMonths = [
 ];
 
 function stripDataUrl(data: string) {
-  // removes "data:...;base64," if present
-  const idx = data.indexOf("base64,");
+  const idx = data?.indexOf("base64,") ?? -1;
   return idx >= 0 ? data.slice(idx + "base64,".length) : data;
 }
 
@@ -138,6 +137,8 @@ export default function PaymentsPage() {
       }
   
       const doc = new jsPDF('p', 'mm', 'a4');
+      
+      console.log("amiriFont type:", typeof amiriFont, "length:", amiriFont?.length);
   
       // 1) LOAD ARABIC FONT (safe) + fallback
       try {
@@ -274,7 +275,7 @@ export default function PaymentsPage() {
       toast({
         variant: "destructive",
         title: t("error"),
-        description: e?.message ? `PDF export failed: ${e.message}` : "PDF export failed.",
+        description: `PDF export failed: ${e?.message ?? "unknown error"}`,
       });
     }
   };
