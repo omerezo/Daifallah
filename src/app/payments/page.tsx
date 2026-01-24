@@ -418,8 +418,8 @@ export default function PaymentsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePrint}>{t('export_pdf')}</DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleExportCSV}>{t('export_csv')}</DropdownMenuItem>
+                <DropdownMenuItem onSelect={handlePrint}>{t('export_pdf')}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
