@@ -233,31 +233,15 @@
 }
 
 @media print {
-  /* Hide everything by default using visibility */
-  body * {
-    visibility: hidden;
-  }
-
-  /* Make only the printable area and its contents visible */
-  .printable-area, .printable-area * {
-    visibility: visible;
-  }
-  
-  /* Ensure the printable area is positioned correctly */
-  .printable-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0 !important;
-    padding: 1rem !important;
-  }
-  
-  /* Still useful to have a class to force-hide some elements */
-  .no-print, .print-hidden {
+  /* Hide UI chrome like sidebar, header, and elements marked with .no-print */
+  aside,
+  header,
+  .no-print,
+  .print-hidden {
     display: none !important;
   }
-
+  
+  /* Reset body and main for clean, full-page printing */
   body {
     background-color: white !important;
     color: black !important;
@@ -265,12 +249,22 @@
     padding: 0 !important;
   }
 
+  main {
+    margin: 0 !important;
+    padding: 1rem !important; /* Give content some breathing room */
+    width: 100% !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* Show the dedicated print-only title used in reports */
   .print-only-title {
     display: block !important;
-    visibility: visible !important; /* Ensure it's visible */
+    visibility: visible !important;
     margin-bottom: 2rem;
   }
 
+  /* Fixes for Recharts library rendering during print */
   .recharts-surface {
     overflow: visible !important;
   }
