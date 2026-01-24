@@ -59,7 +59,6 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useReactToPrint } from 'react-to-print';
 
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
@@ -115,12 +114,9 @@ export default function PaymentsPage() {
     }
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: `${t('payments_report')} - ${new Date().toLocaleDateString()}`,
-    onAfterPrint: () => console.log("Print Success"),
-    onPrintError: (error) => console.error("Print Error:", error),
-  });
+  const handlePrint = () => {
+    window.print();
+  };
 
   const handleExportCSV = () => {
     if (filteredData.data.length === 0 && filteredData.type !== 'message') {
