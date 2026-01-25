@@ -106,6 +106,10 @@ export default function DashboardPage() {
     return summaries;
   }, [payments, allExpenses]);
 
+  const activeMembersCount = useMemo(() => {
+    return participants.filter((p) => p.status === 'Active').length;
+  }, [participants]);
+
   const handleSavePayment = async () => {
     if (!selectedParticipantId || !paymentAmount) {
       toast({
@@ -347,7 +351,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">73</div>
+            <div className="text-2xl font-bold">{activeMembersCount}</div>
             <p className="text-xs text-muted-foreground">
               +2 since last month
             </p>
