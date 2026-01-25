@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -31,6 +30,8 @@ import type {
 } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { logoBase64 as defaultLogoBase64 } from '@/components/logo';
+import { useTranslation } from '@/hooks/use-translation';
+import { toast } from '@/hooks/use-toast';
 
 interface DataContextType {
   payments: Payment[];
@@ -87,6 +88,7 @@ function getInitialState<T>(key: string, fallback: T[]): T[] {
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [payments, setPayments] = useState<Payment[]>(() =>
     getInitialState('payments', initialPayments)
   );
@@ -170,19 +172,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('walletTransactions', JSON.stringify(walletTransactions));
   }, [walletTransactions]);
 
-  useEffect(() => {
+  const setAndPersistLogo = useCallback((newLogo: string) => {
+    // Optimistically update the UI so the user sees the new logo immediately.
+    setLogo(newLogo);
+
+    // Try to persist the new logo to localStorage.
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('appLogo', logo);
+        localStorage.setItem('appLogo', newLogo);
+        toast({
+          title: t('logo_updated'),
+          description: t('logo_updated_description'),
+        });
       } catch (error) {
         if (error instanceof DOMException && error.name === 'QuotaExceededError') {
           console.error("Failed to save logo to localStorage: Quota exceeded. The logo will not be persisted.");
+          
+          // Revert to the previously saved logo since the new one is too large.
+          const oldLogo = localStorage.getItem('appLogo') || defaultLogoBase64;
+          setLogo(oldLogo);
+          
+          toast({
+            variant: 'destructive',
+            title: t('error'),
+            description: t('logo_too_large_description'),
+          });
         } else {
           console.error("Failed to save logo to localStorage:", error);
         }
       }
     }
-  }, [logo]);
+  }, [t]);
 
 
   const addPayment = useCallback((payment: Payment) => {
@@ -394,7 +414,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       walletTransactions,
       currentUser,
       logo,
-      setLogo,
+      setLogo: setAndPersistLogo,
       addPayment,
       updatePayment,
       deletePayment,
@@ -422,6 +442,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       walletTransactions,
       currentUser,
       logo,
+      setAndPersistLogo,
       addPayment,
       updatePayment,
       deletePayment,

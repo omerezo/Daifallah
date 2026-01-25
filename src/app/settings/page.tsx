@@ -34,14 +34,10 @@ export default function SettingsPage() {
         const result = e.target?.result;
         if (typeof result === 'string') {
           setLogo(result);
-          toast({
-            title: t('logo_updated'),
-            description: t('logo_updated_description'),
-          });
         }
       };
       reader.readAsDataURL(file);
-    } else {
+    } else if (file) {
       toast({
         variant: 'destructive',
         title: t('error'),

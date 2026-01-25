@@ -221,6 +221,7 @@
   "logo_updated": "تم تحديث الشعار",
   "logo_updated_description": "تم تحديث شعار لجنتكم بنجاح.",
   "invalid_file_type": "نوع الملف غير صالح. يرجى رفع صورة بصيغة PNG أو JPG.",
+  "logo_too_large_description": "ملف الصورة المختار كبير جداً ولا يمكن حفظه. يرجى اختيار ملف أصغر.",
   "edit_transaction": "تعديل الحركة",
   "transaction_updated": "تم تحديث الحركة",
   "transaction_updated_description": "تم تحديث بيانات الحركة بنجاح.",
