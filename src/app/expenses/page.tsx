@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
@@ -152,9 +153,7 @@ export default function ExpensesPage() {
         // Header
         try {
             doc.setFontSize(22);
-            doc.setFont('Amiri', 'bold');
             doc.text(t('app_name'), 105, 15, { align: 'center' });
-            doc.setFont('Amiri', 'normal');
             
           if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
             const imgProps = doc.getImageProperties(logoBase64);
@@ -194,7 +193,7 @@ export default function ExpensesPage() {
           body: body,
           theme: 'grid',
           styles: { font: 'Amiri', fontSize: 10, cellPadding: 3, halign: 'right', valign: 'middle' },
-          headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'right' },
+          headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
         });
 
