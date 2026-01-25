@@ -1,4 +1,4 @@
-import type { Payment, Participant, Expense, User, RecentActivity, Wallet, WalletTransaction } from './types';
+import type { Payment, Participant, Expense, User, RecentActivity, Wallet, WalletTransaction, PolicyDocument } from './types';
 
 export const payments: Payment[] = [
   {
@@ -156,3 +156,4 @@ export const recentActivities: RecentActivity[] = [
 
 export const wallets: Wallet[] = [];
 export const walletTransactions: WalletTransaction[] = [];
+export const policyDocuments: PolicyDocument[] = [];

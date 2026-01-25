@@ -68,3 +68,16 @@ export type WalletTransaction = {
   amount: number;
   description: string;
 }
+
+export type PolicyDocument = {
+  id: string;
+  name: string;
+  details: string;
+  file: {
+    name: string;
+    url: string;
+    size: number;
+    type: string;
+  };
+  uploadedAt: string;
+};

@@ -17,6 +17,7 @@ import {
   users as initialUsers,
   wallets as initialWallets,
   walletTransactions as initialWalletTransactions,
+  policyDocuments as initialPolicyDocuments,
 } from '@/lib/placeholder-data';
 import type {
   Payment,
@@ -27,6 +28,7 @@ import type {
   Wallet,
   WalletTransaction,
   UserRole,
+  PolicyDocument,
 } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { logoBase64 as defaultLogoBase64 } from '@/components/logo';
@@ -41,6 +43,7 @@ interface DataContextType {
   users: User[];
   wallets: Wallet[];
   walletTransactions: WalletTransaction[];
+  policyDocuments: PolicyDocument[];
   currentUser: User | null;
   logo: string;
   setLogo: (logo: string) => void;
@@ -58,6 +61,8 @@ interface DataContextType {
   addWalletTransaction: (transaction: Omit<WalletTransaction, 'id' | 'date'>) => void;
   updateWalletTransaction: (transaction: WalletTransaction) => void;
   deleteWalletTransaction: (transactionId: string) => void;
+  addPolicyDocument: (document: PolicyDocument) => void;
+  deletePolicyDocument: (documentId: string) => void;
   login: (email: string, password?: string) => User | null;
   logout: () => void;
 }
@@ -109,6 +114,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   );
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>(() =>
     getInitialState('walletTransactions', initialWalletTransactions)
+  );
+  const [policyDocuments, setPolicyDocuments] = useState<PolicyDocument[]>(() =>
+    getInitialState('policyDocuments', initialPolicyDocuments)
   );
   
   const [logo, setLogo] = useState<string>(() => {
@@ -171,12 +179,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('walletTransactions', JSON.stringify(walletTransactions));
   }, [walletTransactions]);
+  
+  useEffect(() => {
+    localStorage.setItem('policyDocuments', JSON.stringify(policyDocuments));
+  }, [policyDocuments]);
 
   const setAndPersistLogo = useCallback((newLogo: string) => {
-    // Optimistically update the UI so the user sees the new logo immediately.
     setLogo(newLogo);
 
-    // Try to persist the new logo to localStorage.
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('appLogo', newLogo);
@@ -188,7 +198,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (error instanceof DOMException && error.name === 'QuotaExceededError') {
           console.error("Failed to save logo to localStorage: Quota exceeded. The logo will not be persisted.");
           
-          // Revert to the previously saved logo since the new one is too large.
           const oldLogo = localStorage.getItem('appLogo') || defaultLogoBase64;
           setLogo(oldLogo);
           
@@ -403,6 +412,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const addPolicyDocument = useCallback((document: PolicyDocument) => {
+    setPolicyDocuments((prev) => [document, ...prev]);
+  }, []);
+
+  const deletePolicyDocument = useCallback((documentId: string) => {
+    setPolicyDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+  }, []);
+
   const value = useMemo(
     () => ({
       payments,
@@ -412,6 +429,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       users,
       wallets,
       walletTransactions,
+      policyDocuments,
       currentUser,
       logo,
       setLogo: setAndPersistLogo,
@@ -429,6 +447,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addWalletTransaction,
       updateWalletTransaction,
       deleteWalletTransaction,
+      addPolicyDocument,
+      deletePolicyDocument,
       login,
       logout,
     }),
@@ -440,6 +460,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       users,
       wallets,
       walletTransactions,
+      policyDocuments,
       currentUser,
       logo,
       setAndPersistLogo,
@@ -457,6 +478,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addWalletTransaction,
       updateWalletTransaction,
       deleteWalletTransaction,
+      addPolicyDocument,
+      deletePolicyDocument,
       login,
       logout,
     ]

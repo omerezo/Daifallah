@@ -229,5 +229,22 @@
   "transaction_deleted_description": "The transaction has been successfully deleted.",
   "delete_transaction_confirm": "Are you sure you want to delete this transaction? This action cannot be undone.",
   "wallet_receipt": "Wallet Transaction Receipt",
-  "transaction_id": "Transaction ID"
+  "transaction_id": "Transaction ID",
+  "policy_and_procedures": "Policy & Procedures",
+  "manage_committee_policies": "Manage your committee's policies and procedure documents.",
+  "add_document": "Add Document",
+  "all_documents": "All Documents",
+  "document_name": "Document Name",
+  "details": "Details",
+  "document_file": "Document File",
+  "max_file_size_info": "Maximum file size: 2MB. Allowed types: PDF, DOCX, PNG, JPG.",
+  "save_document": "Save Document",
+  "document_added": "Document Added",
+  "document_added_description": "Document '{{name}}' was uploaded successfully.",
+  "document_deleted": "Document Deleted",
+  "document_deleted_description": "The document '{{name}}' has been deleted.",
+  "delete_document_confirm": "Are you sure you want to delete this document?",
+  "download": "Download",
+  "file_too_large": "File is too large. Maximum size is 2MB.",
+  "uploaded_at": "Uploaded At"
 }

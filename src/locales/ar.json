@@ -229,5 +229,22 @@
   "transaction_deleted_description": "تم حذف الحركة بنجاح.",
   "delete_transaction_confirm": "هل أنت متأكد أنك تريد حذف هذه الحركة؟ هذا الإجراء لا يمكن التراجع عنه.",
   "wallet_receipt": "إيصال حركة محفظة",
-  "transaction_id": "رقم الحركة"
+  "transaction_id": "رقم الحركة",
+  "policy_and_procedures": "السياسات والإجراءات",
+  "manage_committee_policies": "إدارة مستندات سياسات وإجراءات لجنتكم.",
+  "add_document": "إضافة مستند",
+  "all_documents": "كل المستندات",
+  "document_name": "اسم المستند",
+  "details": "التفاصيل",
+  "document_file": "ملف المستند",
+  "max_file_size_info": "حجم الملف الأقصى: 2 ميجابايت. الأنواع المسموح بها: PDF, DOCX, PNG, JPG.",
+  "save_document": "حفظ المستند",
+  "document_added": "تمت إضافة المستند",
+  "document_added_description": "تم رفع المستند '{{name}}' بنجاح.",
+  "document_deleted": "تم حذف المستند",
+  "document_deleted_description": "تم حذف المستند '{{name}}'.",
+  "delete_document_confirm": "هل أنت متأكد من رغبتك في حذف هذا المستند؟",
+  "download": "تنزيل",
+  "file_too_large": "حجم الملف كبير جدًا. الحجم الأقصى هو 2 ميجابايت.",
+  "uploaded_at": "تاريخ الرفع"
 }

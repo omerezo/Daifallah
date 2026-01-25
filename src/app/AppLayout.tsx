@@ -31,6 +31,7 @@ import {
   User,
   LogOut,
   Landmark,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/logo';
@@ -191,6 +192,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <Link href="/policy-and-procedures">
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith('/policy-and-procedures')}
+                  >
+                    <FileText />
+                    <span>{t('policy_and_procedures')}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <Link href="/settings">
                   <SidebarMenuButton
