@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, File, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { PlusCircle, File, ArrowUpCircle, ArrowDownCircle, MoreHorizontal } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -23,6 +23,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useData } from '@/context/data-provider';
@@ -35,6 +37,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -48,7 +60,7 @@ const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function WalletsPage() {
   const { t, dir } = useTranslation();
-  const { wallets, walletTransactions, addWallet, addWalletTransaction, currentUser, logo } = useData();
+  const { wallets, walletTransactions, addWallet, addWalletTransaction, updateWalletTransaction, deleteWalletTransaction, currentUser, logo } = useData();
   const { toast } = useToast();
 
   const [isAddWalletOpen, setIsAddWalletOpen] = useState(false);
@@ -56,13 +68,30 @@ export default function WalletsPage() {
   const [newWalletRemarks, setNewWalletRemarks] = useState('');
   const [newWalletCurrency, setNewWalletCurrency] = useState<(typeof currencies)[number]>('USD');
 
-  const [isTransactionOpen, setIsTransactionOpen] = useState(false);
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<WalletTransaction | null>(null);
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
   const [transactionType, setTransactionType] = useState<'add' | 'consume'>('add');
   const [transactionAmount, setTransactionAmount] = useState('');
   const [transactionDescription, setTransactionDescription] = useState('');
   
   const [selectedWalletForHistory, setSelectedWalletForHistory] = useState<string | 'all'>('all');
+  const [transactionToDelete, setTransactionToDelete] = useState<WalletTransaction | null>(null);
+
+  const resetTransactionForm = () => {
+    setSelectedWallet(null);
+    setEditingTransaction(null);
+    setTransactionType('add');
+    setTransactionAmount('');
+    setTransactionDescription('');
+  };
+
+  const handleTransactionDialogChange = (isOpen: boolean) => {
+    setIsTransactionDialogOpen(isOpen);
+    if (!isOpen) {
+      resetTransactionForm();
+    }
+  };
 
   const handleAddWallet = () => {
     if (!newWalletName) {
@@ -94,14 +123,28 @@ export default function WalletsPage() {
     setIsAddWalletOpen(false);
   };
 
-  const openTransactionDialog = (wallet: Wallet, type: 'add' | 'consume') => {
+  const handleOpenTransactionDialog = (wallet: Wallet, type: 'add' | 'consume') => {
+    resetTransactionForm();
     setSelectedWallet(wallet);
     setTransactionType(type);
-    setIsTransactionOpen(true);
+    setIsTransactionDialogOpen(true);
+  };
+  
+  const handleOpenEditDialog = (tx: WalletTransaction) => {
+    const wallet = wallets.find(w => w.id === tx.walletId);
+    if (!wallet) return;
+    
+    resetTransactionForm();
+    setEditingTransaction(tx);
+    setSelectedWallet(wallet);
+    setTransactionType(tx.type);
+    setTransactionAmount(String(tx.amount));
+    setTransactionDescription(tx.description);
+    setIsTransactionDialogOpen(true);
   };
 
-  const handleAddTransaction = () => {
-    if (!selectedWallet || !transactionAmount || !transactionDescription) {
+  const handleSaveTransaction = () => {
+    if ((!selectedWallet && !editingTransaction) || !transactionAmount || !transactionDescription) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -110,24 +153,103 @@ export default function WalletsPage() {
       return;
     }
 
-    const newTransaction: Omit<WalletTransaction, 'id' | 'date'> = {
-      walletId: selectedWallet.id,
-      type: transactionType,
-      amount: parseFloat(transactionAmount),
-      description: transactionDescription,
-    };
+    if (editingTransaction) {
+      const updatedTx: WalletTransaction = {
+        ...editingTransaction,
+        amount: parseFloat(transactionAmount),
+        description: transactionDescription,
+      };
+      updateWalletTransaction(updatedTx);
+      toast({
+        title: t('transaction_updated'),
+        description: t('transaction_updated_description'),
+      });
+    } else if (selectedWallet) {
+        const newTransaction: Omit<WalletTransaction, 'id' | 'date'> = {
+          walletId: selectedWallet.id,
+          type: transactionType,
+          amount: parseFloat(transactionAmount),
+          description: transactionDescription,
+        };
+        addWalletTransaction(newTransaction);
+        toast({
+          title: t('transaction_successful'),
+          description: t('transaction_successful_description'),
+        });
+    }
 
-    addWalletTransaction(newTransaction);
+    handleTransactionDialogChange(false);
+  };
+  
+  const handleConfirmDelete = () => {
+    if (transactionToDelete) {
+      deleteWalletTransaction(transactionToDelete.id);
+      toast({
+        title: t('transaction_deleted'),
+        description: t('transaction_deleted_description'),
+      });
+      setTransactionToDelete(null);
+    }
+  };
+  
+  const generateReceipt = (transaction: WalletTransaction) => {
+    const wallet = wallets.find(w => w.id === transaction.walletId);
+    if (!wallet) return;
 
-    toast({
-      title: t('transaction_successful'),
-      description: t('transaction_successful_description'),
-    });
+    const receiptContent = `
+      <html>
+        <head>
+          <title>${t('wallet_receipt')}</title>
+          <style>
+            body { font-family: sans-serif; direction: ${dir}; margin: 0; padding: 2rem; background-color: #f9fafb; color: #111827; }
+            .container { max-width: 600px; margin: auto; padding: 2rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; background-color: white; }
+            .header { text-align: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
+            .header img { width: 80px; height: 80px; object-fit: contain; }
+            .header h1 { font-size: 1.5rem; margin: 0.5rem 0 0; }
+            .details-grid { display: grid; grid-template-columns: auto 1fr; gap: 1rem 2rem; }
+            .details-grid dt { font-weight: 500; color: #6b7280; }
+            .details-grid dd { margin: 0; font-weight: 600; }
+            .amount-total { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: ${dir === 'rtl' ? 'left' : 'right'}; }
+            .amount-total p { margin: 0; font-size: 1.25rem; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <img src="${logo}" alt="Logo">
+              <h1>${t('wallet_receipt')}</h1>
+            </div>
+            <div class="details-grid">
+              <dt>${t('transaction_id')}:</dt>
+              <dd>${transaction.id}</dd>
+              <dt>${t('date')}:</dt>
+              <dd>${new Date(transaction.date).toLocaleDateString()}</dd>
+              <dt>${t('wallet_name')}:</dt>
+              <dd>${wallet.name}</dd>
+              <dt>${t('description')}:</dt>
+              <dd>${transaction.description}</dd>
+            </div>
+            <div class="amount-total">
+              <p>${t('amount')}: ${transaction.amount.toLocaleString()} ${wallet.currency}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
 
-    setTransactionAmount('');
-    setTransactionDescription('');
-    setIsTransactionOpen(false);
-    setSelectedWallet(null);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(receiptContent);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('popup_blocked_error'),
+      });
+    }
   };
 
   const filteredTransactions = useMemo(() => {
@@ -211,7 +333,7 @@ export default function WalletsPage() {
         ? wallets 
         : wallets.filter(w => w.id === selectedWalletForHistory);
 
-    if (walletsToPrint.length === 0) {
+    if (walletsToPrint.length === 0 && filteredTransactions.length === 0) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -434,7 +556,7 @@ export default function WalletsPage() {
                       size="sm"
                       variant="outline"
                       className="flex-1"
-                      onClick={() => openTransactionDialog(wallet, 'add')}
+                      onClick={() => handleOpenTransactionDialog(wallet, 'add')}
                     >
                       <ArrowUpCircle className="ltr:mr-2 rtl:ml-2"/>
                       {t('add_amount')}
@@ -443,7 +565,7 @@ export default function WalletsPage() {
                       size="sm"
                       variant="destructive"
                       className="flex-1"
-                      onClick={() => openTransactionDialog(wallet, 'consume')}
+                      onClick={() => handleOpenTransactionDialog(wallet, 'consume')}
                     >
                       <ArrowDownCircle className="ltr:mr-2 rtl:ml-2"/>
                       {t('consume_amount')}
@@ -501,6 +623,11 @@ export default function WalletsPage() {
                   <TableHead>{t('type')}</TableHead>
                   <TableHead>{t('description')}</TableHead>
                   <TableHead className="text-right">{t('amount')}</TableHead>
+                  {currentUser.role !== 'Viewer' && (
+                    <TableHead>
+                      <span className="sr-only">{t('actions')}</span>
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -519,12 +646,46 @@ export default function WalletsPage() {
                       <TableCell className={`text-right font-mono ${tx.type === 'consume' ? 'text-destructive' : ''}`}>
                           {tx.type === 'consume' ? '-' : ''}{tx.amount.toLocaleString()} {wallet?.currency}
                       </TableCell>
+                      {currentUser.role !== 'Viewer' && (
+                        <TableCell>
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                              <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">{t('toggle_menu')}</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                              {tx.type === 'add' && (
+                                <DropdownMenuItem onClick={() => generateReceipt(tx)}>
+                                  {t('generate_receipt')}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onSelect={() => {
+                                setTimeout(() => handleOpenEditDialog(tx), 100);
+                              }}>
+                                {t('edit')}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={() => {
+                                  setTimeout(() => setTransactionToDelete(tx), 100);
+                                }}
+                              >
+                                {t('delete')}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      )}
                     </TableRow>
                   )
                 })}
                  {filteredTransactions.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">{t('no_transactions_found')}</TableCell>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">{t('no_transactions_found')}</TableCell>
                     </TableRow>
                  )}
               </TableBody>
@@ -533,10 +694,15 @@ export default function WalletsPage() {
         </Card>
       </div>
 
-      <Dialog open={isTransactionOpen} onOpenChange={setIsTransactionOpen}>
+      <Dialog open={isTransactionDialogOpen} onOpenChange={handleTransactionDialogChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{t(transactionType === 'add' ? 'add_amount' : 'consume_amount')} - {selectedWallet?.name}</DialogTitle>
+            <DialogTitle>
+              {editingTransaction 
+                ? t('edit_transaction') 
+                : t(transactionType === 'add' ? 'add_amount' : 'consume_amount')}
+               {' - '}{selectedWallet?.name}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -564,10 +730,29 @@ export default function WalletsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAddTransaction}>{t('save_transaction')}</Button>
+            <Button onClick={handleSaveTransaction}>
+              {editingTransaction ? t('save_changes') : t('save_transaction')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+       <AlertDialog open={!!transactionToDelete} onOpenChange={(isOpen) => !isOpen && setTransactionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('delete_transaction_confirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              {t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

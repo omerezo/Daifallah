@@ -55,6 +55,8 @@ interface DataContextType {
   deleteUser: (userId: string) => void;
   addWallet: (wallet: Wallet) => void;
   addWalletTransaction: (transaction: Omit<WalletTransaction, 'id' | 'date'>) => void;
+  updateWalletTransaction: (transaction: WalletTransaction) => void;
+  deleteWalletTransaction: (transactionId: string) => void;
   login: (email: string, password?: string) => User | null;
   logout: () => void;
 }
@@ -306,6 +308,81 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }));
   }, []);
 
+  const updateWalletTransaction = useCallback((updatedTx: WalletTransaction) => {
+    let originalTx: WalletTransaction | undefined;
+    
+    setWalletTransactions(currentTxs => {
+      originalTx = currentTxs.find(tx => tx.id === updatedTx.id);
+      if (!originalTx) return currentTxs;
+      return currentTxs.map(tx => (tx.id === updatedTx.id ? updatedTx : tx));
+    });
+
+    setWallets(currentWallets => {
+      if (!originalTx) return currentWallets;
+
+      const walletId = originalTx.walletId;
+      const updatedWalletId = updatedTx.walletId;
+
+      return currentWallets.map(wallet => {
+        // Revert from original wallet
+        if (wallet.id === walletId) {
+          let balance = wallet.balance;
+          if (originalTx!.type === 'add') {
+            balance -= originalTx!.amount;
+          } else {
+            balance += originalTx!.amount;
+          }
+          // If wallet ID is not changed, apply new transaction to the same wallet
+          if (walletId === updatedWalletId) {
+             if (updatedTx.type === 'add') {
+              balance += updatedTx.amount;
+            } else {
+              balance -= updatedTx.amount;
+            }
+          }
+          return { ...wallet, balance };
+        }
+        
+        // If wallet ID was changed, apply to new wallet
+        if (wallet.id === updatedWalletId && walletId !== updatedWalletId) {
+           let balance = wallet.balance;
+           if (updatedTx.type === 'add') {
+              balance += updatedTx.amount;
+            } else {
+              balance -= updatedTx.amount;
+            }
+          return { ...wallet, balance };
+        }
+        
+        return wallet;
+      });
+    });
+  }, []);
+
+  const deleteWalletTransaction = useCallback((transactionId: string) => {
+    let txToDelete: WalletTransaction | undefined;
+    
+    setWalletTransactions(currentTxs => {
+      txToDelete = currentTxs.find(tx => tx.id === transactionId);
+      return currentTxs.filter(tx => tx.id !== transactionId);
+    });
+
+    setWallets(currentWallets => {
+      if (!txToDelete) return currentWallets;
+      
+      const walletId = txToDelete.walletId;
+      return currentWallets.map(wallet => {
+        if (wallet.id === walletId) {
+          const balance = txToDelete!.type === 'add'
+            ? wallet.balance - txToDelete!.amount
+            : wallet.balance + txToDelete!.amount;
+          return { ...wallet, balance };
+        }
+        return wallet;
+      });
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       payments,
@@ -330,6 +407,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteUser,
       addWallet,
       addWalletTransaction,
+      updateWalletTransaction,
+      deleteWalletTransaction,
       login,
       logout,
     }),
@@ -355,6 +434,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteUser,
       addWallet,
       addWalletTransaction,
+      updateWalletTransaction,
+      deleteWalletTransaction,
       login,
       logout,
     ]
