@@ -119,10 +119,10 @@ export const expenses: Expense[] = [
 export const users: User[] = [
   {
     id: 'U-001',
-    name: 'Admin User',
-    email: 'admin@umma.tech',
+    name: 'admin',
+    email: 'admin',
     role: 'Admin',
-    password: 'password',
+    password: 'admin@123',
   },
   {
     id: 'U-002',

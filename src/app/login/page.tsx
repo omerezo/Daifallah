@@ -23,8 +23,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useData();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin@umma.tech');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('admin');
+  const [password, setPassword] = useState('admin@123');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +58,7 @@ export default function LoginPage() {
               <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
-                type="email"
+                type="text"
                 placeholder="name@example.com"
                 required
                 value={email}
