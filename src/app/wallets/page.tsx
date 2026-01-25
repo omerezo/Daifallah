@@ -221,22 +221,16 @@ export default function WalletsPage() {
 
       reader.readAsDataURL(fontBlob);
       reader.onloadend = () => {
-        try {
-          const base64Font = (reader.result as string).split(',')[1];
-          doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
-          doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-          doc.setFont('Amiri');
-        } catch (err) {
-          console.warn('Arabic font failed, fallback to Helvetica:', err);
-          doc.setFont('helvetica', 'normal');
-        }
+        const base64Font = (reader.result as string).split(',')[1];
+        doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
+        doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+        doc.setFont('Amiri');
 
+        // Header
         try {
             doc.setFontSize(22);
-            doc.setFont('Amiri', 'bold');
             doc.text(t('app_name'), 105, 15, { align: 'center' });
-            doc.setFont('Amiri', 'normal');
-
+            
           if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
             const imgProps = doc.getImageProperties(logoBase64);
             const logoWidth = 20;
@@ -244,8 +238,8 @@ export default function WalletsPage() {
             const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
             doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
           }
-        } catch (err) {
-          console.warn('Logo skipped (addImage failed):', err);
+        } catch (e) {
+          console.warn('Could not add logo to PDF, skipping.', e);
         }
 
         doc.setFontSize(18);
@@ -275,17 +269,18 @@ export default function WalletsPage() {
           body: body,
           theme: 'grid',
           styles: {
-            font: doc.getFont().fontName,
+            font: 'Amiri',
             fontSize: 10,
+            textColor: [40, 40, 40],
             cellPadding: 3,
-            halign: dir === 'rtl' ? 'right' : 'left',
+            halign: 'right',
+            valign: 'middle'
           },
           headStyles: {
-            font: doc.getFont().fontName,
-            fontStyle: 'bold',
-            halign: dir === 'rtl' ? 'right' : 'left',
             fillColor: [100, 116, 139],
             textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center'
           },
           alternateRowStyles: { fillColor: [245, 245, 245] },
         });
@@ -294,7 +289,7 @@ export default function WalletsPage() {
         toast({ title: t('export_successful'), description: t('pdf_download_description') });
       };
     } catch (e: any) {
-      console.error('PDF export failed:', e);
+      console.error('PDF Export failed:', e);
       toast({
         variant: 'destructive',
         title: t('error'),
