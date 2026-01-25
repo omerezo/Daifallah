@@ -139,7 +139,7 @@ export default function WalletsPage() {
   }, [walletTransactions, selectedWalletForHistory]);
 
   const handleExport = (format: 'csv' | 'pdf') => {
-    if (filteredTransactions.length === 0) {
+    if (wallets.length === 0 && filteredTransactions.length === 0) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -149,6 +149,14 @@ export default function WalletsPage() {
     }
 
     if (format === 'csv') {
+      if (filteredTransactions.length === 0) {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('no_data_to_export'),
+        });
+        return;
+      }
       handleExportCSV();
     } else {
       handleExportPDF();
@@ -200,7 +208,7 @@ export default function WalletsPage() {
   };
 
   const handleExportPDF = async () => {
-    if (filteredTransactions.length === 0) {
+    if (wallets.length === 0) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -251,39 +259,78 @@ export default function WalletsPage() {
         doc.setDrawColor(220, 220, 220);
         doc.line(14, 40, 196, 40);
 
-        const head = [[t('amount'), t('description'), t('type'), t('wallet_name'), t('date')]];
-        const body = filteredTransactions.map((tx) => {
-          const wallet = wallets.find((w) => w.id === tx.walletId);
-          return [
-            `${tx.type === 'consume' ? '-' : ''}${tx.amount.toLocaleString()} ${wallet?.currency}`,
-            tx.description,
-            t(tx.type),
-            wallet?.name || tx.walletId,
-            tx.date,
-          ];
-        });
+        // Summary Cards for Wallets
+        let tableStartY = 45;
+        if (wallets.length > 0) {
+            const cardWidth = 58;
+            const cardHeight = 25;
+            const startX = 14;
+            const initialY = 45;
+            const gap = 5;
+            const maxCardsPerRow = 3;
 
-        autoTable(doc, {
-          startY: 45,
-          head: head,
-          body: body,
-          theme: 'grid',
-          styles: {
-            font: 'Amiri',
-            fontSize: 10,
-            textColor: [40, 40, 40],
-            cellPadding: 3,
-            halign: 'right',
-            valign: 'middle'
-          },
-          headStyles: {
-            fillColor: [100, 116, 139],
-            textColor: [255, 255, 255],
-            fontStyle: 'bold',
-            halign: 'center'
-          },
-          alternateRowStyles: { fillColor: [245, 245, 245] },
-        });
+            wallets.forEach((wallet, index) => {
+                const col = index % maxCardsPerRow;
+                const row = Math.floor(index / maxCardsPerRow);
+                
+                const cardX = startX + col * (cardWidth + gap);
+                const cardY = initialY + row * (cardHeight + gap);
+
+                doc.setDrawColor(224, 224, 224);
+                doc.setFillColor(250, 250, 250);
+                doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 3, 3, 'FD');
+                
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text(wallet.name, cardX + cardWidth - 5, cardY + 8, { align: 'right' });
+                
+                doc.setFontSize(14);
+                doc.setTextColor(40, 40, 40);
+                doc.setFont('Amiri', 'bold');
+                doc.text(`${wallet.balance.toLocaleString()} ${wallet.currency}`, cardX + cardWidth - 5, cardY + 18, { align: 'right' });
+                doc.setFont('Amiri', 'normal');
+            });
+            
+            const numRows = Math.ceil(wallets.length / maxCardsPerRow);
+            tableStartY = initialY + (numRows * cardHeight) + ((numRows > 1 ? numRows -1 : 0) * gap) + 10;
+        }
+
+        // Transaction Table
+        if (filteredTransactions.length > 0) {
+            const head = [[t('amount'), t('description'), t('type'), t('wallet_name'), t('date')]];
+            const body = filteredTransactions.map((tx) => {
+              const wallet = wallets.find((w) => w.id === tx.walletId);
+              return [
+                `${tx.type === 'consume' ? '-' : ''}${tx.amount.toLocaleString()} ${wallet?.currency}`,
+                tx.description,
+                t(tx.type),
+                wallet?.name || tx.walletId,
+                tx.date,
+              ];
+            });
+
+            autoTable(doc, {
+              startY: tableStartY,
+              head: head,
+              body: body,
+              theme: 'grid',
+              styles: {
+                font: 'Amiri',
+                fontSize: 10,
+                textColor: [40, 40, 40],
+                cellPadding: 3,
+                halign: 'right',
+                valign: 'middle'
+              },
+              headStyles: {
+                fillColor: [100, 116, 139],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center'
+              },
+              alternateRowStyles: { fillColor: [245, 245, 245] },
+            });
+        }
 
         doc.save('wallet-transactions.pdf');
         toast({ title: t('export_successful'), description: t('pdf_download_description') });
@@ -378,13 +425,13 @@ export default function WalletsPage() {
                   <p className="text-2xl font-bold">{wallet.balance.toLocaleString()} {wallet.currency}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button
+                   <Button
                     size="sm"
                     variant="outline"
                     className="flex-1"
                     onClick={() => openTransactionDialog(wallet, 'add')}
                   >
-                    <ArrowUpCircle />
+                    <ArrowUpCircle className="ltr:mr-2 rtl:ml-2" />
                     {t('add_amount')}
                   </Button>
                   <Button
@@ -393,7 +440,7 @@ export default function WalletsPage() {
                     className="flex-1"
                     onClick={() => openTransactionDialog(wallet, 'consume')}
                   >
-                    <ArrowDownCircle />
+                    <ArrowDownCircle className="ltr:mr-2 rtl:ml-2" />
                     {t('consume_amount')}
                   </Button>
                 </div>
@@ -421,7 +468,7 @@ export default function WalletsPage() {
                 </select>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="outline" className="h-9 gap-1">
+                    <Button size="sm" variant="outline" className="h-9 gap-1" onClick={() => handleExport('pdf')}>
                         <File className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                         {t('export')}
