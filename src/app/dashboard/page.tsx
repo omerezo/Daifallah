@@ -458,7 +458,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentActivities.map((activity) => (
+                {recentActivities.slice(0, 5).map((activity) => (
                   <TableRow key={activity.id}>
                     <TableCell>
                       <div className="font-medium">{activity.name}</div>
