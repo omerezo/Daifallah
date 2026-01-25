@@ -208,7 +208,11 @@ export default function WalletsPage() {
   };
 
   const handleExportPDF = async () => {
-    if (wallets.length === 0) {
+    const walletsToPrint = selectedWalletForHistory === 'all' 
+        ? wallets 
+        : wallets.filter(w => w.id === selectedWalletForHistory);
+
+    if (walletsToPrint.length === 0) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -261,7 +265,7 @@ export default function WalletsPage() {
 
         // Summary Cards for Wallets
         let tableStartY = 45;
-        if (wallets.length > 0) {
+        if (walletsToPrint.length > 0) {
             const cardWidth = 58;
             const cardHeight = 25;
             const startX = 14;
@@ -269,7 +273,7 @@ export default function WalletsPage() {
             const gap = 5;
             const maxCardsPerRow = 3;
 
-            wallets.forEach((wallet, index) => {
+            walletsToPrint.forEach((wallet, index) => {
                 const col = index % maxCardsPerRow;
                 const row = Math.floor(index / maxCardsPerRow);
                 
@@ -286,12 +290,11 @@ export default function WalletsPage() {
                 
                 doc.setFontSize(14);
                 doc.setTextColor(40, 40, 40);
-                doc.setFont('Amiri', 'bold');
-                doc.text(`${wallet.balance.toLocaleString()} ${wallet.currency}`, cardX + cardWidth - 5, cardY + 18, { align: 'right' });
                 doc.setFont('Amiri', 'normal');
+                doc.text(`${wallet.balance.toLocaleString()} ${wallet.currency}`, cardX + cardWidth - 5, cardY + 18, { align: 'right' });
             });
             
-            const numRows = Math.ceil(wallets.length / maxCardsPerRow);
+            const numRows = Math.ceil(walletsToPrint.length / maxCardsPerRow);
             tableStartY = initialY + (numRows * cardHeight) + ((numRows > 1 ? numRows -1 : 0) * gap) + 10;
         }
 
@@ -317,7 +320,7 @@ export default function WalletsPage() {
               styles: {
                 font: 'Amiri',
                 fontSize: 10,
-                textColor: [40, 40, 40],
+                textColor: [0, 0, 0],
                 cellPadding: 3,
                 halign: 'right',
                 valign: 'middle'
@@ -325,7 +328,7 @@ export default function WalletsPage() {
               headStyles: {
                 fillColor: [100, 116, 139],
                 textColor: [255, 255, 255],
-                fontStyle: 'bold',
+                fontStyle: 'normal',
                 halign: 'center'
               },
               alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -431,7 +434,7 @@ export default function WalletsPage() {
                     className="flex-1"
                     onClick={() => openTransactionDialog(wallet, 'add')}
                   >
-                    <ArrowUpCircle className="ltr:mr-2 rtl:ml-2" />
+                    <ArrowUpCircle />
                     {t('add_amount')}
                   </Button>
                   <Button
@@ -440,7 +443,7 @@ export default function WalletsPage() {
                     className="flex-1"
                     onClick={() => openTransactionDialog(wallet, 'consume')}
                   >
-                    <ArrowDownCircle className="ltr:mr-2 rtl:ml-2" />
+                    <ArrowDownCircle />
                     {t('consume_amount')}
                   </Button>
                 </div>
