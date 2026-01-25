@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -129,9 +130,7 @@ export default function YearlyReportsPage() {
   
         try {
             doc.setFontSize(22);
-            doc.setFont('Amiri', 'bold');
             doc.text(t('app_name'), 105, 15, { align: 'center' });
-            doc.setFont('Amiri', 'normal');
             
             if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
                 const imgProps = doc.getImageProperties(logoBase64);
@@ -178,6 +177,8 @@ export default function YearlyReportsPage() {
 
         // Card 2: Total Expenses
         const card2X = startX + cardWidth + gap;
+        doc.setDrawColor(224, 224, 224);
+        doc.setFillColor(250, 250, 250);
         doc.roundedRect(card2X, startY, cardWidth, cardHeight, 3, 3, 'FD');
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
@@ -190,6 +191,8 @@ export default function YearlyReportsPage() {
 
         // Card 3: Net Balance
         const card3X = card2X + cardWidth + gap;
+        doc.setDrawColor(224, 224, 224);
+        doc.setFillColor(250, 250, 250);
         doc.roundedRect(card3X, startY, cardWidth, cardHeight, 3, 3, 'FD');
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
@@ -230,7 +233,7 @@ export default function YearlyReportsPage() {
             fillColor: [100, 116, 139],
             textColor: [255, 255, 255], 
             fontStyle: 'bold',
-            halign: 'right' 
+            halign: 'center' 
           },
           alternateRowStyles: { 
             fillColor: [245, 245, 245] 
@@ -425,3 +428,5 @@ export default function YearlyReportsPage() {
     </div>
   );
 }
+
+    
