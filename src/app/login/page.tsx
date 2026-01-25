@@ -14,8 +14,6 @@ import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter } from 'next/navigation';
-import { LanguageToggle } from '@/components/language-toggle';
-import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -29,10 +27,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <LanguageToggle />
-        <ThemeToggle />
-      </div>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">

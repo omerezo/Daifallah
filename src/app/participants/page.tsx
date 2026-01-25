@@ -65,7 +65,7 @@ const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function ParticipantsPage() {
   const { t } = useTranslation();
-  const { participants, addParticipant, updateParticipant, deleteParticipant } = useData();
+  const { participants, addParticipant, updateParticipant, deleteParticipant, currentUser } = useData();
   const { toast } = useToast();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -254,79 +254,81 @@ export default function ParticipantsPage() {
                 {t('export_csv')}
               </span>
             </Button>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8 gap-1">
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    {t('add_participant')}
-                  </span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>{t('add_participant')}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      {t('name')}
-                    </Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="phone" className="text-right">
-                      {t('phone')}
-                    </Label>
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="monthly-share" className="text-right">
-                      {t('monthly_share')}
-                    </Label>
-                    <Input
-                      id="monthly-share"
-                      type="number"
-                      value={shareAmount}
-                      onChange={(e) => setShareAmount(e.target.value)}
-                      className="col-span-2"
-                    />
-                    <Select
-                      value={shareCurrency}
-                      onValueChange={(v) =>
-                        setShareCurrency(v as typeof shareCurrency)
-                      }
-                    >
-                      <SelectTrigger className="col-span-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencies.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleAddParticipant}>
-                    {t('save_participant')}
+            {currentUser.role !== 'Viewer' && (
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="h-8 gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                      {t('add_participant')}
+                    </span>
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>{t('add_participant')}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        {t('name')}
+                      </Label>
+                      <Input
+                        id="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="phone" className="text-right">
+                        {t('phone')}
+                      </Label>
+                      <Input
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="monthly-share" className="text-right">
+                        {t('monthly_share')}
+                      </Label>
+                      <Input
+                        id="monthly-share"
+                        type="number"
+                        value={shareAmount}
+                        onChange={(e) => setShareAmount(e.target.value)}
+                        className="col-span-2"
+                      />
+                      <Select
+                        value={shareCurrency}
+                        onValueChange={(v) =>
+                          setShareCurrency(v as typeof shareCurrency)
+                        }
+                      >
+                        <SelectTrigger className="col-span-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {currencies.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleAddParticipant}>
+                      {t('save_participant')}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
         <Card>
@@ -351,9 +353,11 @@ export default function ParticipantsPage() {
                   <TableHead className="hidden sm:table-cell">
                     {t('last_payment_date')}
                   </TableHead>
-                  <TableHead>
-                    <span className="sr-only">{t('actions')}</span>
-                  </TableHead>
+                  {currentUser.role !== 'Viewer' && (
+                    <TableHead>
+                      <span className="sr-only">{t('actions')}</span>
+                    </TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -382,50 +386,52 @@ export default function ParticipantsPage() {
                     <TableCell className="hidden sm:table-cell text-muted-foreground">
                       {participant.lastPaymentDate || '-'}
                     </TableCell>
-                    <TableCell>
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">{t('toggle_menu')}</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                          <DropdownMenuItem
-                            onSelect={() => {
-                              setTimeout(() => {
-                                handleOpenEditDialog(participant);
-                              }, 100);
-                            }}
-                          >
-                            {t('edit')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleToggleStatus(participant)}
-                          >
-                            {participant.status === 'Active'
-                              ? t('deactivate')
-                              : t('activate')}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            className="text-destructive"
-                            onSelect={() => {
-                              setTimeout(() => {
-                                setParticipantToDelete(participant);
-                              }, 100);
-                            }}
-                          >
-                            {t('delete')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    {currentUser.role !== 'Viewer' && (
+                      <TableCell>
+                        <DropdownMenu modal={false}>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">{t('toggle_menu')}</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setTimeout(() => {
+                                  handleOpenEditDialog(participant);
+                                }, 100);
+                              }}
+                            >
+                              {t('edit')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleToggleStatus(participant)}
+                            >
+                              {participant.status === 'Active'
+                                ? t('deactivate')
+                                : t('activate')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onSelect={() => {
+                                setTimeout(() => {
+                                  setParticipantToDelete(participant);
+                                }, 100);
+                              }}
+                            >
+                              {t('delete')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

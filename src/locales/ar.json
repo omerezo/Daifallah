@@ -206,8 +206,16 @@
   "all_wallets": "كل المحافظ",
   "no_transactions_found": "لم يتم العثور على حركات مالية.",
   "wallets_report": "تقرير المحافظ",
-  "from_total_members": "من إجمالي {{total}} أعضاء"
+  "from_total_members": "من إجمالي {{total}} أعضاء",
+  "add_user_description": "إنشاء حساب مستخدم جديد وتعيين دور له.",
+  "user_role": "دور المستخدم",
+  "select_role": "اختر دوراً",
+  "save_user": "حفظ المستخدم",
+  "user_added": "تمت إضافة المستخدم",
+  "user_added_description": "تمت إضافة {{name}} كمستخدم جديد.",
+  "delete_user_confirm": "هل أنت متأكد أنك تريد حذف هذا المستخدم؟",
+  "delete_user_confirm_description": "لا يمكن التراجع عن هذا الإجراء. سيؤدي هذا إلى حذف حساب المستخدم لـ {{name}} بشكل دائم.",
+  "user_deleted": "تم حذف المستخدم",
+  "user_deleted_description": "تم حذف حساب المستخدم لـ {{name}}."
 }
-    
-
     

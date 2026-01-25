@@ -26,6 +26,7 @@ import type {
   User,
   Wallet,
   WalletTransaction,
+  UserRole,
 } from '@/lib/types';
 
 interface DataContextType {
@@ -36,6 +37,7 @@ interface DataContextType {
   users: User[];
   wallets: Wallet[];
   walletTransactions: WalletTransaction[];
+  currentUser: User;
   addPayment: (payment: Payment) => void;
   updatePayment: (payment: Payment) => void;
   deletePayment: (paymentId: string) => void;
@@ -44,6 +46,8 @@ interface DataContextType {
   updateParticipant: (participant: Participant) => void;
   deleteParticipant: (participantId: string) => void;
   addExpense: (expense: Expense) => void;
+  addUser: (user: Omit<User, 'id'>) => void;
+  deleteUser: (userId: string) => void;
   addWallet: (wallet: Wallet) => void;
   addWalletTransaction: (transaction: Omit<WalletTransaction, 'id' | 'date'>) => void;
 }
@@ -94,6 +98,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>(() =>
     getInitialState('walletTransactions', initialWalletTransactions)
   );
+  
+  // In a real app, the current user would be determined by an authentication system.
+  // For this example, we'll hardcode the current user to be the first user in the list (Admin).
+  // To test other roles, you can change the index, e.g., users[1] for Manager.
+  const currentUser = useMemo(() => users[0], [users]);
 
 
   useEffect(() => {
@@ -173,11 +182,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return prevParticipants.filter((p) => p.id !== participantId);
       });
     },
-    [] // `setPayments` is stable and doesn't need to be a dependency
+    []
   );
   
   const addExpense = useCallback((expense: Expense) => {
     setExpenses((prev) => [expense, ...prev]);
+  }, []);
+
+  const addUser = useCallback((user: Omit<User, 'id'>) => {
+    const newUser = { ...user, id: `U-${Date.now()}`};
+    setUsers((prev) => [newUser, ...prev]);
+  }, []);
+
+  const deleteUser = useCallback((userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
   }, []);
 
   const addWallet = useCallback((wallet: Wallet) => {
@@ -211,6 +229,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       users,
       wallets,
       walletTransactions,
+      currentUser,
       addPayment,
       updatePayment,
       deletePayment,
@@ -219,6 +238,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateParticipant,
       deleteParticipant,
       addExpense,
+      addUser,
+      deleteUser,
       addWallet,
       addWalletTransaction,
     }),
@@ -230,6 +251,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       users,
       wallets,
       walletTransactions,
+      currentUser,
       addPayment,
       updatePayment,
       deletePayment,
@@ -238,6 +260,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateParticipant,
       deleteParticipant,
       addExpense,
+      addUser,
+      deleteUser,
       addWallet,
       addWalletTransaction,
     ]

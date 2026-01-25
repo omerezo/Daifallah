@@ -49,7 +49,7 @@ const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function WalletsPage() {
   const { t, dir } = useTranslation();
-  const { wallets, walletTransactions, addWallet, addWalletTransaction } = useData();
+  const { wallets, walletTransactions, addWallet, addWalletTransaction, currentUser } = useData();
   const { toast } = useToast();
 
   const [isAddWalletOpen, setIsAddWalletOpen] = useState(false);
@@ -357,61 +357,63 @@ export default function WalletsPage() {
             {t('wallets')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            <Dialog open={isAddWalletOpen} onOpenChange={setIsAddWalletOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8 gap-1">
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    {t('add_wallet')}
-                  </span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>{t('add_wallet')}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="wallet-name" className="text-right">
-                      {t('wallet_name')}
-                    </Label>
-                    <Input
-                      id="wallet-name"
-                      value={newWalletName}
-                      onChange={(e) => setNewWalletName(e.target.value)}
-                      className="col-span-3"
-                    />
+            {currentUser.role !== 'Viewer' && (
+              <Dialog open={isAddWalletOpen} onOpenChange={setIsAddWalletOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="h-8 gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                      {t('add_wallet')}
+                    </span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>{t('add_wallet')}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="wallet-name" className="text-right">
+                        {t('wallet_name')}
+                      </Label>
+                      <Input
+                        id="wallet-name"
+                        value={newWalletName}
+                        onChange={(e) => setNewWalletName(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-start gap-4">
+                      <Label htmlFor="wallet-remarks" className="text-right pt-2">
+                        {t('remarks')}
+                      </Label>
+                      <Textarea
+                        id="wallet-remarks"
+                        value={newWalletRemarks}
+                        onChange={(e) => setNewWalletRemarks(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="wallet-currency" className="text-right">
+                        {t('currency')}
+                      </Label>
+                       <select
+                        id="wallet-currency"
+                        value={newWalletCurrency}
+                        onChange={(e) => setNewWalletCurrency(e.target.value as (typeof currencies)[number])}
+                        className="col-span-3 h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      >
+                        {currencies.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="wallet-remarks" className="text-right pt-2">
-                      {t('remarks')}
-                    </Label>
-                    <Textarea
-                      id="wallet-remarks"
-                      value={newWalletRemarks}
-                      onChange={(e) => setNewWalletRemarks(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="wallet-currency" className="text-right">
-                      {t('currency')}
-                    </Label>
-                     <select
-                      id="wallet-currency"
-                      value={newWalletCurrency}
-                      onChange={(e) => setNewWalletCurrency(e.target.value as (typeof currencies)[number])}
-                      className="col-span-3 h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                    >
-                      {currencies.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleAddWallet}>{t('save_wallet')}</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <DialogFooter>
+                    <Button onClick={handleAddWallet}>{t('save_wallet')}</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
 
@@ -427,26 +429,28 @@ export default function WalletsPage() {
                   <p className="text-sm text-muted-foreground">{t('current_balance')}</p>
                   <p className="text-2xl font-bold">{wallet.balance.toLocaleString()} {wallet.currency}</p>
                 </div>
-                <div className="flex gap-2">
-                   <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => openTransactionDialog(wallet, 'add')}
-                  >
-                    <ArrowUpCircle />
-                    {t('add_amount')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="flex-1"
-                    onClick={() => openTransactionDialog(wallet, 'consume')}
-                  >
-                    <ArrowDownCircle />
-                    {t('consume_amount')}
-                  </Button>
-                </div>
+                {currentUser.role !== 'Viewer' && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => openTransactionDialog(wallet, 'add')}
+                    >
+                      <ArrowUpCircle className="ltr:mr-2 rtl:ml-2"/>
+                      {t('add_amount')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => openTransactionDialog(wallet, 'consume')}
+                    >
+                      <ArrowDownCircle className="ltr:mr-2 rtl:ml-2"/>
+                      {t('consume_amount')}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -471,7 +475,7 @@ export default function WalletsPage() {
                 </select>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="outline" className="h-9 gap-1" onClick={() => handleExport('pdf')}>
+                    <Button size="sm" variant="outline" className="h-9 gap-1">
                         <File className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                         {t('export')}

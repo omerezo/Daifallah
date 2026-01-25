@@ -46,9 +46,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useData } from '@/context/data-provider';
+import { LanguageToggle } from '@/components/language-toggle';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, lang, dir } = useTranslation();
+  const { currentUser } = useData();
   const pathname = usePathname();
 
   const menuItems = useMemo(
@@ -89,6 +93,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     ],
     [t]
   );
+
+  if (!currentUser) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <SidebarProvider>
@@ -166,14 +174,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
           <SidebarFooter className="flex-col !items-stretch gap-2 border-t border-border">
             <SidebarMenu>
-              <SidebarMenuItem>
-                <Link href="/users">
-                  <SidebarMenuButton isActive={pathname.startsWith('/users')}>
-                    <Users />
-                    <span>{t('user_management')}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
+              {currentUser.role === 'Admin' && (
+                <SidebarMenuItem>
+                  <Link href="/users">
+                    <SidebarMenuButton isActive={pathname.startsWith('/users')}>
+                      <Users />
+                      <span>{t('user_management')}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <Link href="/settings">
                   <SidebarMenuButton
@@ -185,7 +195,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuItem>
             </SidebarMenu>
-            <div className="p-2">
+            <div className="p-2 flex items-center justify-center gap-2 border-t border-border">
+                <LanguageToggle />
+                <ThemeToggle />
+            </div>
+            <div className="p-2 border-t border-border">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -195,14 +209,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <Avatar className="h-8 w-8">
                       <AvatarImage
                         src={PlaceHolderImages[0].imageUrl}
-                        alt="User"
+                        alt={currentUser.name}
                       />
-                      <AvatarFallback>UA</AvatarFallback>
+                      <AvatarFallback>{currentUser.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start overflow-hidden">
-                      <span className="truncate font-medium">User Admin</span>
+                      <span className="truncate font-medium">{currentUser.name}</span>
                       <span className="truncate text-xs text-muted-foreground">
-                        admin@umma.tech
+                        {currentUser.email}
                       </span>
                     </div>
                   </Button>
@@ -211,10 +225,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {t('admin')}
+                        {currentUser.name}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        admin@umma.tech
+                        {currentUser.email}
                       </p>
                     </div>
                   </DropdownMenuLabel>

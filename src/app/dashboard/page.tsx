@@ -67,6 +67,7 @@ export default function DashboardPage() {
     addRecentActivity,
     participants,
     expenses: allExpenses,
+    currentUser,
   } = useData();
 
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
@@ -188,157 +189,159 @@ export default function DashboardPage() {
           {t('dashboard')}
         </h1>
         <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-          <Dialog
-            open={isRecordPaymentOpen}
-            onOpenChange={setIsRecordPaymentOpen}
-          >
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8 gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  {t('record_payment')}
-                </span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{t('record_payment')}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="participant" className="text-right">
-                    {t('participant')}
-                  </Label>
-                  <Select
-                    value={selectedParticipantId}
-                    onValueChange={setSelectedParticipantId}
-                  >
-                    <SelectTrigger id="participant" className="col-span-3">
-                      <SelectValue placeholder={t('select_participant')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {participants.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="amount" className="text-right">
-                    {t('amount')}
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    className="col-span-2"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                  />
-                  <Select
-                    value={paymentCurrency}
-                    onValueChange={(v) =>
-                      setPaymentCurrency(v as typeof paymentCurrency)
-                    }
-                  >
-                    <SelectTrigger className="col-span-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencies.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="payment-date" className="text-right">
-                    {t('payment_for')}
-                  </Label>
-                  <div className="col-span-3 grid grid-cols-2 gap-2">
-                    <Select
-                      value={String(paymentMonth)}
-                      onValueChange={(v) => setPaymentMonth(Number(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('month')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {months.map((month, index) => (
-                           <SelectItem key={month} value={String(index)}>
-                            {t(month)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={String(paymentYear)}
-                      onValueChange={(v) => setPaymentYear(Number(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('year')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {years.map((year) => (
-                          <SelectItem key={year} value={String(year)}>
-                            {year}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="bank-transfer" className="text-right">
-                    {t('bank_transfer')}
-                  </Label>
-                  <div className="col-span-3">
-                    <Input
-                      id="bank-transfer"
-                      type="file"
-                      className="sr-only"
-                      onChange={(e) =>
-                        setBankTransferFile(
-                          e.target.files ? e.target.files[0] : null
-                        )
-                      }
-                    />
-                    <Label
-                      htmlFor="bank-transfer"
-                      className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <Upload className="h-4 w-4" />
-                      <span>
-                        {bankTransferFile
-                          ? bankTransferFile.name
-                          : t('upload_file')}
-                      </span>
-                    </Label>
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="remarks" className="text-right pt-2">
-                    {t('remarks')}
-                  </Label>
-                  <Textarea
-                    id="remarks"
-                    className="col-span-3"
-                    value={remarks}
-                    onChange={(e) => setRemarks(e.target.value)}
-                    placeholder={t('add_remarks_placeholder')}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" onClick={handleSavePayment}>
-                  {t('save_payment')}
+          {currentUser.role !== 'Viewer' && (
+            <Dialog
+              open={isRecordPaymentOpen}
+              onOpenChange={setIsRecordPaymentOpen}
+            >
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8 gap-1">
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    {t('record_payment')}
+                  </span>
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{t('record_payment')}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="participant" className="text-right">
+                      {t('participant')}
+                    </Label>
+                    <Select
+                      value={selectedParticipantId}
+                      onValueChange={setSelectedParticipantId}
+                    >
+                      <SelectTrigger id="participant" className="col-span-3">
+                        <SelectValue placeholder={t('select_participant')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {participants.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="amount" className="text-right">
+                      {t('amount')}
+                    </Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      className="col-span-2"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                    />
+                    <Select
+                      value={paymentCurrency}
+                      onValueChange={(v) =>
+                        setPaymentCurrency(v as typeof paymentCurrency)
+                      }
+                    >
+                      <SelectTrigger className="col-span-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="payment-date" className="text-right">
+                      {t('payment_for')}
+                    </Label>
+                    <div className="col-span-3 grid grid-cols-2 gap-2">
+                      <Select
+                        value={String(paymentMonth)}
+                        onValueChange={(v) => setPaymentMonth(Number(v))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('month')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month, index) => (
+                            <SelectItem key={month} value={String(index)}>
+                              {t(month)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={String(paymentYear)}
+                        onValueChange={(v) => setPaymentYear(Number(v))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('year')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={String(year)}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="bank-transfer" className="text-right">
+                      {t('bank_transfer')}
+                    </Label>
+                    <div className="col-span-3">
+                      <Input
+                        id="bank-transfer"
+                        type="file"
+                        className="sr-only"
+                        onChange={(e) =>
+                          setBankTransferFile(
+                            e.target.files ? e.target.files[0] : null
+                          )
+                        }
+                      />
+                      <Label
+                        htmlFor="bank-transfer"
+                        className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <Upload className="h-4 w-4" />
+                        <span>
+                          {bankTransferFile
+                            ? bankTransferFile.name
+                            : t('upload_file')}
+                        </span>
+                      </Label>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-start gap-4">
+                    <Label htmlFor="remarks" className="text-right pt-2">
+                      {t('remarks')}
+                    </Label>
+                    <Textarea
+                      id="remarks"
+                      className="col-span-3"
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                      placeholder={t('add_remarks_placeholder')}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" onClick={handleSavePayment}>
+                    {t('save_payment')}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
