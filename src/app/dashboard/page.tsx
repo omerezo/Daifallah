@@ -353,7 +353,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{activeMembersCount}</div>
             <p className="text-xs text-muted-foreground">
-              +2 since last month
+              {t('from_total_members', { total: participants.length })}
             </p>
           </CardContent>
         </Card>
