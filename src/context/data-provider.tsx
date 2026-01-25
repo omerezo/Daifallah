@@ -170,7 +170,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('appLogo', logo);
+      try {
+        localStorage.setItem('appLogo', logo);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          console.error("Failed to save logo to localStorage: Quota exceeded. The logo will not be persisted.");
+        } else {
+          console.error("Failed to save logo to localStorage:", error);
+        }
+      }
     }
   }, [logo]);
 
@@ -189,7 +197,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...adminUser,
             password: 'admin@123',
             email: 'admin',
-            name: 'admin',
           };
           // Update the user in the main users list
           setUsers((currentUsers) =>
@@ -269,7 +276,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addUser = useCallback((user: Omit<User, 'id'>) => {
-    const newUser = { ...user, id: `U-${Date.now()}`};
+    const newUser = { ...user, id: `U-${Date.now()}`, password: user.password };
     setUsers((prev) => [...prev, newUser]);
   }, []);
 
@@ -336,7 +343,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       walletTransactions,
       currentUser,
       logo,
-      setLogo,
       addPayment,
       updatePayment,
       deletePayment,
