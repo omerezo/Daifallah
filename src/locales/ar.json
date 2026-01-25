@@ -216,6 +216,7 @@
   "delete_user_confirm": "هل أنت متأكد أنك تريد حذف هذا المستخدم؟",
   "delete_user_confirm_description": "لا يمكن التراجع عن هذا الإجراء. سيؤدي هذا إلى حذف حساب المستخدم لـ {{name}} بشكل دائم.",
   "user_deleted": "تم حذف المستخدم",
-  "user_deleted_description": "تم حذف حساب المستخدم لـ {{name}}."
+  "user_deleted_description": "تم حذف حساب المستخدم لـ {{name}}.",
+  "invalid_credentials": "بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى."
 }
     

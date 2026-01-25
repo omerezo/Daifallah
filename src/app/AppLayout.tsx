@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-import { usePathname } from 'next/navigation';
+import { useMemo, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Collapsible,
   CollapsibleContent,
@@ -52,8 +52,15 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, lang, dir } = useTranslation();
-  const { currentUser } = useData();
+  const { currentUser, logout } = useData();
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace('/login');
+    }
+  }, [currentUser, router]);
 
   const menuItems = useMemo(
     () => [
@@ -238,12 +245,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span>{t('profile')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <Link href="/login">
-                    <DropdownMenuItem>
-                      <LogOut className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
-                      <span>{t('log_out')}</span>
-                    </DropdownMenuItem>
-                  </Link>
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
+                    <span>{t('log_out')}</span>
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

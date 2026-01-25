@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,15 +15,29 @@ import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter } from 'next/navigation';
+import { useData } from '@/context/data-provider';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { login } = useData();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('admin@umma.tech');
+  const [password, setPassword] = useState('password');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would handle authentication with Supabase here
-    router.push('/dashboard');
+    const user = login(email, password);
+    if (user) {
+      router.push('/dashboard');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('invalid_credentials'),
+      });
+    }
   };
 
   return (
@@ -46,7 +61,8 @@ export default function LoginPage() {
                 type="email"
                 placeholder="name@example.com"
                 required
-                defaultValue="admin@umma.tech"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="grid gap-2">
@@ -63,7 +79,8 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 required
-                defaultValue="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <Button type="submit" className="w-full">

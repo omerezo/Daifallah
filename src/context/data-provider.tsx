@@ -28,6 +28,7 @@ import type {
   WalletTransaction,
   UserRole,
 } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 interface DataContextType {
   payments: Payment[];
@@ -37,7 +38,7 @@ interface DataContextType {
   users: User[];
   wallets: Wallet[];
   walletTransactions: WalletTransaction[];
-  currentUser: User;
+  currentUser: User | null;
   addPayment: (payment: Payment) => void;
   updatePayment: (payment: Payment) => void;
   deletePayment: (paymentId: string) => void;
@@ -50,6 +51,8 @@ interface DataContextType {
   deleteUser: (userId: string) => void;
   addWallet: (wallet: Wallet) => void;
   addWalletTransaction: (transaction: Omit<WalletTransaction, 'id' | 'date'>) => void;
+  login: (email: string, password?: string) => User | null;
+  logout: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -77,6 +80,7 @@ function getInitialState<T>(key: string, fallback: T[]): T[] {
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [payments, setPayments] = useState<Payment[]>(() =>
     getInitialState('payments', initialPayments)
   );
@@ -99,10 +103,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     getInitialState('walletTransactions', initialWalletTransactions)
   );
   
-  // In a real app, the current user would be determined by an authentication system.
-  // For this example, we'll hardcode the current user to be the first user in the list (Admin).
-  // To test other roles, you can change the index, e.g., users[1] for Manager.
-  const currentUser = useMemo(() => users[0], [users]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    return window.localStorage.getItem('currentUserId') || null;
+  });
+
+  const currentUser = useMemo(() => {
+    if (!currentUserId) return null;
+    return users.find((u) => u.id === currentUserId) || null;
+  }, [users, currentUserId]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (currentUserId) {
+        window.localStorage.setItem('currentUserId', currentUserId);
+      } else {
+        window.localStorage.removeItem('currentUserId');
+      }
+    }
+  }, [currentUserId]);
 
 
   useEffect(() => {
@@ -140,6 +161,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addPayment = useCallback((payment: Payment) => {
     setPayments((prev) => [payment, ...prev]);
   }, []);
+
+  const login = useCallback(
+    (email: string, password?: string): User | null => {
+      const user = users.find(
+        (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      );
+      if (user) {
+        setCurrentUserId(user.id);
+        return user;
+      }
+      return null;
+    },
+    [users]
+  );
+
+  const logout = useCallback(() => {
+    setCurrentUserId(null);
+    router.push('/login');
+  }, [router]);
 
   const updatePayment = useCallback((updatedPayment: Payment) => {
     setPayments((prev) =>
@@ -191,7 +231,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addUser = useCallback((user: Omit<User, 'id'>) => {
     const newUser = { ...user, id: `U-${Date.now()}`};
-    setUsers((prev) => [newUser, ...prev]);
+    setUsers((prev) => [...prev, newUser]);
   }, []);
 
   const deleteUser = useCallback((userId: string) => {
@@ -242,6 +282,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteUser,
       addWallet,
       addWalletTransaction,
+      login,
+      logout,
     }),
     [
       payments,
@@ -264,6 +306,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deleteUser,
       addWallet,
       addWalletTransaction,
+      login,
+      logout,
     ]
   );
 
