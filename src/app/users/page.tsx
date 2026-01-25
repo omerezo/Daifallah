@@ -71,12 +71,13 @@ export default function UsersPage() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('Viewer');
 
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const handleAddUser = () => {
-    if (!name || !email) {
+    if (!name || !email || !password) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -85,7 +86,7 @@ export default function UsersPage() {
       return;
     }
 
-    addUser({ name, email, role });
+    addUser({ name, email, role, password });
 
     toast({
       title: t('user_added'),
@@ -94,6 +95,7 @@ export default function UsersPage() {
 
     setName('');
     setEmail('');
+    setPassword('');
     setRole('Viewer');
     setIsAddUserOpen(false);
   };
@@ -167,6 +169,18 @@ export default function UsersPage() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right" htmlFor="password">
+                        {t('password')}
+                      </Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         className="col-span-3"
                       />
                     </div>

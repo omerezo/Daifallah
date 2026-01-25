@@ -122,24 +122,28 @@ export const users: User[] = [
     name: 'Admin User',
     email: 'admin@umma.tech',
     role: 'Admin',
+    password: 'password',
   },
   {
     id: 'U-002',
     name: 'Manager User',
     email: 'manager@umma.tech',
     role: 'Manager',
+    password: 'password',
   },
   {
     id: 'U-003',
     name: 'Collector User',
     email: 'collector@umma.tech',
     role: 'Collector',
+    password: 'password',
   },
   {
     id: 'U-004',
     name: 'Viewer User',
     email: 'viewer@umma.tech',
     role: 'Viewer',
+    password: 'password',
   },
 ];
 
