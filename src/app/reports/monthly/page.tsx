@@ -107,7 +107,7 @@ export default function MonthlyReportsPage() {
     const allTransactions = [
       ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const, description: `${t('payment_for')} ${p.paymentFor}` })),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
-    ].sort((a, b) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime());
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };
@@ -166,9 +166,9 @@ export default function MonthlyReportsPage() {
         const body = monthlyData.allTransactions.map(tx => ([
           `${tx.transactionType === 'Expense' ? '-' : ''}${tx.amount.toLocaleString()} ${tx.currency}`,
           t(tx.transactionType.toLowerCase()),
-          tx.transactionType === 'Income' ? `${t('payment_for')} ${tx.paymentFor}` : tx.description,
+          tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description,
           tx.participantName,
-          tx.date
+          new Date(tx.date).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')
         ]));
   
         autoTable(doc, {
@@ -273,7 +273,7 @@ export default function MonthlyReportsPage() {
       </div>
       
       <div className="space-y-8">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3 print-hidden">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{t('total_collected_month')}</CardTitle>
@@ -303,7 +303,7 @@ export default function MonthlyReportsPage() {
             </Card>
         </div>
 
-        <Card>
+        <Card className="print-hidden">
           <CardHeader>
             <CardTitle>{t('monthly_overview')}</CardTitle>
             <CardDescription>
@@ -319,7 +319,9 @@ export default function MonthlyReportsPage() {
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  label={{ value: t('day_of_month'), position: 'insideBottom', offset: -5 }}
+                  angle={dir === 'rtl' ? 45 : -45}
+                  textAnchor={dir === 'rtl' ? 'start' : 'end'}
+                  height={60}
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
@@ -327,12 +329,14 @@ export default function MonthlyReportsPage() {
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `${value.toLocaleString()}`}
+                  width={dir === 'rtl' ? 80 : undefined}
                 />
                 <Tooltip
                   contentStyle={{
                       background: 'hsl(var(--background))',
                       borderColor: 'hsl(var(--border))',
                   }}
+                  labelStyle={{ direction: dir }}
                 />
                 <Legend />
                 <Bar
@@ -371,7 +375,7 @@ export default function MonthlyReportsPage() {
                     <TableBody>
                         {monthlyData.allTransactions.length > 0 ? monthlyData.allTransactions.map((tx) => (
                             <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { timeZone: 'UTC' })}</TableCell>
+                                <TableCell>{new Date(tx.date).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US')}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
                                 <TableCell>{tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description}</TableCell>
                                 <TableCell>
