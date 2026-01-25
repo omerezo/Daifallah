@@ -43,13 +43,12 @@ import type { Wallet, WalletTransaction } from '@/lib/types';
 import { useState, useMemo } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { logoBase64 } from '@/components/logo';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function WalletsPage() {
   const { t, dir } = useTranslation();
-  const { wallets, walletTransactions, addWallet, addWalletTransaction, currentUser } = useData();
+  const { wallets, walletTransactions, addWallet, addWalletTransaction, currentUser, logo } = useData();
   const { toast } = useToast();
 
   const [isAddWalletOpen, setIsAddWalletOpen] = useState(false);
@@ -243,12 +242,12 @@ export default function WalletsPage() {
             doc.setFontSize(22);
             doc.text(t('app_name'), 105, 15, { align: 'center' });
             
-          if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
-            const imgProps = doc.getImageProperties(logoBase64);
+          if (logo && !logo.startsWith('data:image/svg')) {
+            const imgProps = doc.getImageProperties(logo);
             const logoWidth = 20;
             const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-            const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
-            doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+            const format = logo.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+            doc.addImage(logo, format, 14, 10, logoWidth, logoHeight);
           }
         } catch (e) {
           console.warn('Could not add logo to PDF, skipping.', e);
@@ -289,7 +288,7 @@ export default function WalletsPage() {
                 doc.text(wallet.name, cardX + cardWidth - 5, cardY + 8, { align: 'right' });
                 
                 doc.setFontSize(14);
-                doc.setTextColor(40, 40, 40);
+                doc.setTextColor(0, 0, 0);
                 doc.setFont('Amiri', 'normal');
                 doc.text(`${wallet.balance.toLocaleString()} ${wallet.currency}`, cardX + cardWidth - 5, cardY + 18, { align: 'right' });
             });

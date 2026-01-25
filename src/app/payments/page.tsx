@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
-import { logoBase64 } from '@/components/logo';
 import type { Payment, Participant } from '@/lib/types';
 import { useState, useCallback, useMemo } from 'react';
 import {
@@ -74,7 +73,7 @@ const allMonths = [
 export default function PaymentsPage() {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
-  const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity } = useData();
+  const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity, logo } = useData();
 
   // Dialog states
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -144,12 +143,12 @@ export default function PaymentsPage() {
             doc.setFontSize(22);
             doc.text(t('app_name'), 105, 15, { align: 'center' });
 
-            if (logoBase64 && !logoBase64.startsWith("data:image/svg")) {
-                const imgProps = doc.getImageProperties(logoBase64);
+            if (logo && !logo.startsWith("data:image/svg")) {
+                const imgProps = doc.getImageProperties(logo);
                 const logoWidth = 25;
                 const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-                const format = logoBase64.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
-                doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+                const format = logo.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+                doc.addImage(logo, format, 14, 10, logoWidth, logoHeight);
             }
         } catch (e) {
             console.warn("Could not add logo to PDF, skipping.", e);
@@ -210,7 +209,7 @@ export default function PaymentsPage() {
           styles: { 
             font: "Amiri", 
             fontSize: 10, 
-            textColor: [40, 40, 40],
+            textColor: [0, 0, 0],
             cellPadding: 3, 
             halign: "right",
             valign: "middle"
@@ -300,7 +299,7 @@ export default function PaymentsPage() {
             .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); opacity: 0.08; font-size: 10rem; font-weight: bold; color: #777; pointer-events: none; z-index: 1; text-transform: uppercase; }
             .stamp { position: absolute; bottom: 1.5rem; ${dir === 'rtl' ? 'left' : 'right'}: 1.5rem; width: 140px; height: auto; z-index: 20; opacity: 0.85; }
             .header { text-align: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb; }
-            .header img { width: 80px; height: 80px; }
+            .header img { width: 80px; height: 80px; object-fit: contain; }
             .header h1 { font-size: 1.5rem; margin: 0.5rem 0 0; }
             .details-grid { display: grid; grid-template-columns: auto 1fr; gap: 1rem 2rem; }
             .details-grid dt { font-weight: 500; color: #6b7280; }
@@ -315,7 +314,7 @@ export default function PaymentsPage() {
             <div class="watermark">${t('paid_stamp')}</div>
             <div class="content-wrapper">
               <div class="header">
-                <img src="${logoBase64}" alt="Logo">
+                <img src="${logo}" alt="Logo">
                 <h1>${t('payment_receipt')}</h1>
               </div>
               <div class="details-grid">

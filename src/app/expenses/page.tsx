@@ -52,7 +52,6 @@ import type { Expense } from '@/lib/types';
 import { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { logoBase64 } from '@/components/logo';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 const categories: Expense['category'][] = [
@@ -64,7 +63,7 @@ const categories: Expense['category'][] = [
 
 export default function ExpensesPage() {
   const { t, dir } = useTranslation();
-  const { expenses, addExpense, currentUser } = useData();
+  const { expenses, addExpense, currentUser, logo } = useData();
   const { toast } = useToast();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -155,12 +154,12 @@ export default function ExpensesPage() {
             doc.setFontSize(22);
             doc.text(t('app_name'), 105, 15, { align: 'center' });
             
-          if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
-            const imgProps = doc.getImageProperties(logoBase64);
+          if (logo && !logo.startsWith('data:image/svg')) {
+            const imgProps = doc.getImageProperties(logo);
             const logoWidth = 25;
             const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-            const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
-            doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+            const format = logo.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+            doc.addImage(logo, format, 14, 10, logoWidth, logoHeight);
           }
         } catch (e) {
           console.warn('Could not add logo to PDF, skipping.', e);
@@ -192,7 +191,7 @@ export default function ExpensesPage() {
           head: head,
           body: body,
           theme: 'grid',
-          styles: { font: 'Amiri', fontSize: 10, textColor: [40, 40, 40], cellPadding: 3, halign: 'right', valign: 'middle' },
+          styles: { font: 'Amiri', fontSize: 10, textColor: [0, 0, 0], cellPadding: 3, halign: 'right', valign: 'middle' },
           headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
         });

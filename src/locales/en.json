@@ -217,6 +217,8 @@
   "delete_user_confirm_description": "This action cannot be undone. This will permanently delete the user account for {{name}}.",
   "user_deleted": "User Deleted",
   "user_deleted_description": "The user account for {{name}} has been deleted.",
-  "invalid_credentials": "Invalid email or password."
+  "invalid_credentials": "Invalid email or password.",
+  "logo_updated": "Logo Updated",
+  "logo_updated_description": "Your committee logo has been successfully updated.",
+  "invalid_file_type": "Invalid file type. Please upload a PNG, JPG, or WEBP image."
 }
-

@@ -1,5 +1,7 @@
+
 'use client';
 
+import React from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   Card,
@@ -14,10 +16,43 @@ import { useTheme } from '@/context/theme-provider';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
+import { useData } from '@/context/data-provider';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SettingsPage() {
   const { t, setLanguage, lang } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const { setLogo } = useData();
+  const { toast } = useToast();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/webp")) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (typeof result === 'string') {
+          setLogo(result);
+          toast({
+            title: t('logo_updated'),
+            description: t('logo_updated_description'),
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('invalid_file_type'),
+      });
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -86,7 +121,15 @@ export default function SettingsPage() {
                   {t('upload_new_logo')}
                 </span>
               </Label>
-              <Button variant="outline">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleLogoUpload}
+                accept="image/png, image/jpeg, image/webp"
+                className="sr-only"
+                id="logo-upload-input"
+              />
+              <Button variant="outline" onClick={handleUploadClick}>
                 <Upload className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
                 {t('upload')}
               </Button>

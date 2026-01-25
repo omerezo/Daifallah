@@ -38,7 +38,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { logoBase64 } from '@/components/logo';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
@@ -52,7 +51,7 @@ const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function YearlyReportsPage() {
   const { t, dir } = useTranslation();
-  const { payments, expenses } = useData();
+  const { payments, expenses, logo } = useData();
   const { toast } = useToast();
 
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -132,12 +131,12 @@ export default function YearlyReportsPage() {
             doc.setFontSize(22);
             doc.text(t('app_name'), 105, 15, { align: 'center' });
             
-            if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
-                const imgProps = doc.getImageProperties(logoBase64);
+            if (logo && !logo.startsWith('data:image/svg')) {
+                const imgProps = doc.getImageProperties(logo);
                 const logoWidth = 25;
                 const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-                const format = logoBase64.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
-                doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
+                const format = logo.startsWith('data:image/jpeg') ? 'JPEG' : 'PNG';
+                doc.addImage(logo, format, 14, 10, logoWidth, logoHeight);
             }
         } catch (e) {
             console.warn('Could not add logo to PDF, skipping.', e);
@@ -170,10 +169,9 @@ export default function YearlyReportsPage() {
         doc.setTextColor(100, 100, 100);
         doc.text(t('total_collected_month').replace(t('month'), t('year')), startX + cardWidth - 5, startY + 8, { align: 'right' });
         doc.setFontSize(14);
-        doc.setTextColor(40, 40, 40);
-        doc.setFont('Amiri', 'bold');
-        doc.text(`${yearlyData.totalIncome.toLocaleString()} ${selectedCurrency}`, startX + cardWidth - 5, startY + 18, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
         doc.setFont('Amiri', 'normal');
+        doc.text(`${yearlyData.totalIncome.toLocaleString()} ${selectedCurrency}`, startX + cardWidth - 5, startY + 18, { align: 'right' });
 
         // Card 2: Total Expenses
         const card2X = startX + cardWidth + gap;
@@ -184,10 +182,9 @@ export default function YearlyReportsPage() {
         doc.setTextColor(100, 100, 100);
         doc.text(t('total_expenses'), card2X + cardWidth - 5, startY + 8, { align: 'right' });
         doc.setFontSize(14);
-        doc.setTextColor(40, 40, 40);
-        doc.setFont('Amiri', 'bold');
-        doc.text(`${yearlyData.totalExpenses.toLocaleString()} ${selectedCurrency}`, card2X + cardWidth - 5, startY + 18, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
         doc.setFont('Amiri', 'normal');
+        doc.text(`${yearlyData.totalExpenses.toLocaleString()} ${selectedCurrency}`, card2X + cardWidth - 5, startY + 18, { align: 'right' });
 
         // Card 3: Net Balance
         const card3X = card2X + cardWidth + gap;
@@ -198,19 +195,13 @@ export default function YearlyReportsPage() {
         doc.setTextColor(100, 100, 100);
         doc.text(t('net_balance'), card3X + cardWidth - 5, startY + 8, { align: 'right' });
         doc.setFontSize(14);
-        doc.setFont('Amiri', 'bold');
-        if (yearlyData.netBalance < 0) {
-          doc.setTextColor(220, 38, 38);
-        } else {
-          doc.setTextColor(40, 40, 40);
-        }
-        doc.text(`${yearlyData.netBalance.toLocaleString()} ${selectedCurrency}`, card3X + cardWidth - 5, startY + 18, { align: 'right' });
         doc.setFont('Amiri', 'normal');
-        doc.setTextColor(40, 40, 40);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`${yearlyData.netBalance.toLocaleString()} ${selectedCurrency}`, card3X + cardWidth - 5, startY + 18, { align: 'right' });
   
         const head = [[t('amount'), t('type'), t('description'), t('participant_name'), t('date')]];
         const body = yearlyData.allTransactions.map(tx => ([
-          `${tx.transactionType === 'Expense' ? '-' : ''}${tx.amount.toLocaleString()} ${tx.currency}`,
+          `${tx.amount.toLocaleString()} ${tx.currency}`,
           t(tx.transactionType.toLowerCase()),
           tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description,
           tx.participantName,
@@ -232,11 +223,16 @@ export default function YearlyReportsPage() {
           headStyles: { 
             fillColor: [100, 116, 139],
             textColor: [255, 255, 255], 
-            fontStyle: 'bold',
+            fontStyle: 'normal',
             halign: 'center' 
           },
           alternateRowStyles: { 
             fillColor: [245, 245, 245] 
+          },
+           didParseCell: function (data) {
+            if (data.section === 'body') {
+              data.cell.styles.textColor = [0, 0, 0];
+            }
           }
         });
   

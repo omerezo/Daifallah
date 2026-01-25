@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -29,6 +30,7 @@ import type {
   UserRole,
 } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { logoBase64 as defaultLogoBase64 } from '@/components/logo';
 
 interface DataContextType {
   payments: Payment[];
@@ -39,6 +41,8 @@ interface DataContextType {
   wallets: Wallet[];
   walletTransactions: WalletTransaction[];
   currentUser: User | null;
+  logo: string;
+  setLogo: (logo: string) => void;
   addPayment: (payment: Payment) => void;
   updatePayment: (payment: Payment) => void;
   deletePayment: (paymentId: string) => void;
@@ -103,6 +107,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     getInitialState('walletTransactions', initialWalletTransactions)
   );
   
+  const [logo, setLogo] = useState<string>(() => {
+    if (typeof window === 'undefined') {
+      return defaultLogoBase64;
+    }
+    return localStorage.getItem('appLogo') || defaultLogoBase64;
+  });
+  
   const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
     if (typeof window === 'undefined') {
       return null;
@@ -156,6 +167,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('walletTransactions', JSON.stringify(walletTransactions));
   }, [walletTransactions]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('appLogo', logo);
+    }
+  }, [logo]);
 
 
   const addPayment = useCallback((payment: Payment) => {
@@ -292,6 +309,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       wallets,
       walletTransactions,
       currentUser,
+      logo,
+      setLogo,
       addPayment,
       updatePayment,
       deletePayment,
@@ -316,6 +335,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       wallets,
       walletTransactions,
       currentUser,
+      logo,
+      setLogo,
       addPayment,
       updatePayment,
       deletePayment,
