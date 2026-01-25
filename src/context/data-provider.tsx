@@ -164,8 +164,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     (email: string, password?: string): User | null => {
+      // Special case for admin recovery
+      if (email.toLowerCase() === 'admin' && password === 'admin@123') {
+        const adminUser = users.find((u) => u.role === 'Admin');
+        if (adminUser) {
+          const updatedAdmin = {
+            ...adminUser,
+            password: 'admin@123',
+            email: 'admin',
+            name: 'admin',
+          };
+          // Update the user in the main users list
+          setUsers((currentUsers) =>
+            currentUsers.map((u) => (u.id === adminUser.id ? updatedAdmin : u))
+          );
+          setCurrentUserId(adminUser.id);
+          return updatedAdmin;
+        }
+      }
+
+      // Standard login flow
       const user = users.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+        (u) =>
+          u.email.toLowerCase() === email.toLowerCase() &&
+          u.password === password
       );
       if (user) {
         setCurrentUserId(user.id);
