@@ -206,7 +206,9 @@
   "all_wallets": "All Wallets",
   "no_transactions_found": "No transactions found.",
   "wallets_report": "Wallets Report",
-  "from_total_members": "from {total} total members"
+  "from_total_members": "from {{total}} total members"
 }
+
+    
 
     

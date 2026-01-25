@@ -206,6 +206,8 @@
   "all_wallets": "كل المحافظ",
   "no_transactions_found": "لم يتم العثور على حركات مالية.",
   "wallets_report": "تقرير المحافظ",
-  "from_total_members": "من إجمالي {total} أعضاء"
+  "from_total_members": "من إجمالي {{total}} أعضاء"
 }
+    
+
     
