@@ -247,7 +247,7 @@ export default function MonthlyReportsPage() {
           },
           alternateRowStyles: { 
             fillColor: [245, 245, 245] 
-          },
+          }
         });
   
         const fileName = `monthly-report_${t(months[selectedMonth])}_${selectedYear}.pdf`;

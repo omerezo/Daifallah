@@ -237,7 +237,7 @@ export default function YearlyReportsPage() {
           },
           alternateRowStyles: { 
             fillColor: [245, 245, 245] 
-          },
+          }
         });
   
         const fileName = `yearly-report_${selectedYear}.pdf`;
