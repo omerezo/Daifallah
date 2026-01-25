@@ -128,6 +128,11 @@ export default function YearlyReportsPage() {
         doc.setFont('Amiri');
   
         try {
+            doc.setFontSize(22);
+            doc.setFont('Amiri', 'bold');
+            doc.text(t('app_name'), 105, 15, { align: 'center' });
+            doc.setFont('Amiri', 'normal');
+            
             if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
                 const imgProps = doc.getImageProperties(logoBase64);
                 const logoWidth = 25;
@@ -141,27 +146,76 @@ export default function YearlyReportsPage() {
   
         doc.setFontSize(18);
         doc.setTextColor(40, 40, 40);
-        doc.text(`${t('yearly_reports')} - ${selectedYear}`, 195, 18, { align: 'right' });
+        doc.text(`${t('yearly_reports')} - ${selectedYear}`, 195, 28, { align: 'right' });
   
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
-        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
-        doc.text(`${t('currency')}: ${selectedCurrency}`, 195, 30, { align: 'right' });
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 34, { align: 'right' });
+        doc.text(`${t('currency')}: ${selectedCurrency}`, 195, 39, { align: 'right' });
   
         doc.setDrawColor(220, 220, 220);
-        doc.line(14, 35, 196, 35);
+        doc.line(14, 45, 196, 45);
+
+        // Summary Cards
+        const cardWidth = 58;
+        const cardHeight = 25;
+        const startX = 14;
+        const startY = 50;
+        const gap = 5;
+
+        // Card 1: Total Income
+        doc.setDrawColor(224, 224, 224);
+        doc.setFillColor(250, 250, 250);
+        doc.roundedRect(startX, startY, cardWidth, cardHeight, 3, 3, 'FD');
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(t('total_collected_month').replace(t('month'), t('year')), startX + cardWidth - 5, startY + 8, { align: 'right' });
+        doc.setFontSize(14);
+        doc.setTextColor(40, 40, 40);
+        doc.setFont('Amiri', 'bold');
+        doc.text(`${yearlyData.totalIncome.toLocaleString()} ${selectedCurrency}`, startX + cardWidth - 5, startY + 18, { align: 'right' });
+        doc.setFont('Amiri', 'normal');
+
+        // Card 2: Total Expenses
+        const card2X = startX + cardWidth + gap;
+        doc.roundedRect(card2X, startY, cardWidth, cardHeight, 3, 3, 'FD');
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(t('total_expenses'), card2X + cardWidth - 5, startY + 8, { align: 'right' });
+        doc.setFontSize(14);
+        doc.setTextColor(40, 40, 40);
+        doc.setFont('Amiri', 'bold');
+        doc.text(`${yearlyData.totalExpenses.toLocaleString()} ${selectedCurrency}`, card2X + cardWidth - 5, startY + 18, { align: 'right' });
+        doc.setFont('Amiri', 'normal');
+
+        // Card 3: Net Balance
+        const card3X = card2X + cardWidth + gap;
+        doc.roundedRect(card3X, startY, cardWidth, cardHeight, 3, 3, 'FD');
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(t('net_balance'), card3X + cardWidth - 5, startY + 8, { align: 'right' });
+        doc.setFontSize(14);
+        doc.setFont('Amiri', 'bold');
+        if (yearlyData.netBalance < 0) {
+          doc.setTextColor(220, 38, 38);
+        } else {
+          doc.setTextColor(40, 40, 40);
+        }
+        doc.text(`${yearlyData.netBalance.toLocaleString()} ${selectedCurrency}`, card3X + cardWidth - 5, startY + 18, { align: 'right' });
+        doc.setFont('Amiri', 'normal');
+        doc.setTextColor(40, 40, 40);
   
         const head = [[t('amount'), t('type'), t('description'), t('participant_name'), t('date')]];
         const body = yearlyData.allTransactions.map(tx => ([
           `${tx.transactionType === 'Expense' ? '-' : ''}${tx.amount.toLocaleString()} ${tx.currency}`,
           t(tx.transactionType.toLowerCase()),
-          tx.transactionType === 'Income' ? `${t('payment_for')} ${tx.paymentFor}` : tx.description,
+          tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description,
           tx.participantName,
-          tx.date
+          new Date(tx.date).toLocaleDateString()
         ]));
   
         autoTable(doc, {
-          startY: 40,
+          startY: startY + cardHeight + 10,
           head: head,
           body: body,
           theme: 'grid',
@@ -173,7 +227,7 @@ export default function YearlyReportsPage() {
             valign: 'middle'
           },
           headStyles: { 
-            fillColor: [36, 36, 36], 
+            fillColor: [100, 116, 139],
             textColor: [255, 255, 255], 
             fontStyle: 'bold',
             halign: 'right' 
@@ -348,7 +402,7 @@ export default function YearlyReportsPage() {
                     <TableBody>
                         {yearlyData.allTransactions.length > 0 ? yearlyData.allTransactions.map((tx) => (
                             <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { timeZone: 'UTC' })}</TableCell>
+                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString()}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
                                 <TableCell>{tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description}</TableCell>
                                 <TableCell>

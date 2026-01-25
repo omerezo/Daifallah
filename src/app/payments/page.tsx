@@ -125,8 +125,6 @@ export default function PaymentsPage() {
   
       const doc = new jsPDF("p", "mm", "a4");
   
-      // 1. FETCH THE ARABIC FONT FROM PUBLIC FOLDER
-      // We fetch the file, convert it to Base64 on the fly, and register it.
       const fontResponse = await fetch("/fonts/Amiri-Regular.ttf");
       if (!fontResponse.ok) throw new Error("Failed to load Arabic font");
       
@@ -137,19 +135,20 @@ export default function PaymentsPage() {
       reader.onloadend = () => {
         const base64Font = (reader.result as string).split(",")[1];
   
-        // Add font to PDF
         doc.addFileToVFS("Amiri-Regular.ttf", base64Font);
         doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
-        doc.setFont("Amiri"); // Activate the font
+        doc.setFont("Amiri");
   
-        // 2. PROFESSIONAL HEADER
         try {
-            // jsPDF does not support SVG. We skip it to avoid a crash.
+            doc.setFontSize(22);
+            doc.setFont('Amiri', 'bold');
+            doc.text(t('app_name'), 105, 15, { align: 'center' });
+            doc.setFont('Amiri', 'normal');
+
             if (logoBase64 && !logoBase64.startsWith("data:image/svg")) {
                 const imgProps = doc.getImageProperties(logoBase64);
                 const logoWidth = 25;
                 const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-                // Determine format, defaulting to PNG
                 const format = logoBase64.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
                 doc.addImage(logoBase64, format, 14, 10, logoWidth, logoHeight);
             }
@@ -157,22 +156,18 @@ export default function PaymentsPage() {
             console.warn("Could not add logo to PDF, skipping.", e);
         }
   
-        // Add Title (Right Aligned)
         doc.setFontSize(18);
         doc.setTextColor(40, 40, 40);
-        doc.text(t("payments_report"), 195, 18, { align: "right" });
+        doc.text(t("payments_report"), 195, 28, { align: "right" });
   
-        // Add Date & Details
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
-        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: "right" });
-        doc.text(`${t('generated_by')}: User Admin`, 195, 30, { align: "right" });
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 34, { align: "right" });
+        doc.text(`${t('generated_by')}: User Admin`, 195, 39, { align: "right" });
   
-        // Add Separator Line
         doc.setDrawColor(220, 220, 220);
-        doc.line(14, 35, 196, 35);
+        doc.line(14, 45, 196, 45);
   
-        // 3. DEFINE COLUMNS AND DATA
         let head: any[] = [];
         let body: any[] = [];
   
@@ -208,9 +203,8 @@ export default function PaymentsPage() {
           ]));
         }
   
-        // 4. GENERATE TABLE
         autoTable(doc, {
-          startY: 40,
+          startY: 50,
           head: head,
           body: body,
           theme: 'grid',
@@ -218,11 +212,11 @@ export default function PaymentsPage() {
             font: "Amiri", 
             fontSize: 10, 
             cellPadding: 3, 
-            halign: "right", // Right align all text for Arabic
+            halign: "right",
             valign: "middle"
           },
           headStyles: { 
-            fillColor: [36, 36, 36], 
+            fillColor: [100, 116, 139], 
             textColor: [255, 255, 255], 
             fontStyle: 'bold',
             halign: "right" 
@@ -232,7 +226,6 @@ export default function PaymentsPage() {
           },
         });
   
-        // 5. SAVE FILE
         const fileName = filteredData.type === "payments" 
           ? `payments_${new Date().toISOString().slice(0, 10)}.pdf`
           : `unpaid_${filterMonth}_${filterYear}.pdf`;

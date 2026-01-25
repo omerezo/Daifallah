@@ -151,6 +151,11 @@ export default function ExpensesPage() {
 
         // Header
         try {
+            doc.setFontSize(22);
+            doc.setFont('Amiri', 'bold');
+            doc.text(t('app_name'), 105, 15, { align: 'center' });
+            doc.setFont('Amiri', 'normal');
+            
           if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
             const imgProps = doc.getImageProperties(logoBase64);
             const logoWidth = 25;
@@ -164,12 +169,12 @@ export default function ExpensesPage() {
 
         doc.setFontSize(18);
         doc.setTextColor(40, 40, 40);
-        doc.text(t('expenses_report'), 195, 18, { align: 'right' });
+        doc.text(t('expenses_report'), 195, 28, { align: 'right' });
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
-        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 34, { align: 'right' });
         doc.setDrawColor(220, 220, 220);
-        doc.line(14, 35, 196, 35);
+        doc.line(14, 40, 196, 40);
 
         // Table
         const head = [
@@ -184,12 +189,12 @@ export default function ExpensesPage() {
         ]);
 
         autoTable(doc, {
-          startY: 40,
+          startY: 45,
           head: head,
           body: body,
           theme: 'grid',
           styles: { font: 'Amiri', fontSize: 10, cellPadding: 3, halign: 'right', valign: 'middle' },
-          headStyles: { fillColor: [36, 36, 36], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'right' },
+          headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'right' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
         });
 

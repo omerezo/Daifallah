@@ -225,13 +225,18 @@ export default function WalletsPage() {
           const base64Font = (reader.result as string).split(',')[1];
           doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
           doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-          doc.setFont('Amiri', 'normal');
+          doc.setFont('Amiri');
         } catch (err) {
           console.warn('Arabic font failed, fallback to Helvetica:', err);
-          doc.setFont('helvetica', 'normal'); // fallback so PDF still works
+          doc.setFont('helvetica', 'normal');
         }
 
         try {
+            doc.setFontSize(22);
+            doc.setFont('Amiri', 'bold');
+            doc.text(t('app_name'), 105, 15, { align: 'center' });
+            doc.setFont('Amiri', 'normal');
+
           if (logoBase64 && !logoBase64.startsWith('data:image/svg')) {
             const imgProps = doc.getImageProperties(logoBase64);
             const logoWidth = 20;
@@ -245,12 +250,12 @@ export default function WalletsPage() {
 
         doc.setFontSize(18);
         doc.setTextColor(40, 40, 40);
-        doc.text(t('wallets_report'), 195, 18, { align: 'right' });
+        doc.text(t('wallets_report'), 195, 28, { align: 'right' });
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
-        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
+        doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 34, { align: 'right' });
         doc.setDrawColor(220, 220, 220);
-        doc.line(14, 35, 196, 35);
+        doc.line(14, 40, 196, 40);
 
         const head = [[t('amount'), t('description'), t('type'), t('wallet_name'), t('date')]];
         const body = filteredTransactions.map((tx) => {
@@ -265,7 +270,7 @@ export default function WalletsPage() {
         });
 
         autoTable(doc, {
-          startY: 40,
+          startY: 45,
           head: head,
           body: body,
           theme: 'grid',
@@ -279,7 +284,7 @@ export default function WalletsPage() {
             font: doc.getFont().fontName,
             fontStyle: 'bold',
             halign: dir === 'rtl' ? 'right' : 'left',
-            fillColor: [36, 36, 36],
+            fillColor: [100, 116, 139],
             textColor: [255, 255, 255],
           },
           alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -380,20 +385,21 @@ export default function WalletsPage() {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => openTransactionDialog(wallet, 'add')}
+                  >
+                    <ArrowUpCircle />
+                    {t('add_amount')}
+                  </Button>
+                  <Button
+                    size="sm"
                     variant="destructive"
                     className="flex-1"
                     onClick={() => openTransactionDialog(wallet, 'consume')}
                   >
-                    <ArrowDownCircle className="h-4 w-4" />
+                    <ArrowDownCircle />
                     {t('consume_amount')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => openTransactionDialog(wallet, 'add')}
-                  >
-                    <ArrowUpCircle className="h-4 w-4" />
-                    {t('add_amount')}
                   </Button>
                 </div>
               </CardContent>
