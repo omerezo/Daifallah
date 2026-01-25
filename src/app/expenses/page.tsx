@@ -192,7 +192,7 @@ export default function ExpensesPage() {
           head: head,
           body: body,
           theme: 'grid',
-          styles: { font: 'Amiri', fontSize: 10, cellPadding: 3, halign: 'right', valign: 'middle' },
+          styles: { font: 'Amiri', fontSize: 10, textColor: [40, 40, 40], cellPadding: 3, halign: 'right', valign: 'middle' },
           headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
           alternateRowStyles: { fillColor: [245, 245, 245] },
         });

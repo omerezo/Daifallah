@@ -210,6 +210,7 @@ export default function PaymentsPage() {
           styles: { 
             font: "Amiri", 
             fontSize: 10, 
+            textColor: [40, 40, 40],
             cellPadding: 3, 
             halign: "right",
             valign: "middle"
