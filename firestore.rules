@@ -13,7 +13,8 @@ service cloud.firestore {
     }
     
     function getUserRole(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+      // Safely access the role property, returning null if the doc or field doesn't exist.
+      return get(/databases/$(database)/documents/users/$(userId)).data.get('role', null);
     }
 
     function isAdmin() {
@@ -42,7 +43,7 @@ service cloud.firestore {
     match /users/{userId} {
       // Any signed-in user can read profile data, list is also open to any viewer.
       // This is necessary for resolving user names from IDs across the app.
-      allow read, list: if isViewer();
+      allow read, list: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
