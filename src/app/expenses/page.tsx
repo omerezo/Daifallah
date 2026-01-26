@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useTranslation } from '@/hooks/use-translation';
@@ -35,7 +34,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -304,10 +302,12 @@ export default function ExpensesPage() {
     
     setIsAddDialogOpen(false);
     setIsEditDialogOpen(false);
+    setEditingExpense(null);
   };
   
   const handleOpenAddDialog = () => {
     setEditingExpense(null);
+    resetForm();
     setIsAddDialogOpen(true);
   };
 
@@ -329,15 +329,15 @@ export default function ExpensesPage() {
 
   const AddEditDialog = ({ open, onOpenChange, expense }: { open: boolean, onOpenChange: (open: boolean) => void, expense: Expense | null }) => {
     useEffect(() => {
-      if (expense) {
+      if (open && expense) {
         setDescription(expense.description);
         setCategory(expense.category);
         setAmount(String(expense.amount));
         setCurrency(expense.currency);
-      } else {
+      } else if (open && !expense) {
         resetForm();
       }
-    }, [expense]);
+    }, [open, expense, resetForm]);
   
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -444,7 +444,7 @@ export default function ExpensesPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {currentUser.role !== 'Viewer' && (
+            {currentUser && currentUser.role !== 'Viewer' && (
                 <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -519,7 +519,7 @@ export default function ExpensesPage() {
                   </TableHead>
                   <TableHead className="hidden lg:table-cell">{t('recorded_by')}</TableHead>
                   <TableHead className="text-right">{t('amount')}</TableHead>
-                  {currentUser.role !== 'Viewer' && (
+                  {currentUser && currentUser.role !== 'Viewer' && (
                     <TableHead>
                       <span className="sr-only">{t('actions')}</span>
                     </TableHead>
@@ -542,7 +542,7 @@ export default function ExpensesPage() {
                     <TableCell className="text-right">
                       {expense.amount.toLocaleString()} {expense.currency}
                     </TableCell>
-                    {currentUser.role !== 'Viewer' && (
+                    {currentUser && currentUser.role !== 'Viewer' && (
                       <TableCell>
                         <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
