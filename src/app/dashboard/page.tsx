@@ -150,9 +150,12 @@ export default function DashboardPage() {
       type: 'Monthly Share' as const,
       paymentFor: `${paymentForMonth} ${paymentYear}`,
       recordedBy: currentUser.id,
-      bankTransferProof,
       remarks,
     };
+    
+    if (bankTransferProof) {
+        (newPayment as Payment).bankTransferProof = bankTransferProof;
+    }
 
     const newActivity = {
       id: `${Date.now()}`,

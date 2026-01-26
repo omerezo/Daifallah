@@ -405,7 +405,7 @@ export default function PaymentsPage() {
     }
 
     const participant = participants.find((p) => p.id === selectedParticipantId);
-    if (!participant) return;
+    if (!participant || !currentUser) return;
 
     let bankTransferProof: Payment['bankTransferProof'];
     if (bankTransferFile) {
@@ -425,16 +425,20 @@ export default function PaymentsPage() {
     const paymentForDate = new Date(paymentYear, paymentMonth, 1);
     const paymentForMonth = paymentForDate.toLocaleString('default', { month: 'long' });
 
-    const paymentData = {
+    const paymentData: Omit<Payment, 'id' | 'date'> = {
+      participantId: participant.id,
       participantName: participant.name,
       amount: parseFloat(paymentAmount),
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
       paymentFor: `${paymentForMonth} ${paymentYear}`,
-      recordedBy: 'User Admin',
-      bankTransferProof,
+      recordedBy: currentUser.id,
       remarks,
     };
+    
+    if (bankTransferProof) {
+      (paymentData as Payment).bankTransferProof = bankTransferProof;
+    }
 
     if (editingPayment) {
       updatePayment({ ...paymentData, id: editingPayment.id, date: editingPayment.date });
@@ -443,12 +447,7 @@ export default function PaymentsPage() {
         description: t('payment_updated_description'),
       });
     } else {
-      const newPayment: Payment = {
-        ...paymentData,
-        id: `PAY-${Date.now()}`,
-        date: new Date().toISOString().split('T')[0],
-      };
-      addPayment(newPayment);
+      addPayment(paymentData);
       
       const newActivity = {
         id: `${Date.now()}`,
