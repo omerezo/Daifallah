@@ -16,16 +16,16 @@ import Link from 'next/link';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { useData } from '@/context/data-provider';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
-  const { addUser } = useData();
   const [email, setEmail] = useState('admin@umma.tech');
   const [password, setPassword] = useState('admin@123');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,9 +42,10 @@ export default function LoginPage() {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           const newUserId = userCredential.user.uid;
-
-          // Add user profile to Firestore
-          addUser({ name: 'admin', email, role: 'Admin' }, newUserId);
+          
+          // Explicitly create and wait for the user document to be created
+          const userDocRef = doc(firestore, 'users', newUserId);
+          await setDoc(userDocRef, { id: newUserId, name: 'admin', email, role: 'Admin' });
           
           toast({
             title: "Admin User Created",

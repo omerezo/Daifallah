@@ -160,15 +160,12 @@ export default function ParticipantsPage() {
       return;
     }
 
-    const newParticipant: Participant = {
-      id: `P-${Date.now()}`,
+    addParticipant({
       name,
       phone,
       monthlyShare: `${shareAmount} ${shareCurrency}`,
       status: 'Active',
-    };
-
-    addParticipant(newParticipant);
+    });
 
     toast({
       title: t('participant_added'),
@@ -238,6 +235,10 @@ export default function ParticipantsPage() {
       setParticipantToDelete(null);
     }
   };
+  
+  if (!currentUser) {
+    return null; // Or a loading spinner
+  }
 
 
   return (
