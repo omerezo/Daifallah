@@ -266,5 +266,8 @@
   "save_password": "Save Password",
   "password_mismatch_error": "The new passwords do not match.",
   "invalid_current_password": "The current password you entered is incorrect.",
-  "password_updated_success": "Your password has been updated successfully."
+  "password_updated_success": "Your password has been updated successfully.",
+  "storage_quota_exceeded": "Browser storage is full. Recent changes could not be saved and may be lost on refresh. Please remove large files like receipts or documents."
 }
+
+    

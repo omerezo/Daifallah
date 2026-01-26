@@ -154,39 +154,135 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    localStorage.setItem('payments', JSON.stringify(payments));
-  }, [payments]);
+    try {
+      localStorage.setItem('payments', JSON.stringify(payments));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('storage_quota_exceeded'),
+        });
+      } else {
+        console.error('Failed to save payments to localStorage:', error);
+      }
+    }
+  }, [payments, t]);
 
   useEffect(() => {
-    localStorage.setItem('participants', JSON.stringify(participants));
-  }, [participants]);
+    try {
+      localStorage.setItem('participants', JSON.stringify(participants));
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('storage_quota_exceeded'),
+            });
+        } else {
+            console.error('Failed to save participants to localStorage:', error);
+        }
+    }
+  }, [participants, t]);
 
   useEffect(() => {
-    localStorage.setItem('expenses', JSON.stringify(expenses));
-  }, [expenses]);
+    try {
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('storage_quota_exceeded'),
+            });
+        } else {
+            console.error('Failed to save expenses to localStorage:', error);
+        }
+    }
+  }, [expenses, t]);
   
   useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
-  }, [users]);
+    try {
+        localStorage.setItem('users', JSON.stringify(users));
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('storage_quota_exceeded'),
+            });
+        } else {
+            console.error('Failed to save users to localStorage:', error);
+        }
+    }
+  }, [users, t]);
 
   useEffect(() => {
-    localStorage.setItem(
-      'recentActivities',
-      JSON.stringify(recentActivities)
-    );
-  }, [recentActivities]);
+    try {
+      localStorage.setItem(
+        'recentActivities',
+        JSON.stringify(recentActivities)
+      );
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('storage_quota_exceeded'),
+            });
+        } else {
+            console.error('Failed to save recentActivities to localStorage:', error);
+        }
+    }
+  }, [recentActivities, t]);
   
   useEffect(() => {
-    localStorage.setItem('wallets', JSON.stringify(wallets));
-  }, [wallets]);
+    try {
+        localStorage.setItem('wallets', JSON.stringify(wallets));
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('storage_quota_exceeded'),
+            });
+        } else {
+            console.error('Failed to save wallets to localStorage:', error);
+        }
+    }
+  }, [wallets, t]);
   
   useEffect(() => {
-    localStorage.setItem('walletTransactions', JSON.stringify(walletTransactions));
-  }, [walletTransactions]);
+    try {
+        localStorage.setItem('walletTransactions', JSON.stringify(walletTransactions));
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('storage_quota_exceeded'),
+            });
+        } else {
+            console.error('Failed to save walletTransactions to localStorage:', error);
+        }
+    }
+  }, [walletTransactions, t]);
   
   useEffect(() => {
-    localStorage.setItem('policyDocuments', JSON.stringify(policyDocuments));
-  }, [policyDocuments]);
+    try {
+        localStorage.setItem('policyDocuments', JSON.stringify(policyDocuments));
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('storage_quota_exceeded'),
+            });
+        } else {
+            console.error('Failed to save policyDocuments to localStorage:', error);
+        }
+    }
+  }, [policyDocuments, t]);
 
   const setAndPersistLogo = useCallback((newLogo: string) => {
     const oldLogo = localStorage.getItem('appLogo') || defaultLogoBase64;
@@ -516,3 +612,5 @@ export function useData() {
   }
   return context;
 }
+
+    
