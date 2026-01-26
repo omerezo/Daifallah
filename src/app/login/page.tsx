@@ -26,8 +26,8 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin.user@umma.tech');
-  const [password, setPassword] = useState('admin@123');
+  const [email, setEmail] = useState('founder@umma.tech');
+  const [password, setPassword] = useState('FoundingAdmin!2024');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -38,7 +38,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       // If user is not found, create a new admin user.
-      if (error.code === 'auth/user-not-found' && email === 'admin.user@umma.tech') {
+      if (error.code === 'auth/user-not-found' && email === 'founder@umma.tech') {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           const newUserId = userCredential.user.uid;
