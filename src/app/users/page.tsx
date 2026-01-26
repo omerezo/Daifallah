@@ -115,7 +115,7 @@ export default function UsersPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUserId = userCredential.user.uid;
 
-        addUser({ id: newUserId, name, email, role });
+        addUser({ name, email, role }, newUserId);
 
         toast({
           title: t('user_added'),
