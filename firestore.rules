@@ -31,6 +31,12 @@ service cloud.firestore {
         return isSignedIn(); // All signed in users can view
     }
 
+    // APP CONFIG
+    match /appConfig/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // USERS
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();

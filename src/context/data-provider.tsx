@@ -103,7 +103,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { data: policyDocumentsData, error: policyDocumentsError } = useCollection<PolicyDocument>(policyDocumentsRef);
   const policyDocuments = policyDocumentsData || [];
 
-  const logoRef = useMemoFirebase(() => firestore ? doc(firestore, 'appConfig', 'logo') : null, [firestore]);
+  const logoRef = useMemoFirebase(() => (firestore && authUser) ? doc(firestore, 'appConfig', 'logo') : null, [firestore, authUser]);
   const { data: logoData, error: logoError } = useDoc<{url: string}>(logoRef);
   const logo = logoData?.url || '';
 
@@ -112,7 +112,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const errors = [paymentsError, participantsError, expensesError, usersError, walletsError, walletTransactionsError, policyDocumentsError, logoError].filter(Boolean);
     if (errors.length > 0) {
-      const nonPermissionErrors = errors.filter(e => e && !e.message.includes('permission-denied'));
+      const nonPermissionErrors = errors.filter(e => e && !e.message.includes('permission-denied') && !e.message.includes('insufficient permissions'));
       if (nonPermissionErrors.length > 0) {
         toast({
           variant: 'destructive',
@@ -152,28 +152,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setDocumentNonBlocking(participantRef, participant, { merge: true });
   }, [firestore]);
 
-  const deleteParticipant = useCallback((participantId: string) => {
+  const deleteParticipant = useCallback(async (participantId: string) => {
       if (!firestore) return;
       
       const participantRef = doc(firestore, 'participants', participantId);
       const paymentsQuery = query(collection(firestore, 'payments'), where('participantId', '==', participantId));
 
-      // This is not atomic, but it's the best we can do with non-blocking calls client-side
-      getDocs(paymentsQuery).then(paymentsSnapshot => {
+      try {
+        const paymentsSnapshot = await getDocs(paymentsQuery);
         const batch = writeBatch(firestore);
-        batch.delete(participantRef); // Also delete the participant in the same batch
+        
         paymentsSnapshot.forEach(paymentDoc => {
           batch.delete(paymentDoc.ref);
         });
-        batch.commit().catch(e => {
-            console.error("Error batch deleting participant and payments:", e);
-            toast({ variant: 'destructive', title: "Error cleaning up data", description: e.message });
-        });
-      }).catch(e => {
-        console.error("Error finding payments to delete:", e);
-        // If we can't find payments, still try to delete the participant
-        deleteDocumentNonBlocking(participantRef);
-      });
+        batch.delete(participantRef);
+        
+        await batch.commit();
+      } catch (e: any) {
+        console.error("Error batch deleting participant and payments:", e);
+        toast({ variant: 'destructive', title: "Error cleaning up data", description: e.message });
+      }
   }, [firestore, toast]);
 
   const addExpense = useCallback((expense: Omit<Expense, 'id' | 'date'>) => {
@@ -217,29 +215,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
     addDocumentNonBlocking(collection(firestore, 'wallets'), { ...wallet, balance: 0 });
   }, [firestore]);
   
-  const addWalletTransaction = useCallback((transaction: Omit<WalletTransaction, 'id' | 'date'>) => {
+  const addWalletTransaction = useCallback(async (transaction: Omit<WalletTransaction, 'id' | 'date'>) => {
     if (!firestore) return;
-    runTransaction(firestore, async (t) => {
-      const walletRef = doc(firestore, 'wallets', transaction.walletId);
-      const walletDoc = await t.get(walletRef);
-      if (!walletDoc.exists()) {
-        throw new Error("Wallet does not exist!");
-      }
-      const walletData = walletDoc.data() as Wallet;
-      const newBalance = transaction.type === 'add'
-        ? walletData.balance + transaction.amount
-        : walletData.balance - transaction.amount;
-      
-      if (newBalance < 0) {
-        throw new Error("Insufficient funds.");
-      }
-      
-      const newTransactionRef = doc(collection(firestore, 'walletTransactions'));
-      t.set(newTransactionRef, { ...transaction, date: new Date().toISOString().split('T')[0] });
-      t.update(walletRef, { balance: newBalance });
-    }).catch(e => {
+    try {
+        await runTransaction(firestore, async (t) => {
+        const walletRef = doc(firestore, 'wallets', transaction.walletId);
+        const walletDoc = await t.get(walletRef);
+        if (!walletDoc.exists()) {
+            throw new Error("Wallet does not exist!");
+        }
+        const walletData = walletDoc.data() as Wallet;
+        const newBalance = transaction.type === 'add'
+            ? walletData.balance + transaction.amount
+            : walletData.balance - transaction.amount;
+        
+        if (newBalance < 0) {
+            throw new Error("Insufficient funds.");
+        }
+        
+        const newTransactionRef = doc(collection(firestore, 'walletTransactions'));
+        t.set(newTransactionRef, { ...transaction, date: new Date().toISOString().split('T')[0] });
+        t.update(walletRef, { balance: newBalance });
+        });
+    } catch(e: any) {
        toast({ variant: 'destructive', title: 'Transaction failed', description: e.toString() });
-    });
+    }
   }, [firestore, toast]);
 
   const updateWalletTransaction = useCallback(async (transaction: WalletTransaction) => {
