@@ -1,1 +1,1 @@
-// This file has been replaced by next.config.js to resolve a startup issue.
+// This file is intentionally left blank to resolve a configuration conflict.
