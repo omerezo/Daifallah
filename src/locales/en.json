@@ -240,6 +240,7 @@
   "details": "Details",
   "document_file": "Document File",
   "max_file_size_info": "Maximum file size: 2MB. Allowed types: PDF, DOCX, PNG, JPG.",
+  "max_image_file_size_info": "Maximum file size: 2MB. Allowed types: PNG, JPG.",
   "save_document": "Save Document",
   "document_added": "Document Added",
   "document_added_description": "Document '{{name}}' was uploaded successfully.",

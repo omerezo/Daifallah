@@ -57,6 +57,8 @@ const months = [
   'july', 'august', 'september', 'october', 'november', 'december'
 ];
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -302,11 +304,22 @@ export default function DashboardPage() {
                         id="bank-transfer"
                         type="file"
                         className="sr-only"
-                        onChange={(e) =>
-                          setBankTransferFile(
-                            e.target.files ? e.target.files[0] : null
-                          )
-                        }
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                if (file.size > MAX_FILE_SIZE) {
+                                    toast({
+                                        variant: 'destructive',
+                                        title: t('error'),
+                                        description: t('file_too_large'),
+                                    });
+                                    setBankTransferFile(null);
+                                    e.target.value = ''; // Reset file input
+                                } else {
+                                    setBankTransferFile(file);
+                                }
+                            }
+                        }}
                       />
                       <Label
                         htmlFor="bank-transfer"
@@ -319,6 +332,7 @@ export default function DashboardPage() {
                             : t('upload_file')}
                         </span>
                       </Label>
+                      <p className="text-xs text-muted-foreground mt-1">{t('max_image_file_size_info')}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-4 items-start gap-4">

@@ -240,6 +240,7 @@
   "details": "التفاصيل",
   "document_file": "ملف المستند",
   "max_file_size_info": "حجم الملف الأقصى: 2 ميجابايت. الأنواع المسموح بها: PDF, DOCX, PNG, JPG.",
+  "max_image_file_size_info": "حجم الملف الأقصى: 2 ميجابايت. الأنواع المسموح بها: PNG, JPG.",
   "save_document": "حفظ المستند",
   "document_added": "تمت إضافة المستند",
   "document_added_description": "تم رفع المستند '{{name}}' بنجاح.",
