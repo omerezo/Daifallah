@@ -17,15 +17,17 @@ import { useTranslation } from '@/hooks/use-translation';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { useData } from '@/context/data-provider';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const auth = useAuth();
   const { toast } = useToast();
+  const { addUser } = useData();
   const [email, setEmail] = useState('admin@umma.tech');
-  const [password, setPassword] = useState('password');
+  const [password, setPassword] = useState('admin@123');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -35,12 +37,39 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
-      console.error("Login failed:", error);
-      toast({
-        variant: 'destructive',
-        title: t('error'),
-        description: t('invalid_credentials'),
-      });
+      // If user is not found, create a new admin user.
+      if (error.code === 'auth/user-not-found' && email === 'admin@umma.tech') {
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const newUserId = userCredential.user.uid;
+
+          // Add user profile to Firestore
+          addUser({ name: 'admin', email, role: 'Admin' }, newUserId);
+          
+          toast({
+            title: "Admin User Created",
+            description: "The default admin user has been created. You are now being logged in.",
+          });
+          
+          // The onAuthStateChanged listener will redirect to dashboard, but we push to be safe.
+          router.push('/dashboard');
+
+        } catch (creationError: any) {
+          console.error("Admin user creation failed:", creationError);
+          toast({
+            variant: 'destructive',
+            title: t('error'),
+            description: `Could not create admin user: ${creationError.message}`,
+          });
+        }
+      } else {
+        console.error("Login failed:", error);
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('invalid_credentials'),
+        });
+      }
     } finally {
       setIsLoading(false);
     }
