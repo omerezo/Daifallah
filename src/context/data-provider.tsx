@@ -72,25 +72,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { user: authUser } = useUser();
 
   const paymentsRef = useMemoFirebase(() => firestore ? collection(firestore, 'payments') : null, [firestore]);
-  const { data: payments = [], error: paymentsError } = useCollection<Payment>(paymentsRef);
+  const { data: paymentsData, error: paymentsError } = useCollection<Payment>(paymentsRef);
+  const payments = paymentsData || [];
 
   const participantsRef = useMemoFirebase(() => firestore ? collection(firestore, 'participants') : null, [firestore]);
-  const { data: participants = [], error: participantsError } = useCollection<Participant>(participantsRef);
+  const { data: participantsData, error: participantsError } = useCollection<Participant>(participantsRef);
+  const participants = participantsData || [];
 
   const expensesRef = useMemoFirebase(() => firestore ? collection(firestore, 'expenses') : null, [firestore]);
-  const { data: expenses = [], error: expensesError } = useCollection<Expense>(expensesRef);
+  const { data: expensesData, error: expensesError } = useCollection<Expense>(expensesRef);
+  const expenses = expensesData || [];
 
   const usersRef = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
-  const { data: users = [], error: usersError } = useCollection<UserProfile>(usersRef);
+  const { data: usersData, error: usersError } = useCollection<UserProfile>(usersRef);
+  const users = usersData || [];
 
   const walletsRef = useMemoFirebase(() => firestore ? collection(firestore, 'wallets') : null, [firestore]);
-  const { data: wallets = [], error: walletsError } = useCollection<Wallet>(walletsRef);
+  const { data: walletsData, error: walletsError } = useCollection<Wallet>(walletsRef);
+  const wallets = walletsData || [];
 
   const walletTransactionsRef = useMemoFirebase(() => firestore ? collection(firestore, 'walletTransactions') : null, [firestore]);
-  const { data: walletTransactions = [], error: walletTransactionsError } = useCollection<WalletTransaction>(walletTransactionsRef);
+  const { data: walletTransactionsData, error: walletTransactionsError } = useCollection<WalletTransaction>(walletTransactionsRef);
+  const walletTransactions = walletTransactionsData || [];
 
   const policyDocumentsRef = useMemoFirebase(() => firestore ? collection(firestore, 'policyDocuments') : null, [firestore]);
-  const { data: policyDocuments = [], error: policyDocumentsError } = useCollection<PolicyDocument>(policyDocumentsRef);
+  const { data: policyDocumentsData, error: policyDocumentsError } = useCollection<PolicyDocument>(policyDocumentsRef);
+  const policyDocuments = policyDocumentsData || [];
 
   const logoRef = useMemoFirebase(() => firestore ? doc(firestore, 'appConfig', 'logo') : null, [firestore]);
   const { data: logoData, error: logoError } = useDoc<{url: string}>(logoRef);
@@ -153,12 +160,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       // Then find and delete associated payments
       getDocs(paymentsQuery).then(paymentsSnapshot => {
+        const batch = writeBatch(firestore);
         paymentsSnapshot.forEach(paymentDoc => {
-          deleteDocumentNonBlocking(doc(firestore, 'payments', paymentDoc.id));
+          batch.delete(doc(firestore, 'payments', paymentDoc.id));
+        });
+        batch.commit().catch(e => {
+            console.error("Error batch deleting payments:", e);
+            toast({ variant: 'destructive', title: "Error cleaning up payments", description: e.message });
         });
       }).catch(e => {
         console.error("Error finding payments to delete:", e);
-        toast({ variant: 'destructive', title: "Error cleaning up payments", description: e.message });
+        toast({ variant: 'destructive', title: "Error finding payments", description: e.message });
       });
   }, [firestore, toast]);
 
@@ -183,7 +195,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addUser = useCallback((user: UserProfile) => {
      if (!firestore) return;
      const userRef = doc(firestore, 'users', user.id);
-     setDocumentNonBlocking(userRef, user, {});
+     setDocumentNonBlocking(userRef, user, { merge: true });
   }, [firestore]);
   
   const updateUser = useCallback((user: UserProfile) => {
@@ -195,7 +207,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteUser = useCallback((userId: string) => {
      if (!firestore) return;
      // This only deletes the Firestore document.
-     // Deleting from Firebase Auth should be handled separately for security.
      const userRef = doc(firestore, 'users', userId);
      deleteDocumentNonBlocking(userRef);
   }, [firestore]);
@@ -223,7 +234,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
       
       const newTransactionRef = doc(collection(firestore, 'walletTransactions'));
-      t.set(newTransactionRef, { ...transaction, date: new Date().toISOString() });
+      t.set(newTransactionRef, { ...transaction, date: new Date().toISOString().split('T')[0] });
       t.update(walletRef, { balance: newBalance });
     }).catch(e => {
        toast({ variant: 'destructive', title: 'Transaction failed', description: e.toString() });
@@ -237,7 +248,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // A more robust solution would use a Cloud Function to ensure atomicity.
     const txRef = doc(firestore, 'walletTransactions', transaction.id);
     setDocumentNonBlocking(txRef, transaction, { merge: true });
-    toast({ title: 'Transaction Updated', description: 'Balance will update shortly.' });
+    toast({ title: 'Transaction Updated', description: 'Balance may need manual adjustment.' });
   }, [firestore, toast]);
 
   const deleteWalletTransaction = useCallback((transactionId: string) => {
