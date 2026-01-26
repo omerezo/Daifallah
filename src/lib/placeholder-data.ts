@@ -97,6 +97,7 @@ export const expenses: Expense[] = [
     category: 'Family Support',
     amount: 500,
     currency: 'USD',
+    recordedBy: 'Admin User',
   },
   {
     id: 'EXP-002',
@@ -105,6 +106,7 @@ export const expenses: Expense[] = [
     category: 'Medical',
     amount: 1500,
     currency: 'SAR',
+    recordedBy: 'Manager User',
   },
   {
     id: 'EXP-003',
@@ -113,6 +115,7 @@ export const expenses: Expense[] = [
     category: 'Education',
     amount: 300,
     currency: 'USD',
+    recordedBy: 'Admin User',
   },
 ];
 

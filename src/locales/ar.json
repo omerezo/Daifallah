@@ -246,5 +246,10 @@
   "delete_document_confirm": "هل أنت متأكد من رغبتك في حذف هذا المستند؟",
   "download": "تنزيل",
   "file_too_large": "حجم الملف كبير جدًا. الحجم الأقصى هو 2 ميجابايت.",
-  "uploaded_at": "تاريخ الرفع"
+  "uploaded_at": "تاريخ الرفع",
+  "expense_updated": "تم تحديث المصروف",
+  "expense_updated_description": "تم تحديث بيانات المصروف '{{description}}' بنجاح.",
+  "expense_deleted": "تم حذف المصروف",
+  "expense_deleted_description": "تم حذف المصروف '{{description}}'.",
+  "delete_expense_confirm": "هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء."
 }

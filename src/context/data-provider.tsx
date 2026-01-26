@@ -55,6 +55,8 @@ interface DataContextType {
   updateParticipant: (participant: Participant) => void;
   deleteParticipant: (participantId: string) => void;
   addExpense: (expense: Expense) => void;
+  updateExpense: (expense: Expense) => void;
+  deleteExpense: (expenseId: string) => void;
   addUser: (user: Omit<User, 'id'>) => void;
   deleteUser: (userId: string) => void;
   addWallet: (wallet: Wallet) => void;
@@ -306,6 +308,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setExpenses((prev) => [expense, ...prev]);
   }, []);
 
+  const updateExpense = useCallback((updatedExpense: Expense) => {
+    setExpenses((prev) =>
+      prev.map((e) => (e.id === updatedExpense.id ? updatedExpense : e))
+    );
+  }, []);
+
+  const deleteExpense = useCallback((expenseId: string) => {
+    setExpenses((prev) => prev.filter((e) => e.id !== expenseId));
+  }, []);
+
   const addUser = useCallback((user: Omit<User, 'id'>) => {
     const newUser = { ...user, id: `U-${Date.now()}`, password: user.password };
     setUsers((prev) => [...prev, newUser]);
@@ -441,6 +453,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateParticipant,
       deleteParticipant,
       addExpense,
+      updateExpense,
+      deleteExpense,
       addUser,
       deleteUser,
       addWallet,
@@ -472,6 +486,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateParticipant,
       deleteParticipant,
       addExpense,
+      updateExpense,
+      deleteExpense,
       addUser,
       deleteUser,
       addWallet,

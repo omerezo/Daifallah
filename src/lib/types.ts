@@ -30,6 +30,7 @@ export type Expense = {
   category: 'Family Support' | 'Medical' | 'Education' | 'Operational';
   amount: number;
   currency: 'USD' | 'SAR' | 'EGP' | 'SDG';
+  recordedBy: string;
 };
 
 export type UserRole = 'Admin' | 'Manager' | 'Collector' | 'Viewer';

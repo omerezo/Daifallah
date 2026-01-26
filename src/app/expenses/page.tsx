@@ -37,6 +37,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -49,7 +59,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Expense } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 const categories: Expense['category'][] = [
@@ -58,13 +68,23 @@ const categories: Expense['category'][] = [
   'Education',
   'Operational',
 ];
+const allYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
+const allMonths = [
+  'january', 'february', 'march', 'april', 'may', 'june', 
+  'july', 'august', 'september', 'october', 'november', 'december'
+];
+
 
 export default function ExpensesPage() {
   const { t, dir } = useTranslation();
-  const { expenses, addExpense, currentUser, logo } = useData();
+  const { expenses, users, addExpense, updateExpense, deleteExpense, currentUser, logo } = useData();
   const { toast } = useToast();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<Expense['category']>(
     'Family Support'
@@ -72,8 +92,42 @@ export default function ExpensesPage() {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<(typeof currencies)[number]>('USD');
 
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterUser, setFilterUser] = useState<string>('all');
+  const [filterMonth, setFilterMonth] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
+
+  const resetForm = useCallback(() => {
+    setDescription('');
+    setCategory('Family Support');
+    setAmount('');
+    setCurrency('USD');
+  }, []);
+
+  useEffect(() => {
+    if (editingExpense) {
+      setDescription(editingExpense.description);
+      setCategory(editingExpense.category);
+      setAmount(String(editingExpense.amount));
+      setCurrency(editingExpense.currency);
+    } else {
+        resetForm();
+    }
+  }, [editingExpense, resetForm]);
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(expense => {
+        const expenseDate = new Date(expense.date);
+        const categoryMatch = filterCategory === 'all' || expense.category === filterCategory;
+        const userMatch = filterUser === 'all' || expense.recordedBy === filterUser;
+        const monthMatch = filterMonth === 'all' || expenseDate.getMonth() === parseInt(filterMonth, 10);
+        const yearMatch = filterYear === 'all' || expenseDate.getFullYear() === parseInt(filterYear, 10);
+        return categoryMatch && userMatch && monthMatch && yearMatch;
+    });
+  }, [expenses, filterCategory, filterUser, filterMonth, filterYear]);
+
   const handleExportCSV = () => {
-    if (expenses.length === 0) {
+    if (filteredExpenses.length === 0) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -88,13 +142,15 @@ export default function ExpensesPage() {
       t('category'),
       t('amount'),
       t('currency'),
+      t('recorded_by'),
     ];
-    const data = expenses.map((e) => [
+    const data = filteredExpenses.map((e) => [
       e.date,
       e.description,
       t(e.category.toLowerCase().replace(' ', '_')),
       e.amount,
       e.currency,
+      e.recordedBy,
     ]);
 
     const csvContent = [
@@ -123,7 +179,7 @@ export default function ExpensesPage() {
   };
 
   const handleExportPDF = async () => {
-    if (expenses.length === 0) {
+    if (filteredExpenses.length === 0) {
       toast({
         variant: 'destructive',
         title: t('error'),
@@ -178,9 +234,10 @@ export default function ExpensesPage() {
 
         // Table
         const head = [
-          [t('currency'), t('amount'), t('category'), t('description'), t('date')],
+          [t('recorded_by'), t('currency'), t('amount'), t('category'), t('description'), t('date')],
         ];
-        const body = expenses.map((e) => [
+        const body = filteredExpenses.map((e) => [
+          e.recordedBy,
           e.currency,
           e.amount.toLocaleString(),
           t(e.category.toLowerCase().replace(' ', '_')),
@@ -208,7 +265,7 @@ export default function ExpensesPage() {
   };
 
 
-  const handleAddExpense = () => {
+  const handleSaveExpense = () => {
     if (!description || !amount) {
       toast({
         variant: 'destructive',
@@ -218,210 +275,327 @@ export default function ExpensesPage() {
       return;
     }
 
-    const newExpense: Expense = {
-      id: `EXP-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+    const expenseData = {
       description,
       category,
       amount: parseFloat(amount),
       currency,
+      recordedBy: currentUser!.name,
     };
 
-    addExpense(newExpense);
-
-    toast({
-      title: t('expense_added'),
-      description: t('expense_added_description', { description }),
-    });
-
-    setDescription('');
-    setCategory('Family Support');
-    setAmount('');
-    setCurrency('USD');
+    if (editingExpense) {
+        updateExpense({ ...expenseData, id: editingExpense.id, date: editingExpense.date });
+        toast({
+            title: t('expense_updated'),
+            description: t('expense_updated_description', { description }),
+        });
+    } else {
+        const newExpense: Expense = {
+            ...expenseData,
+            id: `EXP-${Date.now()}`,
+            date: new Date().toISOString().split('T')[0],
+        };
+        addExpense(newExpense);
+        toast({
+            title: t('expense_added'),
+            description: t('expense_added_description', { description }),
+        });
+    }
+    
     setIsAddDialogOpen(false);
+    setIsEditDialogOpen(false);
+  };
+  
+  const handleOpenAddDialog = () => {
+    setEditingExpense(null);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (expense: Expense) => {
+    setEditingExpense(expense);
+    setIsEditDialogOpen(true);
+  };
+  
+  const handleConfirmDelete = () => {
+    if (expenseToDelete) {
+        deleteExpense(expenseToDelete.id);
+        toast({
+            title: t('expense_deleted'),
+            description: t('expense_deleted_description', { description: expenseToDelete.description }),
+        });
+        setExpenseToDelete(null);
+    }
+  };
+
+  const AddEditDialog = ({ open, onOpenChange, expense }: { open: boolean, onOpenChange: (open: boolean) => void, expense: Expense | null }) => {
+    useEffect(() => {
+      if (expense) {
+        setDescription(expense.description);
+        setCategory(expense.category);
+        setAmount(String(expense.amount));
+        setCurrency(expense.currency);
+      } else {
+        resetForm();
+      }
+    }, [expense]);
+  
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{expense ? t('edit') : t('add_expense')}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="description" className="text-right pt-2">
+                {t('description')}
+              </Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="col-span-3"
+                placeholder={t('expense_description_placeholder')}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="category" className="text-right">
+                {t('category')}
+              </Label>
+              <Select
+                value={category}
+                onValueChange={(v) =>
+                  setCategory(v as Expense['category'])
+                }
+              >
+                <SelectTrigger id="category" className="col-span-3">
+                  <SelectValue placeholder={t('select_category')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {t(c.toLowerCase().replace(' ', '_'))}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="amount" className="text-right">
+                {t('amount')}
+              </Label>
+              <Input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="col-span-2"
+              />
+              <Select
+                value={currency}
+                onValueChange={(v) =>
+                  setCurrency(v as (typeof currencies)[number])
+                }
+              >
+                <SelectTrigger className="col-span-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveExpense}>{expense ? t('save_changes') : t('save_expense')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div className="flex items-center">
-        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
-          {t('expenses_management')}
-        </h1>
-        <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="h-8 gap-1">
-                <File className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                  {t('export')}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleExportCSV}>
-                {t('export_csv')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleExportPDF}>
-                {t('export_pdf')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {currentUser.role !== 'Viewer' && (
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8 gap-1">
-                  <PlusCircle className="h-3.5 w-3.5" />
+    <>
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex items-center">
+          <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
+            {t('expenses_management')}
+          </h1>
+          <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8 gap-1">
+                  <File className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    {t('add_expense')}
+                    {t('export')}
                   </span>
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>{t('add_expense')}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="description" className="text-right pt-2">
-                      {t('description')}
-                    </Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="col-span-3"
-                      placeholder={t('expense_description_placeholder')}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="category" className="text-right">
-                      {t('category')}
-                    </Label>
-                    <Select
-                      value={category}
-                      onValueChange={(v) =>
-                        setCategory(v as Expense['category'])
-                      }
-                    >
-                      <SelectTrigger id="category" className="col-span-3">
-                        <SelectValue placeholder={t('select_category')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {t(c.toLowerCase().replace(' ', '_'))}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                      {t('amount')}
-                    </Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="col-span-2"
-                    />
-                    <Select
-                      value={currency}
-                      onValueChange={(v) =>
-                        setCurrency(v as (typeof currencies)[number])
-                      }
-                    >
-                      <SelectTrigger className="col-span-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencies.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleAddExpense}>{t('save_expense')}</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  {t('export_csv')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  {t('export_pdf')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {currentUser.role !== 'Viewer' && (
+                <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    {t('add_expense')}
+                    </span>
+                </Button>
+            )}
+          </div>
         </div>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('all_expenses')}</CardTitle>
-          <CardDescription>
-            {t('manage_your_committee_expenses')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('date')}</TableHead>
-                <TableHead>{t('description')}</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  {t('category')}
-                </TableHead>
-                <TableHead className="text-right">{t('amount')}</TableHead>
-                {currentUser.role !== 'Viewer' && (
-                  <TableHead>
-                    <span className="sr-only">{t('actions')}</span>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('filters')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+               <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('category')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all')}</SelectItem>
+                  {categories.map(c => <SelectItem key={c} value={c}>{t(c.toLowerCase().replace(' ', '_'))}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterUser} onValueChange={setFilterUser}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('recorded_by')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all')}</SelectItem>
+                  {users.map(u => <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filterMonth} onValueChange={setFilterMonth}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('month')} />
+                  </SelectTrigger>
+                <SelectContent position="item-aligned">
+                  <SelectItem value="all">{t('all_months')}</SelectItem>
+                  {allMonths.map((m, i) => <SelectItem key={i} value={String(i)}>{t(m)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+                <Select value={filterYear} onValueChange={setFilterYear}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('year')} />
+                  </SelectTrigger>
+                <SelectContent position="item-aligned">
+                    <SelectItem value="all">{t('all_years')}</SelectItem>
+                  {allYears.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('all_expenses')}</CardTitle>
+            <CardDescription>
+              {t('manage_your_committee_expenses')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('date')}</TableHead>
+                  <TableHead>{t('description')}</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    {t('category')}
                   </TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses.map((expense) => (
-                <TableRow key={expense.id}>
-                  <TableCell>{expense.date}</TableCell>
-                  <TableCell className="font-medium">
-                    {expense.description}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <Badge variant="outline">
-                      {t(expense.category.toLowerCase().replace(' ', '_'))}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {expense.amount.toLocaleString()} {expense.currency}
-                  </TableCell>
+                  <TableHead className="hidden lg:table-cell">{t('recorded_by')}</TableHead>
+                  <TableHead className="text-right">{t('amount')}</TableHead>
                   {currentUser.role !== 'Viewer' && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">{t('toggle_menu')}</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                          <DropdownMenuItem>{t('edit')}</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            {t('delete')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    <TableHead>
+                      <span className="sr-only">{t('actions')}</span>
+                    </TableHead>
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              </TableHeader>
+              <TableBody>
+                {filteredExpenses.map((expense) => (
+                  <TableRow key={expense.id}>
+                    <TableCell>{expense.date}</TableCell>
+                    <TableCell className="font-medium">
+                      {expense.description}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge variant="outline">
+                        {t(expense.category.toLowerCase().replace(' ', '_'))}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">{expense.recordedBy}</TableCell>
+                    <TableCell className="text-right">
+                      {expense.amount.toLocaleString()} {expense.currency}
+                    </TableCell>
+                    {currentUser.role !== 'Viewer' && (
+                      <TableCell>
+                        <DropdownMenu modal={false}>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">{t('toggle_menu')}</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
+                            <DropdownMenuItem onSelect={() => handleOpenEditDialog(expense)}>{t('edit')}</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                                className="text-destructive"
+                                onSelect={() => setExpenseToDelete(expense)}
+                            >
+                              {t('delete')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      <AddEditDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} expense={null} />
+      <AddEditDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} expense={editingExpense} />
+
+      <AlertDialog open={!!expenseToDelete} onOpenChange={(isOpen) => !isOpen && setExpenseToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {t('delete_expense_confirm')}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete}>
+                {t('delete')}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
