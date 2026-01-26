@@ -38,8 +38,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { useToast } from '@/hooks/use-toast';
 
 const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
@@ -111,6 +109,9 @@ export default function YearlyReportsPage() {
   
       toast({ title: t('export'), description: t('preparing_pdf') });
   
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
       const doc = new jsPDF('p', 'mm', 'a4');
   
       const fontResponse = await fetch('/fonts/Amiri-Regular.ttf');

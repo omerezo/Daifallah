@@ -53,8 +53,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { Wallet, WalletTransaction } from '@/lib/types';
 import { useState, useMemo } from 'react';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
@@ -343,6 +341,10 @@ export default function WalletsPage() {
     }
 
     toast({ title: t('export'), description: t('preparing_pdf') });
+    
+    const { default: jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
     const doc = new jsPDF('p', 'mm', 'a4');
 
     try {

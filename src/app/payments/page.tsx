@@ -59,9 +59,6 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 const allYears = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 3 - i);
@@ -122,6 +119,9 @@ export default function PaymentsPage() {
       }
   
       toast({ title: t("export"), description: t("preparing_pdf") ?? "Preparing PDF..." });
+      
+      const { default: jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
   
       const doc = new jsPDF("p", "mm", "a4");
   
