@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -34,7 +34,26 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // After successful login, check if the user profile exists in Firestore.
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // If the profile doesn't exist, create it. This handles cases where
+        // the auth user was created but the firestore doc creation failed previously.
+        // We'll be charitable and create it here, assuming they are the default admin.
+        if (email === 'first.admin@umma.tech') {
+            await setDoc(userDocRef, { id: user.uid, name: 'Founding Admin', email, role: 'Admin' });
+            toast({
+                title: "Admin Profile Restored",
+                description: "Your admin profile was missing and has been restored. Logging you in.",
+            });
+        }
+      }
+
       router.push('/dashboard');
     } catch (error: any) {
       // If user is not found, this is likely the first login. Create an admin user.
@@ -72,7 +91,6 @@ export default function LoginPage() {
           }
         }
       } else {
-        console.error("Login failed:", error.code, error.message);
         toast({
           variant: 'destructive',
           title: t('error'),
