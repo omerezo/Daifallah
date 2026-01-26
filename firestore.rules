@@ -3,94 +3,47 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for concise, reusable logic.
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    function getUserRole(userId) {
-      // Safely access the role property, returning null if the doc or field doesn't exist.
-      return get(/databases/$(database)/documents/users/$(userId)).data.get('role', null);
-    }
-
-    function isAdmin() {
-      return isSignedIn() && getUserRole(request.auth.uid) == 'Admin';
-    }
-
-    function isManager() {
-      return isSignedIn() && (getUserRole(request.auth.uid) == 'Manager' || isAdmin());
-    }
-
-    function isCollector() {
-        return isSignedIn() && (getUserRole(request.auth.uid) == 'Collector' || isManager());
-    }
-    
-    function isViewer() {
-        return isSignedIn(); // All signed in users can view
-    }
-
-    // APP CONFIG
+    // Allow public read for app configuration like the logo
     match /appConfig/{configId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSignedIn(); // Only signed-in users can change config
     }
 
-    // USERS
+    // Allow signed-in users to manage their own profile and read others'
     match /users/{userId} {
-      // Any signed-in user can read profile data, list is also open to any viewer.
-      // This is necessary for resolving user names from IDs across the app.
       allow read, list: if isSignedIn();
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow create: if request.auth.uid == userId; // User can create their own profile
+      allow update: if request.auth.uid == userId; // User can update their own profile
+      allow delete: if isSignedIn(); // Any signed-in user can delete another for now
     }
 
-    // PARTICIPANTS
+    // Allow any signed-in user full access to the main data collections
     match /participants/{participantId} {
-      allow read: if isViewer();
-      allow list: if isViewer();
-      allow create: if isCollector();
-      allow update: if isCollector();
-      allow delete: if isAdmin();
+      allow read, write: if isSignedIn();
     }
     
-    // PAYMENTS
     match /payments/{paymentId} {
-        allow read, list: if isViewer();
-        allow create: if isCollector() && request.resource.data.recordedBy == request.auth.uid;
-        allow update: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isManager();
-        allow delete: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isAdmin();
+        allow read, write: if isSignedIn();
     }
 
-    // EXPENSES
     match /expenses/{expenseId} {
-        allow read, list: if isViewer();
-        allow create: if isCollector() && request.resource.data.recordedBy == request.auth.uid;
-        allow update: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isManager();
-        allow delete: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isAdmin();
+        allow read, write: if isSignedIn();
     }
     
-    // WALLETS
     match /wallets/{walletId} {
-        allow read, list: if isManager();
-        allow create, update, delete: if isAdmin();
+        allow read, write: if isSignedIn();
     }
 
-    // WALLET TRANSACTIONS
     match /walletTransactions/{transactionId} {
-        allow read, list: if isManager();
-        allow create: if isManager();
-        allow update, delete: if isAdmin();
+        allow read, write: if isSignedIn();
     }
 
-    // POLICY DOCUMENTS
     match /policyDocuments/{documentId} {
-        allow read, list: if isViewer();
-        allow create, delete: if isAdmin();
+        allow read, write: if isSignedIn();
     }
   }
 }
