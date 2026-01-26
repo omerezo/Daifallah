@@ -26,7 +26,7 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin@umma.tech');
+  const [email, setEmail] = useState('admin.user@umma.tech');
   const [password, setPassword] = useState('admin@123');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,14 +38,14 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       // If user is not found, create a new admin user.
-      if (error.code === 'auth/user-not-found' && email === 'admin@umma.tech') {
+      if (error.code === 'auth/user-not-found' && email === 'admin.user@umma.tech') {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           const newUserId = userCredential.user.uid;
           
           // Explicitly create and wait for the user document to be created
           const userDocRef = doc(firestore, 'users', newUserId);
-          await setDoc(userDocRef, { id: newUserId, name: 'admin', email, role: 'Admin' });
+          await setDoc(userDocRef, { id: newUserId, name: 'Admin', email, role: 'Admin' });
           
           toast({
             title: "Admin User Created",
@@ -55,7 +55,8 @@ export default function LoginPage() {
           // The onAuthStateChanged listener will redirect to dashboard, but we push to be safe.
           router.push('/dashboard');
 
-        } catch (creationError: any) {
+        } catch (creationError: any)
+          {
           console.error("Admin user creation failed:", creationError);
           toast({
             variant: 'destructive',
