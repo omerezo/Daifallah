@@ -551,7 +551,7 @@ export default function WalletsPage() {
                   <p className="text-2xl font-bold">{wallet.balance.toLocaleString()} {wallet.currency}</p>
                 </div>
                 {currentUser.role !== 'Viewer' && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm"
                       variant="outline"
