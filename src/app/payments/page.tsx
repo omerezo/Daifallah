@@ -70,7 +70,7 @@ const allMonths = [
 export default function PaymentsPage() {
   const { t, dir } = useTranslation();
   const { toast } = useToast();
-  const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity, logo } = useData();
+  const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity, logo, currentUser } = useData();
 
   // Dialog states
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -543,12 +543,14 @@ export default function PaymentsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                {t('add_payment')}
-              </span>
-            </Button>
+            {currentUser && currentUser.role !== 'Viewer' && (
+              <Button size="sm" className="h-8 gap-1" onClick={handleOpenAddDialog}>
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                  {t('add_payment')}
+                </span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -678,26 +680,30 @@ export default function PaymentsPage() {
                               >
                                 {t('generate_receipt')}
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  setTimeout(() => {
-                                    handleOpenEditDialog(payment);
-                                  }, 100);
-                                }}
-                              >
-                                {t('edit')}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onSelect={() => {
-                                  setTimeout(() => {
-                                    setPaymentToDelete(payment);
-                                  }, 100); 
-                                }}
-                              >
-                                {t('delete')}
-                              </DropdownMenuItem>
+                              {currentUser && currentUser.role !== 'Viewer' && (
+                                <>
+                                  <DropdownMenuItem
+                                    onSelect={() => {
+                                      setTimeout(() => {
+                                        handleOpenEditDialog(payment);
+                                      }, 100);
+                                    }}
+                                  >
+                                    {t('edit')}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onSelect={() => {
+                                      setTimeout(() => {
+                                        setPaymentToDelete(payment);
+                                      }, 100); 
+                                    }}
+                                  >
+                                    {t('delete')}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
