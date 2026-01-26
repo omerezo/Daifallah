@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   Card,
@@ -9,12 +9,14 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useTheme } from '@/context/theme-provider';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Upload } from 'lucide-react';
 import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -22,9 +24,13 @@ import { useToast } from '@/hooks/use-toast';
 export default function SettingsPage() {
   const { t, setLanguage, lang } = useTranslation();
   const { theme, setTheme } = useTheme();
-  const { setLogo } = useData();
+  const { setLogo, currentUser, updateUser } = useData();
   const { toast } = useToast();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -48,6 +54,44 @@ export default function SettingsPage() {
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handlePasswordChange = () => {
+    if (!currentUser) return;
+
+    if (currentUser.password !== currentPassword) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('invalid_current_password'),
+      });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('password_mismatch_error'),
+      });
+      return;
+    }
+    if (!newPassword) {
+        toast({
+            variant: 'destructive',
+            title: t('error'),
+            description: t('fill_all_fields')
+        });
+        return;
+    }
+
+    updateUser({ ...currentUser, password: newPassword });
+    toast({
+      title: t('password_updated_success'),
+    });
+
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
   };
 
   return (
@@ -102,6 +146,45 @@ export default function SettingsPage() {
               </RadioGroup>
             </div>
           </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('security')}</CardTitle>
+            <CardDescription>{t('manage_your_password')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">{t('current_password')}</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">{t('new_password')}</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-new-password">{t('confirm_new_password')}</Label>
+              <Input
+                id="confirm-new-password"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={handlePasswordChange}>{t('save_password')}</Button>
+          </CardFooter>
         </Card>
 
         <Card>

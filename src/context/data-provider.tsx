@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -58,6 +59,7 @@ interface DataContextType {
   updateExpense: (expense: Expense) => void;
   deleteExpense: (expenseId: string) => void;
   addUser: (user: Omit<User, 'id'>) => void;
+  updateUser: (user: User) => void;
   deleteUser: (userId: string) => void;
   addWallet: (wallet: Wallet) => void;
   addWalletTransaction: (transaction: Omit<WalletTransaction, 'id' | 'date'>) => void;
@@ -187,31 +189,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [policyDocuments]);
 
   const setAndPersistLogo = useCallback((newLogo: string) => {
+    const oldLogo = localStorage.getItem('appLogo') || defaultLogoBase64;
     setLogo(newLogo);
-
-    if (typeof window !== 'undefined') {
-      try {
+    try {
         localStorage.setItem('appLogo', newLogo);
         toast({
           title: t('logo_updated'),
           description: t('logo_updated_description'),
         });
-      } catch (error) {
+    } catch (error) {
         if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-          console.error("Failed to save logo to localStorage: Quota exceeded. The logo will not be persisted.");
-          
-          const oldLogo = localStorage.getItem('appLogo') || defaultLogoBase64;
-          setLogo(oldLogo);
-          
-          toast({
-            variant: 'destructive',
-            title: t('error'),
-            description: t('logo_too_large_description'),
-          });
+            setLogo(oldLogo); // Revert to old logo if new one is too big
+            localStorage.setItem('appLogo', oldLogo); // Ensure localStorage is consistent
+            toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: t('logo_too_large_description'),
+            });
         } else {
-          console.error("Failed to save logo to localStorage:", error);
+            console.error("Failed to save logo to localStorage:", error);
         }
-      }
     }
   }, [t]);
 
@@ -321,6 +318,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addUser = useCallback((user: Omit<User, 'id'>) => {
     const newUser = { ...user, id: `U-${Date.now()}`, password: user.password };
     setUsers((prev) => [...prev, newUser]);
+  }, []);
+
+  const updateUser = useCallback((updatedUser: User) => {
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
+    );
   }, []);
 
   const deleteUser = useCallback((userId: string) => {
@@ -456,6 +459,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateExpense,
       deleteExpense,
       addUser,
+      updateUser,
       deleteUser,
       addWallet,
       addWalletTransaction,
@@ -489,6 +493,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateExpense,
       deleteExpense,
       addUser,
+      updateUser,
       deleteUser,
       addWallet,
       addWalletTransaction,

@@ -253,5 +253,18 @@
   "expense_updated_description": "تم تحديث بيانات المصروف '{{description}}' بنجاح.",
   "expense_deleted": "تم حذف المصروف",
   "expense_deleted_description": "تم حذف المصروف '{{description}}'.",
-  "delete_expense_confirm": "هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء."
+  "delete_expense_confirm": "هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.",
+  "edit_user": "تعديل المستخدم",
+  "edit_user_description": "تعديل تفاصيل المستخدم وأذوناته.",
+  "user_updated": "تم تحديث المستخدم",
+  "user_updated_description": "تم تحديث تفاصيل {{name}} بنجاح.",
+  "security": "الأمان",
+  "manage_your_password": "إدارة كلمة المرور الخاصة بك.",
+  "current_password": "كلمة المرور الحالية",
+  "new_password": "كلمة المرور الجديدة",
+  "confirm_new_password": "تأكيد كلمة المرور الجديدة",
+  "save_password": "حفظ كلمة المرور",
+  "password_mismatch_error": "كلمتا المرور الجديدتان غير متطابقتين.",
+  "invalid_current_password": "كلمة المرور الحالية غير صحيحة.",
+  "password_updated_success": "تم تحديث كلمة المرور بنجاح."
 }

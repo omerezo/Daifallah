@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/use-translation';
 import {
   Card,
@@ -38,7 +39,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Dialog,
@@ -65,16 +65,40 @@ const roles: UserRole[] = ['Admin', 'Manager', 'Collector', 'Viewer'];
 
 export default function UsersPage() {
   const { t } = useTranslation();
-  const { currentUser, users, addUser, deleteUser } = useData();
+  const { currentUser, users, addUser, updateUser, deleteUser } = useData();
   const { toast } = useToast();
 
+  // Add User State
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>('Viewer');
 
+  // Edit User State
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState<UserRole>('Viewer');
+
+  // Delete User State
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (editingUser) {
+      setEditName(editingUser.name);
+      setEditEmail(editingUser.email);
+      setEditPassword(editingUser.password || '');
+      setEditRole(editingUser.role);
+    } else {
+      setEditName('');
+      setEditEmail('');
+      setEditPassword('');
+      setEditRole('Viewer');
+    }
+  }, [editingUser]);
 
   const handleAddUser = () => {
     if (!name || !email || !password) {
@@ -99,10 +123,54 @@ export default function UsersPage() {
     setRole('Viewer');
     setIsAddUserOpen(false);
   };
+  
+  const handleOpenEditDialog = (user: User) => {
+    setEditingUser(user);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = () => {
+    if (!editingUser || !editName || !editEmail) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('fill_all_fields'),
+      });
+      return;
+    }
+    
+    // Don't allow an admin to demote the last remaining admin
+    const adminCount = users.filter(u => u.role === 'Admin').length;
+    if (currentUser?.id === editingUser.id && editingUser.role === 'Admin' && editRole !== 'Admin' && adminCount <= 1) {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: "You cannot demote the last admin account.",
+        });
+        return;
+    }
+
+    updateUser({
+      ...editingUser,
+      name: editName,
+      email: editEmail,
+      password: editPassword,
+      role: editRole,
+    });
+    
+    toast({
+        title: t('user_updated'),
+        description: t('user_updated_description', {name: editName})
+    });
+    
+    setIsEditDialogOpen(false);
+    setEditingUser(null);
+  };
+
 
   const handleConfirmDelete = () => {
     if (userToDelete) {
-      if (userToDelete.id === currentUser.id) {
+      if (userToDelete.id === currentUser?.id) {
         toast({
           variant: 'destructive',
           title: t('error'),
@@ -131,7 +199,7 @@ export default function UsersPage() {
             {t('user_management')}
           </h1>
           <div className="ltr:ml-auto rtl:mr-auto flex items-center gap-2">
-            {currentUser.role === 'Admin' && (
+            {currentUser?.role === 'Admin' && (
               <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="h-8 gap-1">
@@ -227,7 +295,7 @@ export default function UsersPage() {
                     {t('email')}
                   </TableHead>
                   <TableHead>{t('role')}</TableHead>
-                  {currentUser.role === 'Admin' && (
+                  {currentUser?.role === 'Admin' && (
                     <TableHead>
                       <span className="sr-only">{t('actions')}</span>
                     </TableHead>
@@ -246,7 +314,7 @@ export default function UsersPage() {
                         {t(user.role.toLowerCase())}
                       </Badge>
                     </TableCell>
-                    {currentUser.role === 'Admin' && (
+                    {currentUser?.role === 'Admin' && (
                       <TableCell>
                         <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
@@ -263,13 +331,14 @@ export default function UsersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>{t('actions')}</DropdownMenuLabel>
-                            <DropdownMenuItem disabled>
-                              {t('edit_role')}
+                            <DropdownMenuItem onSelect={() => handleOpenEditDialog(user)}>
+                              {t('edit')}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-destructive"
                               onSelect={() => setUserToDelete(user)}
+                              disabled={user.id === currentUser?.id}
                             >
                               {t('delete_user')}
                             </DropdownMenuItem>
@@ -283,7 +352,7 @@ export default function UsersPage() {
             </Table>
           </CardContent>
         </Card>
-        {currentUser.role === 'Admin' && (
+        {currentUser?.role === 'Admin' && (
           <Card className="border-destructive">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-destructive">
@@ -328,6 +397,52 @@ export default function UsersPage() {
           </Card>
         )}
       </div>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(isOpen) => {
+          setIsEditDialogOpen(isOpen);
+          if (!isOpen) setEditingUser(null);
+      }}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{t('edit_user')}</DialogTitle>
+                <DialogDescription>{t('edit_user_description')}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right" htmlFor="edit-name">{t('name')}</Label>
+                <Input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right" htmlFor="edit-email">{t('email')}</Label>
+                <Input id="edit-email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right" htmlFor="edit-password">{t('password')}</Label>
+                <Input id="edit-password" type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="col-span-3" placeholder="Enter new password or leave blank" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right" htmlFor="edit-role">{t('user_role')}</Label>
+                <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
+                    <SelectTrigger id="edit-role" className="col-span-3">
+                        <SelectValue placeholder={t('select_role')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {roles.map((r) => (
+                        <SelectItem key={r} value={r} disabled={r === 'Admin' && currentUser?.id !== editingUser?.id && currentUser?.role !== 'Admin'}>
+                            {t(r.toLowerCase())}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            </div>
+            <DialogFooter>
+                <Button onClick={handleUpdateUser}>{t('save_changes')}</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <AlertDialog
         open={!!userToDelete}
