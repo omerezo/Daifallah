@@ -26,8 +26,8 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [email, setEmail] = useState('founder@umma.tech');
-  const [password, setPassword] = useState('FoundingAdmin!2024');
+  const [email, setEmail] = useState('first.admin@umma.tech');
+  const [password, setPassword] = useState('ChangeMeLater!2024');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -37,35 +37,42 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
-      // If user is not found, create a new admin user.
-      if (error.code === 'auth/user-not-found' && email === 'founder@umma.tech') {
+      // If user is not found, this is likely the first login. Create an admin user.
+      if (error.code === 'auth/user-not-found') {
         try {
           const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           const newUserId = userCredential.user.uid;
           
-          // Explicitly create and wait for the user document to be created
           const userDocRef = doc(firestore, 'users', newUserId);
-          await setDoc(userDocRef, { id: newUserId, name: 'Admin', email, role: 'Admin' });
+          // Make sure this completes before we redirect.
+          await setDoc(userDocRef, { id: newUserId, name: 'Founding Admin', email, role: 'Admin' });
           
           toast({
             title: "Admin User Created",
             description: "The default admin user has been created. You are now being logged in.",
           });
           
-          // The onAuthStateChanged listener will redirect to dashboard, but we push to be safe.
           router.push('/dashboard');
 
-        } catch (creationError: any)
-          {
+        } catch (creationError: any) {
           console.error("Admin user creation failed:", creationError);
-          toast({
-            variant: 'destructive',
-            title: t('error'),
-            description: `Could not create admin user: ${creationError.message}`,
-          });
+          // This can happen if the user exists but the password was wrong in the first try.
+          if (creationError.code === 'auth/email-already-in-use') {
+             toast({
+                variant: 'destructive',
+                title: t('error'),
+                description: "This email is already registered, but the password was incorrect. Please try again or use 'Forgot Password'.",
+             });
+          } else {
+            toast({
+              variant: 'destructive',
+              title: 'Error during setup',
+              description: creationError.message,
+            });
+          }
         }
       } else {
-        console.error("Login failed:", error);
+        console.error("Login failed:", error.code, error.message);
         toast({
           variant: 'destructive',
           title: t('error'),
