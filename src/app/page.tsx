@@ -2,20 +2,23 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useData } from '@/context/data-provider';
+import { useUser } from '@/firebase';
 
 export default function RootPage() {
   const router = useRouter();
-  const { currentUser } = useData();
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // In a real app, you'd check auth status here.
-    if (currentUser) {
+    if (isUserLoading) {
+      // Wait until the auth state is determined
+      return;
+    }
+    if (user) {
       router.replace('/dashboard');
     } else {
       router.replace('/login');
     }
-  }, [currentUser, router]);
+  }, [user, isUserLoading, router]);
 
   // Return null or a loading spinner while the redirect happens
   return null;

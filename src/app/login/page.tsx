@@ -15,28 +15,34 @@ import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/use-translation';
 import { useRouter } from 'next/navigation';
-import { useData } from '@/context/data-provider';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { login } = useData();
+  const auth = useAuth();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin');
-  const [password, setPassword] = useState('admin@123');
+  const [email, setEmail] = useState('admin@umma.tech');
+  const [password, setPassword] = useState('password');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user = login(email, password);
-    if (user) {
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
-    } else {
+    } catch (error: any) {
+      console.error("Login failed:", error);
       toast({
         variant: 'destructive',
         title: t('error'),
         description: t('invalid_credentials'),
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -63,6 +69,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -81,10 +88,11 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full">
-              {t('login')}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? '...' : t('login')}
             </Button>
           </form>
         </CardContent>

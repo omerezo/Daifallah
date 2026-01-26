@@ -47,21 +47,37 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useData } from '@/context/data-provider';
 import { LanguageToggle } from '@/components/language-toggle';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+import { signOut } from 'firebase/auth';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { t, lang, dir } = useTranslation();
-  const { currentUser, logout } = useData();
-  const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
+  const firestore = useFirestore();
+
+  const { user: authUser, isUserLoading } = useUser();
+
+  const userDocRef = useMemoFirebase(
+    () => (firestore && authUser ? doc(firestore, 'users', authUser.uid) : null),
+    [firestore, authUser]
+  );
+  const { data: currentUser, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!isUserLoading && !authUser) {
       router.replace('/login');
     }
-  }, [currentUser, router]);
+  }, [authUser, isUserLoading, router]);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
 
   const menuItems = useMemo(
     () => [
@@ -102,8 +118,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     [t]
   );
 
-  if (!currentUser) {
+  if (isUserLoading || isProfileLoading) {
     return null; // Or a loading spinner
+  }
+  
+  if (!currentUser) {
+     if(!isUserLoading && !isProfileLoading) {
+        // This can happen if the user is authenticated but their profile document doesn't exist yet
+        // For now, we'll just show nothing. A better experience would be a "creating profile" page.
+         console.warn("No user profile found for authenticated user.");
+     }
+     return null;
   }
 
   return (
@@ -256,7 +281,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <span>{t('profile')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout}>
+                  <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
                     <span>{t('log_out')}</span>
                   </DropdownMenuItem>

@@ -141,7 +141,7 @@ export default function ExpensesPage() {
       return;
     }
     const headers = [t('date'), t('description'), t('category'), t('amount'), t('currency'), t('recorded_by')];
-    const data = filteredExpenses.map((e) => [e.date, e.description, t(e.category.toLowerCase().replace(' ', '_')), e.amount, e.currency, e.recordedBy]);
+    const data = filteredExpenses.map((e) => [e.date, e.description, t(e.category.toLowerCase().replace(' ', '_')), e.amount, e.currency, users.find(u=>u.id === e.recordedBy)?.name || e.recordedBy]);
     const csvContent = [headers.join(','), ...data.map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(','))].join('\n');
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -197,7 +197,7 @@ export default function ExpensesPage() {
         doc.setDrawColor(220, 220, 220);
         doc.line(14, 40, 196, 40);
         const head = [[t('recorded_by'), t('currency'), t('amount'), t('category'), t('description'), t('date')]];
-        const body = filteredExpenses.map((e) => [e.recordedBy, e.currency, e.amount.toLocaleString(), t(e.category.toLowerCase().replace(' ', '_')), e.description, e.date]);
+        const body = filteredExpenses.map((e) => [users.find(u=>u.id === e.recordedBy)?.name || e.recordedBy, e.currency, e.amount.toLocaleString(), t(e.category.toLowerCase().replace(' ', '_')), e.description, e.date]);
         autoTable(doc, { startY: 45, head, body, theme: 'grid', styles: { font: 'Amiri', fontSize: 10, textColor: [0, 0, 0], cellPadding: 3, halign: 'right', valign: 'middle' }, headStyles: { fillColor: [100, 116, 139], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, alternateRowStyles: { fillColor: [245, 245, 245] } });
         doc.save('expenses.pdf');
         toast({ title: t('export_successful'), description: t('pdf_download_description') });
@@ -209,17 +209,16 @@ export default function ExpensesPage() {
   };
 
   const handleSaveExpense = () => {
-    if (!description || !amount) {
+    if (!description || !amount || !currentUser) {
       toast({ variant: 'destructive', title: t('error'), description: t('fill_all_fields') });
       return;
     }
-    const expenseData = { description, category, amount: parseFloat(amount), currency, recordedBy: currentUser!.name };
+    const expenseData = { description, category, amount: parseFloat(amount), currency, recordedBy: currentUser.id };
     if (editingExpense) {
         updateExpense({ ...expenseData, id: editingExpense.id, date: editingExpense.date });
         toast({ title: t('expense_updated'), description: t('expense_updated_description', { description }) });
     } else {
-        const newExpense: Expense = { ...expenseData, id: `EXP-${Date.now()}`, date: new Date().toISOString().split('T')[0] };
-        addExpense(newExpense);
+        addExpense(expenseData);
         toast({ title: t('expense_added'), description: t('expense_added_description', { description }) });
     }
     handleDialogChange(false);
@@ -232,6 +231,10 @@ export default function ExpensesPage() {
         setExpenseToDelete(null);
     }
   };
+
+  if (!currentUser) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <>
@@ -287,7 +290,7 @@ export default function ExpensesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('all_users')}</SelectItem>
-                  {users.map(u => <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>)}
+                  {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filterMonth} onValueChange={setFilterMonth}>
@@ -339,7 +342,7 @@ export default function ExpensesPage() {
                     <TableCell className="hidden md:table-cell">
                       <Badge variant="outline">{t(expense.category.toLowerCase().replace(' ', '_'))}</Badge>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{expense.recordedBy}</TableCell>
+                    <TableCell className="hidden md:table-cell">{users.find(u=>u.id === expense.recordedBy)?.name || expense.recordedBy}</TableCell>
                     <TableCell className="text-right">{expense.amount.toLocaleString()} {expense.currency}</TableCell>
                     {currentUser && currentUser.role !== 'Viewer' && (
                       <TableCell>

@@ -1,146 +1,87 @@
-/**
- * @file firestore.rules
- * @description Security rules for the UmmaTech Aid Firestore database.
- *
- * ## Core Philosophy
- * This ruleset implements a hybrid security model that combines strict user-ownership with role-based access control (RBAC) for administrative functions. The primary goal is to ensure that users can only access and manage their own data, while granting privileged administrators the necessary read and write access to shared data.
- *
- * ## Data Structure
- * - /userProfiles/{userId}: The root for all user-specific data. Each user has a profile document.
- * - /userProfiles/{userId}/payments/{paymentId}: A subcollection containing payment records created by the user. Access is tied to the parent user profile.
- * - /userProfiles/{userId}/expenses/{expenseId}: A subcollection containing expense records created by the user. Access is also tied to the parent user profile.
- * - /participants/{participantId}: A top-level collection of charity participants, readable by all signed-in users but writable only by administrators.
- * - /roles_admin/{userId}: A special collection where the existence of a document signifies that the user is an administrator. This collection is not client-accessible.
- *
- * ## Key Security Decisions
- * - User Data Isolation: All sensitive user data (profiles, payments, expenses) is stored in a path containing the user's ID, enabling strict path-based ownership rules. Listing all users is explicitly disallowed for privacy.
- * - Admin Privileges: Admin status is determined by the existence of a document in the `/roles_admin` collection, which is a secure and performant method. Admins are granted read-only access to user data and full control over the shared `participants` collection.
- * - Secure Defaults: The default rule is to deny access. Permissions are granted explicitly for each path and operation. The `/roles_admin` collection is completely locked down from client access.
- *
- * ## Denormalization for Authorization
- * To ensure fast and secure authorization, the `recordedBy` field is denormalized onto `Payment` and `Expense` documents. On creation, this field is validated to match the authenticated user's ID, permanently linking the record to its creator.
- *
- * ## Structural Segregation
- * User-specific data (payments, expenses) is segregated into subcollections under each user's profile document. This is more secure and performant than storing all records in a single collection and filtering with a user ID, especially for list operations.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper functions for concise, reusable logic.
-
-    /**
-     * Checks if a user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's ID matches the provided userId.
-     * This is the core function for enforcing data ownership.
-     */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-
-    /**
-     * Checks if the document being accessed already exists in Firestore.
-     * Critical for securing update and delete operations.
-     */
-    function isExistingDoc() {
-      return resource != null;
+    
+    function getUserRole(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
     }
 
-    /**
-     * Checks if the authenticated user is an administrator by verifying the
-     * existence of a document in the roles_admin collection.
-     */
     function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return isSignedIn() && getUserRole(request.auth.uid) == 'Admin';
     }
 
-    /**
-     * @description Rules for a user's own profile document.
-     * @path /userProfiles/{userProfileId}
-     * @allow (create) A new user can create their own profile document if their auth UID matches the document ID.
-     * @allow (get) An authenticated user can read their own profile, and an admin can read any profile.
-     * @deny (update) A user cannot update another user's profile.
-     * @deny (list) No user, including an admin, can list all user profiles in the collection.
-     * @principle Enforces self-creation and strict ownership for user profiles, with an exception for admin reads.
-     */
-    match /userProfiles/{userProfileId} {
-      allow get: if isOwner(userProfileId) || isAdmin();
-      allow list: if false;
-      allow create: if isOwner(userProfileId) && request.resource.data.id == userProfileId;
-      allow update: if isOwner(userProfileId) && isExistingDoc() && request.resource.data.id == resource.data.id;
-      allow delete: if isOwner(userProfileId) && isExistingDoc();
-
-      /**
-       * @description Rules for a user's payment records.
-       * @path /userProfiles/{userProfileId}/payments/{paymentId}
-       * @allow (create) A user can create a payment record under their own profile.
-       * @allow (list) A user can list their own payment records.
-       * @deny (update) A user cannot update a payment record belonging to another user.
-       * @deny (delete) A user cannot delete a payment record belonging to another user.
-       * @principle Restricts access to a user's own data tree, ensuring data privacy and integrity.
-       */
-      match /payments/{paymentId} {
-        allow get: if isOwner(userProfileId) || isAdmin();
-        allow list: if isOwner(userProfileId) || isAdmin();
-        allow create: if isOwner(userProfileId) && request.resource.data.recordedBy == request.auth.uid;
-        allow update: if isOwner(userProfileId) && isExistingDoc() && request.resource.data.recordedBy == resource.data.recordedBy;
-        allow delete: if isOwner(userProfileId) && isExistingDoc();
-      }
-
-      /**
-       * @description Rules for a user's expense records.
-       * @path /userProfiles/{userProfileId}/expenses/{expenseId}
-       * @allow (create) A user can create an expense record under their own profile.
-       * @allow (list) A user can list their own expense records.
-       * @deny (get) A user cannot read an expense record belonging to another user.
-       * @deny (delete) A user cannot delete an expense record belonging to another user.
-       * @principle Restricts access to a user's own data tree, ensuring data privacy and integrity.
-       */
-      match /expenses/{expenseId} {
-        allow get: if isOwner(userProfileId) || isAdmin();
-        allow list: if isOwner(userProfileId) || isAdmin();
-        allow create: if isOwner(userProfileId) && request.resource.data.recordedBy == request.auth.uid;
-        allow update: if isOwner(userProfileId) && isExistingDoc() && request.resource.data.recordedBy == resource.data.recordedBy;
-        allow delete: if isOwner(userProfileId) && isExistingDoc();
-      }
+    function isManager() {
+      return isSignedIn() && (getUserRole(request.auth.uid) == 'Manager' || isAdmin());
     }
 
-    /**
-     * @description Rules for the shared collection of charity participants.
-     * @path /participants/{participantId}
-     * @allow (get, list) Any authenticated user can read the list of participants.
-     * @allow (create) An administrator can create a new participant document.
-     * @deny (update) A regular, non-admin user cannot modify a participant's details.
-     * @deny (delete) A regular, non-admin user cannot delete a participant.
-     * @principle Implements public read access for authenticated users, while restricting all write operations to administrators.
-     */
+    function isCollector() {
+        return isSignedIn() && (getUserRole(request.auth.uid) == 'Collector' || isManager());
+    }
+    
+    function isViewer() {
+        return isSignedIn(); // All signed in users can view
+    }
+
+    // USERS
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // PARTICIPANTS
     match /participants/{participantId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read: if isViewer();
+      allow list: if isViewer();
+      allow create: if isCollector();
+      allow update: if isCollector();
+      allow delete: if isAdmin();
+    }
+    
+    // PAYMENTS
+    match /payments/{paymentId} {
+        allow read, list: if isViewer();
+        allow create: if isCollector() && request.resource.data.recordedBy == request.auth.uid;
+        allow update: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isManager();
+        allow delete: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isAdmin();
     }
 
-    /**
-     * @description Locks down the admin roles collection from all client-side access.
-     * @path /roles_admin/{userProfileId}
-     * @allow (any) No operation is permitted.
-     * @deny (get, list, create, update, delete) All client operations are forbidden.
-     * @principle Prevents any user from reading the list of admins or modifying roles from the client. This must be managed server-side or via the Firebase console.
-     */
-    match /roles_admin/{userProfileId} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    // EXPENSES
+    match /expenses/{expenseId} {
+        allow read, list: if isViewer();
+        allow create: if isCollector() && request.resource.data.recordedBy == request.auth.uid;
+        allow update: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isManager();
+        allow delete: if (isCollector() && resource.data.recordedBy == request.auth.uid) || isAdmin();
+    }
+    
+    // WALLETS
+    match /wallets/{walletId} {
+        allow read, list: if isManager();
+        allow create, update, delete: if isAdmin();
+    }
+
+    // WALLET TRANSACTIONS
+    match /walletTransactions/{transactionId} {
+        allow read, list: if isManager();
+        allow create: if isManager();
+        allow update, delete: if isAdmin();
+    }
+
+    // POLICY DOCUMENTS
+    match /policyDocuments/{documentId} {
+        allow read, list: if isViewer();
+        allow create, delete: if isAdmin();
     }
   }
 }

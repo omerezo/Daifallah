@@ -124,7 +124,7 @@ export default function DashboardPage() {
     }
 
     const participant = participants.find((p) => p.id === selectedParticipantId);
-    if (!participant) return;
+    if (!participant || !currentUser) return;
 
     let bankTransferProof: Payment['bankTransferProof'];
     if (bankTransferFile) {
@@ -142,15 +142,14 @@ export default function DashboardPage() {
     const paymentForDate = new Date(paymentYear, paymentMonth, 1);
     const paymentForMonth = paymentForDate.toLocaleString('default', { month: 'long' });
 
-    const newPayment: Payment = {
-      id: `PAY-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
+    const newPayment: Omit<Payment, 'id' | 'date'> = {
+      participantId: participant.id,
       participantName: participant.name,
       amount: parseFloat(paymentAmount),
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
       paymentFor: `${paymentForMonth} ${paymentYear}`,
-      recordedBy: 'User Admin', // Hardcoded for now, replace with actual logged-in user
+      recordedBy: currentUser.id,
       bankTransferProof,
       remarks,
     };
@@ -183,6 +182,10 @@ export default function DashboardPage() {
     setRemarks('');
     setIsRecordPaymentOpen(false);
   };
+  
+  if (!currentUser) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">

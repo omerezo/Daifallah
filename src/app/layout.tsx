@@ -5,6 +5,8 @@ import { Providers } from '@/components/providers';
 import { Toaster } from '@/components/ui/toaster';
 import { usePathname } from 'next/navigation';
 import AppLayout from './AppLayout';
+import { FirebaseClientProvider } from '@/firebase';
+import { DataProvider } from '@/context/data-provider';
 
 export default function RootLayout({
   children,
@@ -34,10 +36,14 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
-        <Providers>
-          {isLoginPage ? children : <AppLayout>{children}</AppLayout>}
-          <Toaster />
-        </Providers>
+        <FirebaseClientProvider>
+          <DataProvider>
+            <Providers>
+              {isLoginPage ? children : <AppLayout>{children}</AppLayout>}
+              <Toaster />
+            </Providers>
+          </DataProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

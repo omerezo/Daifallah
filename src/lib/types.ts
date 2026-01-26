@@ -1,17 +1,18 @@
 export type Payment = {
   id: string;
   date: string;
+  participantId: string;
   participantName: string;
   amount: number;
   currency: 'USD' | 'SAR' | 'EGP' | 'SDG';
   type: 'Monthly Share' | 'Donation';
   paymentFor: string;
-  recordedBy: string;
+  recordedBy: string; // User ID
+  remarks?: string;
   bankTransferProof?: {
     filename: string;
     url: string;
   };
-  remarks?: string;
 };
 
 export type Participant = {
@@ -30,27 +31,26 @@ export type Expense = {
   category: 'Family Support' | 'Medical' | 'Education' | 'Operational';
   amount: number;
   currency: 'USD' | 'SAR' | 'EGP' | 'SDG';
-  recordedBy: string;
+  recordedBy: string; // User ID
 };
 
 export type UserRole = 'Admin' | 'Manager' | 'Collector' | 'Viewer';
 
-export type User = {
-  id: string;
+export type UserProfile = {
+  id: string; // Firebase Auth UID
   name: string;
   email: string;
   role: UserRole;
-  password?: string;
 };
 
 export type RecentActivity = {
-    id: string;
-    name: string;
-    email: string;
-    type: 'Payment' | 'Donation' | 'Expense';
-    status: 'Paid' | 'Processed' | 'Pending';
-    date: string;
-    amount: string;
+  id: string;
+  name: string;
+  email: string;
+  type: 'Payment' | 'Donation' | 'Expense';
+  status: 'Paid' | 'Processed' | 'Pending';
+  date: string;
+  amount: string;
 }
 
 export type Wallet = {

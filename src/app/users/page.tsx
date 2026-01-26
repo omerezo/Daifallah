@@ -60,7 +60,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { UserRole, User } from '@/lib/types';
+import type { UserRole, UserProfile } from '@/lib/types';
+import { useAuth } from '@/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const roles: UserRole[] = ['Admin', 'Manager', 'Collector', 'Viewer'];
 
@@ -68,6 +70,7 @@ export default function UsersPage() {
   const { t } = useTranslation();
   const { currentUser, users, addUser, updateUser, deleteUser } = useData();
   const { toast } = useToast();
+  const auth = useAuth();
 
   // Add User State
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -78,30 +81,27 @@ export default function UsersPage() {
 
   // Edit User State
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
-  const [editPassword, setEditPassword] = useState('');
   const [editRole, setEditRole] = useState<UserRole>('Viewer');
 
   // Delete User State
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     if (editingUser) {
       setEditName(editingUser.name);
       setEditEmail(editingUser.email);
-      setEditPassword(editingUser.password || '');
       setEditRole(editingUser.role);
     } else {
       setEditName('');
       setEditEmail('');
-      setEditPassword('');
       setEditRole('Viewer');
     }
   }, [editingUser]);
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!name || !email || !password) {
       toast({
         variant: 'destructive',
@@ -111,21 +111,32 @@ export default function UsersPage() {
       return;
     }
 
-    addUser({ name, email, role, password });
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const newUserId = userCredential.user.uid;
 
-    toast({
-      title: t('user_added'),
-      description: t('user_added_description', { name }),
-    });
+        addUser({ id: newUserId, name, email, role });
 
-    setName('');
-    setEmail('');
-    setPassword('');
-    setRole('Viewer');
-    setIsAddUserOpen(false);
+        toast({
+          title: t('user_added'),
+          description: t('user_added_description', { name }),
+        });
+
+        setName('');
+        setEmail('');
+        setPassword('');
+        setRole('Viewer');
+        setIsAddUserOpen(false);
+    } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: error.message,
+        });
+    }
   };
   
-  const handleOpenEditDialog = (user: User) => {
+  const handleOpenEditDialog = (user: UserProfile) => {
     setEditingUser(user);
     setIsEditDialogOpen(true);
   };
@@ -155,7 +166,6 @@ export default function UsersPage() {
       ...editingUser,
       name: editName,
       email: editEmail,
-      password: editPassword,
       role: editRole,
     });
     
@@ -191,6 +201,10 @@ export default function UsersPage() {
       setUserToDelete(null);
     }
   };
+
+  if (!currentUser) {
+    return null; // Or a loading spinner
+  }
 
   return (
     <>
@@ -417,10 +431,6 @@ export default function UsersPage() {
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right" htmlFor="edit-email">{t('email')}</Label>
                 <Input id="edit-email" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right" htmlFor="edit-password">{t('password')}</Label>
-                <Input id="edit-password" type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} className="col-span-3" placeholder="Enter new password or leave blank" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right" htmlFor="edit-role">{t('user_role')}</Label>
