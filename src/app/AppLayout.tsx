@@ -59,6 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
+  const pathname = usePathname();
 
   const { user: authUser, isUserLoading } = useUser();
 
@@ -75,7 +76,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [authUser, isUserLoading, router]);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    if (auth) {
+      await signOut(auth);
+    }
     router.push('/login');
   };
 
