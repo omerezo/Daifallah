@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -187,34 +186,36 @@ export default function SettingsPage() {
           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('branding')}</CardTitle>
-            <CardDescription>{t('customize_logo_branding')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="logo-upload" className="flex flex-col gap-1">
-                <span>{t('committee_logo')}</span>
-                <span className="font-normal leading-snug text-muted-foreground">
-                  {t('upload_new_logo')}
-                </span>
-              </Label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleLogoUpload}
-                accept="image/png, image/jpeg, image/webp"
-                className="sr-only"
-                id="logo-upload-input"
-              />
-              <Button variant="outline" onClick={handleUploadClick}>
-                <Upload className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
-                {t('upload')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {currentUser?.role === 'Admin' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('branding')}</CardTitle>
+              <CardDescription>{t('customize_logo_branding')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="logo-upload" className="flex flex-col gap-1">
+                  <span>{t('committee_logo')}</span>
+                  <span className="font-normal leading-snug text-muted-foreground">
+                    {t('upload_new_logo')}
+                  </span>
+                </Label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleLogoUpload}
+                  accept="image/png, image/jpeg, image/webp"
+                  className="sr-only"
+                  id="logo-upload-input"
+                />
+                <Button variant="outline" onClick={handleUploadClick}>
+                  <Upload className="ltr:mr-2 rtl:ml-2 h-4 w-4" />
+                  {t('upload')}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
