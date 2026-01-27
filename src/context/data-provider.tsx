@@ -53,7 +53,7 @@ interface DataContextType {
   deleteWalletTransaction: (transactionId: string) => Promise<void>;
   
   policyDocuments: PolicyDocument[];
-  addPolicyDocument: (doc: Omit<PolicyDocument, 'id' | 'uploadedAt' | 'file'> & { file: File }) => void;
+  addPolicyDocument: (doc: Omit<PolicyDocument, 'id' | 'uploadedAt'>) => void;
   deletePolicyDocument: (docId: string) => void;
 
   recentActivities: RecentActivity[];
@@ -326,25 +326,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
   }, [firestore, toast]);
 
-  const addPolicyDocument = useCallback((document: Omit<PolicyDocument, 'id' | 'uploadedAt' | 'file'> & { file: File }) => {
+  const addPolicyDocument = useCallback((document: Omit<PolicyDocument, 'id' | 'uploadedAt'>) => {
     if (!firestore) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const fileUrl = e.target?.result as string;
-        const newDoc = {
-            name: document.name,
-            details: document.details,
-            uploadedAt: new Date().toISOString(),
-            file: {
-                name: document.file.name,
-                url: fileUrl,
-                size: document.file.size,
-                type: document.file.type
-            }
-        }
-        addDocumentNonBlocking(collection(firestore, 'policyDocuments'), newDoc);
+    const newDoc = {
+      ...document,
+      uploadedAt: new Date().toISOString(),
     };
-    reader.readAsDataURL(document.file);
+    addDocumentNonBlocking(collection(firestore, 'policyDocuments'), newDoc);
   }, [firestore]);
 
   const deletePolicyDocument = useCallback((docId: string) => {

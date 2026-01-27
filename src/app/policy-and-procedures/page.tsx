@@ -52,7 +52,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider';
 import type { PolicyDocument } from '@/lib/types';
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 
 export default function PolicyAndProceduresPage() {
   const { t } = useTranslation();
@@ -103,8 +103,7 @@ export default function PolicyAndProceduresPage() {
     reader.onload = (e) => {
       const fileUrl = e.target?.result as string;
 
-      const newDocument: PolicyDocument = {
-        id: `DOC-${Date.now()}`,
+      const newDocument = {
         name: docName,
         details: docDetails,
         file: {
@@ -113,46 +112,17 @@ export default function PolicyAndProceduresPage() {
           size: docFile.size,
           type: docFile.type,
         },
-        uploadedAt: new Date().toISOString(),
       };
 
-      try {
-        // A pre-check to see if adding this doc would exceed quota
-        // This is a rough estimation
-        const currentStorage = JSON.stringify(localStorage);
-        if (currentStorage.length + fileUrl.length > 4.5 * 1024 * 1024) { // Leave some buffer
-             toast({
-                variant: 'destructive',
-                title: t('error'),
-                description: t('logo_too_large_description'), // Reusing this translation for storage full
-            });
-            return;
-        }
+      addPolicyDocument(newDocument);
 
-        addPolicyDocument(newDocument);
+      toast({
+        title: t('document_added'),
+        description: t('document_added_description', { name: docName }),
+      });
 
-        toast({
-          title: t('document_added'),
-          description: t('document_added_description', { name: docName }),
-        });
-
-        resetForm();
-        setIsAddDialogOpen(false);
-      } catch (error) {
-           if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-             toast({
-                variant: 'destructive',
-                title: t('error'),
-                description: t('logo_too_large_description'), // Reusing this translation
-            });
-           } else {
-             toast({
-                variant: 'destructive',
-                title: t('error'),
-                description: "An unexpected error occurred.",
-             });
-           }
-      }
+      resetForm();
+      setIsAddDialogOpen(false);
     };
     reader.readAsDataURL(docFile);
   };
