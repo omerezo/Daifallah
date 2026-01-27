@@ -162,7 +162,7 @@ export default function PaymentsPage() {
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
         doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 34, { align: "right" });
-        doc.text(`${t('generated_by')}: User Admin`, 195, 39, { align: "right" });
+        doc.text(`${t('generated_by')}: ${currentUser?.name || 'N/A'}`, 195, 39, { align: "right" });
   
         doc.setDrawColor(220, 220, 220);
         doc.line(14, 45, 196, 45);
@@ -182,16 +182,24 @@ export default function PaymentsPage() {
             t("date"),
           ]];
   
-          body = (filteredData.data as Payment[]).map(p => ([
-            p.remarks || "-",
-            t(p.type.toLowerCase()),
-            p.currency,
-            String(p.amount),
-            users.find(u => u.id === p.recordedBy)?.name || p.recordedBy,
-            p.paymentFor,
-            p.participantName,
-            p.date,
-          ]));
+          body = (filteredData.data as Payment[]).map(p => {
+              let paymentForDisplay = p.paymentFor;
+              if (p.paymentFor.includes('-')) {
+                const [year, month] = p.paymentFor.split('-').map(Number);
+                const date = new Date(Date.UTC(year, month - 1, 1));
+                paymentForDisplay = date.toLocaleString(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+              }
+              return [
+                p.remarks || "-",
+                t(p.type.toLowerCase()),
+                p.currency,
+                String(p.amount),
+                users.find(u => u.id === p.recordedBy)?.name || p.recordedBy,
+                paymentForDisplay,
+                p.participantName,
+                p.date,
+            ]
+          });
         } else if (filteredData.type === "unpaid") {
           head = [[t("status"), t("monthly_share"), t("phone"), t("name")]];
           body = (filteredData.data as Participant[]).map(p => ([
@@ -253,7 +261,15 @@ export default function PaymentsPage() {
     if (filteredData.type === 'payments') {
         const paymentData = filteredData.data as Payment[];
         headers = ['ID', t('date'), t('participant_name'), t('payment_for'), t('recorded_by'), t('amount'), t('currency'), t('type'), t('remarks')];
-        data = paymentData.map(p => [p.id, p.date, p.participantName, p.paymentFor, users.find(u => u.id === p.recordedBy)?.name || p.recordedBy, p.amount, p.currency, p.type, p.remarks || '']);
+        data = paymentData.map(p => {
+          let paymentForDisplay = p.paymentFor;
+          if (p.paymentFor.includes('-')) {
+            const [year, month] = p.paymentFor.split('-').map(Number);
+            const date = new Date(Date.UTC(year, month - 1, 1));
+            paymentForDisplay = date.toLocaleString(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+          }
+          return [p.id, p.date, p.participantName, paymentForDisplay, users.find(u => u.id === p.recordedBy)?.name || p.recordedBy, p.amount, p.currency, p.type, p.remarks || ''];
+        });
         filename = 'payments.csv';
     } else if (filteredData.type === 'unpaid') {
         const participantData = filteredData.data as Participant[];
@@ -288,6 +304,12 @@ export default function PaymentsPage() {
 
   const generateReceipt = (payment: Payment) => {
     const paidStampBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQwIDk2Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0LCA0KSI+PHJlY3Qgd2lkdGg9IjIzMiIgaGVpZ2h0PSI4OCIgc3R5bGU9ImZpbGw6bm9uZTsgc3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlOiNkNDAwMDA7IiByeD0iOCIgcnk9IjgiLz48dGV4dCB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMTYsIDYwKSIgc3R5bGU9ImZvbnQtZmFtaWx5OkFyaWFsLCBIZWx2ZXRpY2E7Zm9udC1zaXplOjQ4cHg7ZmlsbDojZDQwMDAwO2ZvbnQtd2VpZ2h0OmJvbGQ7dGV4dC1hbmNob3I6bWlkZGxlIj5QQUlEPC90ZXh0PjwvZz48L3N2Zz4=";
+    let paymentForDisplay = payment.paymentFor;
+    if (payment.paymentFor.includes('-')) {
+        const [year, month] = payment.paymentFor.split('-').map(Number);
+        const date = new Date(Date.UTC(year, month - 1, 1));
+        paymentForDisplay = date.toLocaleString(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    }
 
     const receiptContent = `
       <html>
@@ -326,7 +348,7 @@ export default function PaymentsPage() {
                 <dt>${t('participant_name')}:</dt>
                 <dd>${payment.participantName}</dd>
                 <dt>${t('payment_for')}:</dt>
-                <dd>${payment.paymentFor}</dd>
+                <dd>${paymentForDisplay}</dd>
               </div>
               <div class="amount-total">
                 <p>${t('amount')}: ${payment.amount.toLocaleString()} ${payment.currency}</p>
@@ -367,20 +389,18 @@ export default function PaymentsPage() {
     setSelectedParticipantId(participant?.id);
     setPaymentAmount(String(payment.amount));
     setPaymentCurrency(payment.currency);
-  
-    try {
-      const paymentForDate = new Date(payment.paymentFor);
-      if (!isNaN(paymentForDate.getTime())) {
-        setPaymentMonth(paymentForDate.getMonth());
-        setPaymentYear(paymentForDate.getFullYear());
-      } else {
-        throw new Error('Invalid date');
-      }
-    } catch (e) {
-      const [monthName, year] = payment.paymentFor.split(' ');
-      const monthIndex = allMonths.findIndex(m => t(m).toLowerCase() === monthName?.toLowerCase() || m === monthName?.toLowerCase());
-      if (monthIndex !== -1) setPaymentMonth(monthIndex);
-      if (year && !isNaN(Number(year))) setPaymentYear(Number(year));
+
+    if (payment.paymentFor.includes('-')) {
+        const [year, month] = payment.paymentFor.split('-').map(Number);
+        setPaymentYear(year);
+        setPaymentMonth(month - 1);
+    } else {
+        // Fallback for old "Month Year" format
+        const [monthName, yearStr] = payment.paymentFor.split(' ');
+        const year = parseInt(yearStr, 10);
+        const monthIndex = allMonths.findIndex(m => t(m).toLowerCase() === monthName?.toLowerCase());
+        if (monthIndex !== -1) setPaymentMonth(monthIndex);
+        if (year) setPaymentYear(year);
     }
     
     setRemarks(payment.remarks || '');
@@ -422,16 +442,13 @@ export default function PaymentsPage() {
         bankTransferProof = editingPayment.bankTransferProof
     }
     
-    const paymentForDate = new Date(paymentYear, paymentMonth, 1);
-    const paymentForMonth = paymentForDate.toLocaleString(lang, { month: 'long', timeZone: 'UTC' });
-
     const paymentData: Omit<Payment, 'id' | 'date'> = {
       participantId: participant.id,
       participantName: participant.name,
       amount: parseFloat(paymentAmount),
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
-      paymentFor: `${paymentForMonth} ${paymentYear}`,
+      paymentFor: `${paymentYear}-${String(paymentMonth + 1).padStart(2, '0')}`,
       recordedBy: currentUser.id,
       remarks,
     };
@@ -489,11 +506,19 @@ export default function PaymentsPage() {
         return { type: 'message', data: t('select_month_year_unpaid') };
       }
       
-      const paymentPeriod = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+      const paymentPeriod = `${year}-${String(month + 1).padStart(2, '0')}`;
       
       const paidParticipantNames = new Set(
         payments
-            .filter(p => p.paymentFor === paymentPeriod)
+            .filter(p => {
+              if (!p.paymentFor) return false;
+              if (p.paymentFor.includes('-')) {
+                return p.paymentFor === paymentPeriod;
+              }
+              // Fallback for old data
+              const paymentDate = new Date(p.paymentFor);
+              return paymentDate.getFullYear() === year && paymentDate.getMonth() === month;
+            })
             .map(p => p.participantName)
       );
 
@@ -503,11 +528,21 @@ export default function PaymentsPage() {
       return { type: 'unpaid', data: unpaid };
     } else { // view === 'payments'
         const filtered = payments.filter(payment => {
-            const paymentForDate = new Date(payment.paymentFor);
-            const paymentMonthNum = paymentForDate.getMonth();
-            const paymentYearNum = paymentForDate.getFullYear();
-            
-            const participantMatch = filterParticipant === 'all' || payment.participantName === (participants.find(p => p.id === filterParticipant)?.name);
+            let paymentMonthNum = -1;
+            let paymentYearNum = -1;
+
+            if (payment.paymentFor.includes('-')) {
+                const [year, month] = payment.paymentFor.split('-').map(Number);
+                paymentYearNum = year;
+                paymentMonthNum = month - 1;
+            } else {
+                // Fallback for old data
+                const paymentForDate = new Date(payment.paymentFor);
+                paymentMonthNum = paymentForDate.getMonth();
+                paymentYearNum = paymentForDate.getFullYear();
+            }
+
+            const participantMatch = filterParticipant === 'all' || payment.participantId === filterParticipant;
             const collectorMatch = filterCollector === 'all' || payment.recordedBy === filterCollector;
             const monthMatch = filterMonth === 'all' || paymentMonthNum === parseInt(filterMonth, 10);
             const yearMatch = filterYear === 'all' || paymentYearNum === parseInt(filterYear, 10);
@@ -584,7 +619,7 @@ export default function PaymentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('all_collectors')}</SelectItem>
-                  {users.map(u => <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>)}
+                  {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={filterMonth} onValueChange={setFilterMonth}>
@@ -643,7 +678,17 @@ export default function PaymentsPage() {
                         <TableCell className="font-medium">
                           {payment.participantName}
                         </TableCell>
-                        <TableCell>{payment.paymentFor}</TableCell>
+                        <TableCell>
+                          {(() => {
+                              if (!payment.paymentFor) return '';
+                              if (payment.paymentFor.includes('-')) {
+                                  const [year, month] = payment.paymentFor.split('-').map(Number);
+                                  const date = new Date(Date.UTC(year, month - 1, 1));
+                                  return date.toLocaleString(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+                              }
+                              return payment.paymentFor; // Fallback for old data
+                          })()}
+                        </TableCell>
                         <TableCell className="hidden md:table-cell">{users.find(u => u.id === payment.recordedBy)?.name || payment.recordedBy}</TableCell>
                         <TableCell className="text-right">{payment.amount}</TableCell>
                         <TableCell className="hidden md:table-cell">
@@ -919,5 +964,3 @@ export default function PaymentsPage() {
     </>
   );
 }
-
-    

@@ -48,8 +48,8 @@ const months = [
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
 export default function MonthlyReportsPage() {
-  const { t, dir } = useTranslation();
-  const { payments, expenses, logo } = useData();
+  const { t, lang, dir } = useTranslation();
+  const { payments, expenses, logo, currentUser } = useData();
   const { toast } = useToast();
 
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -58,13 +58,22 @@ export default function MonthlyReportsPage() {
 
   const monthlyData = useMemo(() => {
     const filteredPayments = payments.filter((p) => {
-      // NOTE: We parse paymentFor as a local date to avoid timezone issues.
-      const paymentForDate = new Date(p.paymentFor);
-      return (
-        paymentForDate.getFullYear() === selectedYear &&
-        paymentForDate.getMonth() === selectedMonth &&
-        p.currency === selectedCurrency
-      );
+        if (!p.paymentFor) return false;
+        if (p.paymentFor.includes('-')) {
+            const [year, month] = p.paymentFor.split('-').map(Number);
+            return (
+                year === selectedYear &&
+                (month - 1) === selectedMonth &&
+                p.currency === selectedCurrency
+            );
+        }
+        // Fallback for old "Month Year" format
+        const paymentForDate = new Date(p.paymentFor);
+        return (
+            paymentForDate.getFullYear() === selectedYear &&
+            paymentForDate.getMonth() === selectedMonth &&
+            p.currency === selectedCurrency
+        );
     });
 
     const filteredExpenses = expenses.filter((e) => {
@@ -102,13 +111,21 @@ export default function MonthlyReportsPage() {
     });
 
     const allTransactions = [
-      ...filteredPayments.map(p => ({ ...p, id: `p-${p.id}`, transactionType: 'Income' as const, description: `${t('payment_for')} ${p.paymentFor}` })),
+      ...filteredPayments.map(p => {
+        let paymentForDisplay = p.paymentFor;
+        if (p.paymentFor.includes('-')) {
+            const [year, month] = p.paymentFor.split('-').map(Number);
+            const date = new Date(Date.UTC(year, month - 1, 1));
+            paymentForDisplay = date.toLocaleString(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        }
+        return { ...p, id: `p-${p.id}`, transactionType: 'Income' as const, description: `${t('payment_for')} ${paymentForDisplay}` };
+      }),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
 
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };
-  }, [payments, expenses, selectedYear, selectedMonth, selectedCurrency, t]);
+  }, [payments, expenses, selectedYear, selectedMonth, selectedCurrency, t, lang]);
 
   const handleExportPDF = async () => {
     try {
@@ -161,15 +178,16 @@ export default function MonthlyReportsPage() {
         doc.setTextColor(100, 100, 100);
         doc.text(`${t('date')}: ${new Date().toLocaleDateString()}`, 195, 34, { align: 'right' });
         doc.text(`${t('currency')}: ${selectedCurrency}`, 195, 39, { align: 'right' });
+        doc.text(`${t('generated_by')}: ${currentUser?.name || 'N/A'}`, 195, 44, { align: 'right' });
   
         doc.setDrawColor(220, 220, 220);
-        doc.line(14, 45, 196, 45);
+        doc.line(14, 50, 196, 50);
 
         // Summary Cards
         const cardWidth = 58;
         const cardHeight = 25;
         const startX = 14;
-        const startY = 50;
+        const startY = 55;
         const gap = 5;
 
         // Card 1: Total Income
@@ -211,13 +229,25 @@ export default function MonthlyReportsPage() {
         doc.text(`${monthlyData.netBalance.toLocaleString()} ${selectedCurrency}`, card3X + cardWidth - 5, startY + 18, { align: 'right' });
 
         const head = [[t('amount'), t('type'), t('description'), t('participant_name'), t('date')]];
-        const body = monthlyData.allTransactions.map(tx => ([
-          `${tx.amount.toLocaleString()} ${tx.currency}`,
-          t(tx.transactionType.toLowerCase()),
-          tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description,
-          tx.participantName,
-          new Date(tx.date).toLocaleDateString()
-        ]));
+        const body = monthlyData.allTransactions.map(tx => {
+            let description = tx.description;
+            if(tx.transactionType === 'Income') {
+                let paymentForDisplay = tx.paymentFor;
+                if (tx.paymentFor.includes('-')) {
+                    const [year, month] = tx.paymentFor.split('-').map(Number);
+                    const date = new Date(Date.UTC(year, month - 1, 1));
+                    paymentForDisplay = date.toLocaleString(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+                }
+                description = `${t('payment_for')} ${paymentForDisplay}`;
+            }
+            return [
+                `${tx.amount.toLocaleString()} ${tx.currency}`,
+                t(tx.transactionType.toLowerCase()),
+                description,
+                tx.participantName,
+                new Date(tx.date).toLocaleDateString()
+            ]
+        });
   
         autoTable(doc, {
           startY: startY + cardHeight + 10,
@@ -430,7 +460,7 @@ export default function MonthlyReportsPage() {
                             <TableRow key={tx.id}>
                                 <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
-                                <TableCell>{tx.transactionType === 'Income' ? `${t('payment_for')} ${new Date(tx.paymentFor).toLocaleDateString(dir === 'rtl' ? 'ar-EG' : 'en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })}` : tx.description}</TableCell>
+                                <TableCell>{tx.description}</TableCell>
                                 <TableCell>
                                     <Badge variant={tx.transactionType === 'Income' ? 'secondary' : 'destructive'}>{t(tx.transactionType.toLowerCase())}</Badge>
                                 </TableCell>
@@ -451,5 +481,3 @@ export default function MonthlyReportsPage() {
     </div>
   );
 }
-
-    

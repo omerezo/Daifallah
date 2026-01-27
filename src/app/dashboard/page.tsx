@@ -139,16 +139,13 @@ export default function DashboardPage() {
       };
     }
     
-    const paymentForDate = new Date(paymentYear, paymentMonth, 1);
-    const paymentForMonth = paymentForDate.toLocaleString(lang, { month: 'long', timeZone: 'UTC' });
-
     const newPayment: Omit<Payment, 'id' | 'date'> = {
       participantId: participant.id,
       participantName: participant.name,
       amount: parseFloat(paymentAmount),
       currency: paymentCurrency,
       type: 'Monthly Share' as const,
-      paymentFor: `${paymentForMonth} ${paymentYear}`,
+      paymentFor: `${paymentYear}-${String(paymentMonth + 1).padStart(2, '0')}`,
       recordedBy: currentUser.id,
       remarks,
     };
