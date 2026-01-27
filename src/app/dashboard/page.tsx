@@ -60,7 +60,7 @@ const months = [
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export default function DashboardPage() {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { toast } = useToast();
   const {
     payments,
@@ -140,7 +140,7 @@ export default function DashboardPage() {
     }
     
     const paymentForDate = new Date(paymentYear, paymentMonth, 1);
-    const paymentForMonth = paymentForDate.toLocaleString('default', { month: 'long' });
+    const paymentForMonth = paymentForDate.toLocaleString(lang, { month: 'long', timeZone: 'UTC' });
 
     const newPayment: Omit<Payment, 'id' | 'date'> = {
       participantId: participant.id,

@@ -69,7 +69,7 @@ const allMonths = [
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export default function PaymentsPage() {
-  const { t, dir } = useTranslation();
+  const { t, dir, lang } = useTranslation();
   const { toast } = useToast();
   const { payments, participants, users, addPayment, updatePayment, deletePayment, addRecentActivity, logo, currentUser } = useData();
 
@@ -187,7 +187,7 @@ export default function PaymentsPage() {
             t(p.type.toLowerCase()),
             p.currency,
             String(p.amount),
-            p.recordedBy,
+            users.find(u => u.id === p.recordedBy)?.name || p.recordedBy,
             p.paymentFor,
             p.participantName,
             p.date,
@@ -253,7 +253,7 @@ export default function PaymentsPage() {
     if (filteredData.type === 'payments') {
         const paymentData = filteredData.data as Payment[];
         headers = ['ID', t('date'), t('participant_name'), t('payment_for'), t('recorded_by'), t('amount'), t('currency'), t('type'), t('remarks')];
-        data = paymentData.map(p => [p.id, p.date, p.participantName, p.paymentFor, p.recordedBy, p.amount, p.currency, p.type, p.remarks || '']);
+        data = paymentData.map(p => [p.id, p.date, p.participantName, p.paymentFor, users.find(u => u.id === p.recordedBy)?.name || p.recordedBy, p.amount, p.currency, p.type, p.remarks || '']);
         filename = 'payments.csv';
     } else if (filteredData.type === 'unpaid') {
         const participantData = filteredData.data as Participant[];
@@ -423,7 +423,7 @@ export default function PaymentsPage() {
     }
     
     const paymentForDate = new Date(paymentYear, paymentMonth, 1);
-    const paymentForMonth = paymentForDate.toLocaleString('default', { month: 'long' });
+    const paymentForMonth = paymentForDate.toLocaleString(lang, { month: 'long', timeZone: 'UTC' });
 
     const paymentData: Omit<Payment, 'id' | 'date'> = {
       participantId: participant.id,
@@ -644,7 +644,7 @@ export default function PaymentsPage() {
                           {payment.participantName}
                         </TableCell>
                         <TableCell>{payment.paymentFor}</TableCell>
-                        <TableCell className="hidden md:table-cell">{payment.recordedBy}</TableCell>
+                        <TableCell className="hidden md:table-cell">{users.find(u => u.id === payment.recordedBy)?.name || payment.recordedBy}</TableCell>
                         <TableCell className="text-right">{payment.amount}</TableCell>
                         <TableCell className="hidden md:table-cell">
                           {payment.currency}
