@@ -59,7 +59,7 @@ const months = [
   'july', 'august', 'september', 'october', 'november', 'december'
 ];
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 
 export default function DashboardPage() {
   const { t, lang } = useTranslation();
@@ -275,8 +275,8 @@ export default function DashboardPage() {
     }
     
     toast({
-      title: 'Payments Saved',
-      description: `Successfully recorded ${monthIndices.length} payments for ${participant.name}.`,
+      title: t('payments_saved'),
+      description: t('payments_saved_description', { count: monthIndices.length, name: participant.name }),
     });
     
     resetMultiPaymentForm();
@@ -314,8 +314,8 @@ export default function DashboardPage() {
                 </DialogHeader>
                 <Tabs defaultValue="single" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="single">Single Payment</TabsTrigger>
-                    <TabsTrigger value="multiple">Multiple Payments</TabsTrigger>
+                    <TabsTrigger value="single">{t('single_payment')}</TabsTrigger>
+                    <TabsTrigger value="multiple">{t('multiple_payments')}</TabsTrigger>
                   </TabsList>
                   
                   {/* Single Payment Tab */}
@@ -491,21 +491,21 @@ export default function DashboardPage() {
                             </Select>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right">Mode</Label>
+                            <Label className="text-right">{t('mode')}</Label>
                              <RadioGroup value={multiPaymentMode} onValueChange={(v) => setMultiPaymentMode(v as 'single'|'bulk')} className="col-span-3 flex gap-4">
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="single" id="r1" />
-                                    <Label htmlFor="r1">Single amount per month</Label>
+                                    <Label htmlFor="r1">{t('single_amount_per_month')}</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <RadioGroupItem value="bulk" id="r2" />
-                                    <Label htmlFor="r2">Distribute bulk amount</Label>
+                                    <Label htmlFor="r2">{t('distribute_bulk_amount')}</Label>
                                 </div>
                             </RadioGroup>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                            <Label htmlFor="amount-multi" className="text-right">
-                              {multiPaymentMode === 'single' ? "Amount per Month" : "Total Bulk Amount"}
+                              {t(multiPaymentMode === 'single' ? 'amount_per_month' : 'total_bulk_amount')}
                             </Label>
                             <Input
                               id="amount-multi"
@@ -553,7 +553,7 @@ export default function DashboardPage() {
                               </Select>
                          </div>
                          <div className="grid grid-cols-4 items-start gap-4">
-                            <Label className="text-right pt-2">Months</Label>
+                            <Label className="text-right pt-2">{t('months')}</Label>
                             <div className="col-span-3">
                                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                                 {months.map((month, index) => (
@@ -583,15 +583,15 @@ export default function DashboardPage() {
                                             setSelectedMonths(newSelectedMonths);
                                         }}
                                     />
-                                    <Label htmlFor="select-all-months" className="font-semibold">Select All</Label>
+                                    <Label htmlFor="select-all-months" className="font-semibold">{t('select_all')}</Label>
                                 </div>
                             </div>
                          </div>
                         {multiPaymentMode === 'bulk' && distributedAmount > 0 && (
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label className="text-right">Amount/Month</Label>
+                                <Label className="text-right">{t('amount_per_month_label')}</Label>
                                 <div className="col-span-3 text-sm text-muted-foreground">
-                                    {distributedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {paymentCurrency} will be recorded for each of the {numSelectedMonths} selected months.
+                                    {t('distributed_amount_info', { amount: distributedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), currency: paymentCurrency, count: numSelectedMonths })}
                                 </div>
                             </div>
                         )}
@@ -605,13 +605,13 @@ export default function DashboardPage() {
                             className="col-span-3"
                             value={remarks}
                             onChange={(e) => setRemarks(e.target.value)}
-                            placeholder={`${t('add_remarks_placeholder')} (will be applied to all records)`}
+                            placeholder={t('remarks_placeholder_multiple', { placeholder: t('add_remarks_placeholder') })}
                           />
                         </div>
                     </div>
                     <DialogFooter>
                       <Button type="button" onClick={handleSaveMultiplePayments}>
-                        Save {numSelectedMonths} Payments
+                        {t('save_multiple_payments', { count: numSelectedMonths })}
                       </Button>
                     </DialogFooter>
                   </TabsContent>

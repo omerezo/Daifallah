@@ -239,7 +239,7 @@
   "document_name": "اسم المستند",
   "details": "التفاصيل",
   "document_file": "ملف المستند",
-  "max_file_size_info": "حجم الملف الأقصى: 1 ميجابايت. الأنواع المسموح بها: PDF, DOCX, PNG, JPG.",
+  "max_file_size_info": "Maximum file size: 1MB. Allowed types: PDF, DOCX, PNG, JPG.",
   "max_image_file_size_info": "حجم الملف الأقصى: 1 ميجابايت. الأنواع المسموح بها: PNG, JPG.",
   "save_document": "حفظ المستند",
   "document_added": "تمت إضافة المستند",
@@ -268,7 +268,20 @@
   "password_mismatch_error": "كلمتا المرور الجديدتان غير متطابقتين.",
   "invalid_current_password": "كلمة المرور الحالية غير صحيحة.",
   "password_updated_success": "تم تحديث كلمة المرور بنجاح.",
-  "storage_quota_exceeded": "مساحة تخزين المتصفح ممتلئة. لم يتم حفظ التغييرات الأخيرة وقد تُفقد عند تحديث الصفحة. يرجى إزالة الملفات الكبيرة مثل الإيصالات أو المستندات."
+  "storage_quota_exceeded": "مساحة تخزين المتصفح ممتلئة. لم يتم حفظ التغييرات الأخيرة وقد تُفقد عند تحديث الصفحة. يرجى إزالة الملفات الكبيرة مثل الإيصالات أو المستندات.",
+  "single_payment": "دفعة فردية",
+  "multiple_payments": "دفعات متعددة",
+  "mode": "الوضع",
+  "single_amount_per_month": "مبلغ واحد لكل شهر",
+  "distribute_bulk_amount": "توزيع مبلغ إجمالي",
+  "amount_per_month": "المبلغ لكل شهر",
+  "total_bulk_amount": "المبلغ الإجمالي",
+  "months": "الشهور",
+  "select_all": "تحديد الكل",
+  "amount_per_month_label": "المبلغ/شهر",
+  "distributed_amount_info": "سيتم تسجيل {{amount}} {{currency}} لكل شهر من الشهور الـ{{count}} المختارة.",
+  "remarks_placeholder_multiple": "{{placeholder}} (سيتم تطبيقه على جميع السجلات)",
+  "save_multiple_payments": "حفظ {{count}} دفعات",
+  "payments_saved": "تم حفظ الدفعات",
+  "payments_saved_description": "تم تسجيل {{count}} دفعات بنجاح لـ {{name}}."
 }
-
-    

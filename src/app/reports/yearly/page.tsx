@@ -113,7 +113,7 @@ export default function YearlyReportsPage() {
         return { ...p, id: `p-${p.id}`, transactionType: 'Income' as const, description: `${t('payment_for')} ${paymentForDisplay}` };
       }),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
-    ].sort((a, b) => new Date(a.date + 'T00:00:00').getTime() - new Date(b.date + 'T00:00:00').getTime());
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };
@@ -434,7 +434,7 @@ export default function YearlyReportsPage() {
                     <TableBody>
                         {yearlyData.allTransactions.length > 0 ? yearlyData.allTransactions.map((tx) => (
                             <TableRow key={tx.id}>
-                                <TableCell>{new Date(tx.date + 'T00:00:00').toLocaleDateString()}</TableCell>
+                                <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
                                 <TableCell className="font-medium">{tx.participantName}</TableCell>
                                 <TableCell>{tx.description}</TableCell>
                                 <TableCell>

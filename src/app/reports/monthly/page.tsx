@@ -121,7 +121,7 @@ export default function MonthlyReportsPage() {
         return { ...p, id: `p-${p.id}`, transactionType: 'Income' as const, description: `${t('payment_for')} ${paymentForDisplay}` };
       }),
       ...filteredExpenses.map(e => ({ ...e, id: `e-${e.id}`, transactionType: 'Expense' as const, participantName: e.description }))
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
 
     return { totalIncome, totalExpenses, netBalance, chartData, allTransactions };

@@ -268,7 +268,20 @@
   "password_mismatch_error": "The new passwords do not match.",
   "invalid_current_password": "The current password you entered is incorrect.",
   "password_updated_success": "Your password has been updated successfully.",
-  "storage_quota_exceeded": "Browser storage is full. Recent changes could not be saved and may be lost on refresh. Please remove large files like receipts or documents."
+  "storage_quota_exceeded": "Browser storage is full. Recent changes could not be saved and may be lost on refresh. Please remove large files like receipts or documents.",
+  "single_payment": "Single Payment",
+  "multiple_payments": "Multiple Payments",
+  "mode": "Mode",
+  "single_amount_per_month": "Single amount per month",
+  "distribute_bulk_amount": "Distribute bulk amount",
+  "amount_per_month": "Amount per Month",
+  "total_bulk_amount": "Total Bulk Amount",
+  "months": "Months",
+  "select_all": "Select All",
+  "amount_per_month_label": "Amount/Month",
+  "distributed_amount_info": "{{amount}} {{currency}} will be recorded for each of the {{count}} selected months.",
+  "remarks_placeholder_multiple": "{{placeholder}} (will be applied to all records)",
+  "save_multiple_payments": "Save {{count}} Payments",
+  "payments_saved": "Payments Saved",
+  "payments_saved_description": "Successfully recorded {{count}} payments for {{name}}."
 }
-
-    
