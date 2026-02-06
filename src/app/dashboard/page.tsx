@@ -48,6 +48,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useData } from '@/context/data-provider';
 import type { Payment } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const currencies = ['USD', 'SAR', 'EGP', 'SDG'] as const;
 
@@ -74,6 +76,7 @@ export default function DashboardPage() {
 
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
 
+  // Single payment state
   const [selectedParticipantId, setSelectedParticipantId] = useState<
     string | undefined
   >();
@@ -84,6 +87,20 @@ export default function DashboardPage() {
   const [paymentYear, setPaymentYear] = useState(new Date().getFullYear());
   const [bankTransferFile, setBankTransferFile] = useState<File | null>(null);
   const [remarks, setRemarks] = useState('');
+
+  // Multiple payment state
+  const [multiPaymentMode, setMultiPaymentMode] = useState<'single' | 'bulk'>('single');
+  const [selectedMonths, setSelectedMonths] = useState<Record<number, boolean>>({});
+  const [multiPaymentAmount, setMultiPaymentAmount] = useState('');
+  const [multiPaymentYear, setMultiPaymentYear] = useState(new Date().getFullYear());
+
+  const numSelectedMonths = useMemo(() => Object.values(selectedMonths).filter(Boolean).length, [selectedMonths]);
+  const distributedAmount = useMemo(() => {
+    if (multiPaymentMode !== 'bulk' || !multiPaymentAmount || numSelectedMonths === 0) {
+      return 0;
+    }
+    return parseFloat(multiPaymentAmount) / numSelectedMonths;
+  }, [multiPaymentAmount, numSelectedMonths, multiPaymentMode]);
 
   const currencySummaries = useMemo(() => {
     const summaries = {} as Record<
@@ -112,6 +129,28 @@ export default function DashboardPage() {
   const activeMembersCount = useMemo(() => {
     return participants.filter((p) => p.status === 'Active').length;
   }, [participants]);
+  
+  const resetSinglePaymentForm = () => {
+    setSelectedParticipantId(undefined);
+    setPaymentAmount('');
+    setPaymentCurrency('USD');
+    setPaymentMonth(new Date().getMonth());
+    setPaymentYear(new Date().getFullYear());
+    setBankTransferFile(null);
+    setRemarks('');
+  };
+
+  const resetMultiPaymentForm = () => {
+    // Keep participant ID if user just wants to switch modes
+    // setSelectedParticipantId(undefined); 
+    setMultiPaymentMode('single');
+    setSelectedMonths({});
+    setMultiPaymentAmount('');
+    setMultiPaymentYear(new Date().getFullYear());
+    setBankTransferFile(null); // Also reset file for multi-payment
+    setRemarks(''); // And remarks
+  }
+
 
   const handleSavePayment = async () => {
     if (!selectedParticipantId || !paymentAmount) {
@@ -172,16 +211,78 @@ export default function DashboardPage() {
       description: t('payment_saved_description'),
     });
     
-    // Reset form and close dialog
-    setSelectedParticipantId(undefined);
-    setPaymentAmount('');
-    setPaymentCurrency('USD');
-    setPaymentMonth(new Date().getMonth());
-    setPaymentYear(new Date().getFullYear());
-    setBankTransferFile(null);
-    setRemarks('');
+    resetSinglePaymentForm();
     setIsRecordPaymentOpen(false);
   };
+  
+  const handleSaveMultiplePayments = async () => {
+    if (!selectedParticipantId || !multiPaymentAmount || numSelectedMonths === 0) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: t('fill_all_fields'),
+      });
+      return;
+    }
+
+    const participant = participants.find((p) => p.id === selectedParticipantId);
+    if (!participant || !currentUser) return;
+
+    let bankTransferProof: Payment['bankTransferProof'];
+    if (bankTransferFile) {
+      const url = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target!.result as string);
+        reader.readAsDataURL(bankTransferFile);
+      });
+      bankTransferProof = {
+        filename: bankTransferFile.name,
+        url: url,
+      };
+    }
+
+    const amountPerMonth = multiPaymentMode === 'bulk' ? distributedAmount : parseFloat(multiPaymentAmount);
+    
+    const monthIndices = Object.entries(selectedMonths)
+      .filter(([, isSelected]) => isSelected)
+      .map(([index]) => parseInt(index, 10));
+
+    for (const monthIndex of monthIndices) {
+      const paymentData: Omit<Payment, 'id'|'date'> = {
+        participantId: participant.id,
+        participantName: participant.name,
+        amount: amountPerMonth,
+        currency: paymentCurrency,
+        type: 'Monthly Share',
+        paymentFor: `${multiPaymentYear}-${String(monthIndex + 1).padStart(2, '0')}`,
+        recordedBy: currentUser.id,
+        remarks,
+        ...(bankTransferProof && { bankTransferProof }),
+      };
+      
+      addPayment(paymentData);
+      
+      const activity = {
+        id: `${Date.now()}-${monthIndex}`,
+        name: participant.name,
+        email: `${participant.name.toLowerCase().replace(' ', '.')}@example.com`,
+        type: 'Payment' as const,
+        status: 'Paid' as const,
+        date: new Date().toLocaleDateString('en-CA'),
+        amount: `${amountPerMonth.toFixed(2)} ${paymentCurrency}`,
+      };
+      addRecentActivity(activity);
+    }
+    
+    toast({
+      title: 'Payments Saved',
+      description: `Successfully recorded ${monthIndices.length} payments for ${participant.name}.`,
+    });
+    
+    resetMultiPaymentForm();
+    setIsRecordPaymentOpen(false);
+  };
+
   
   if (!currentUser) {
     return null; // Or a loading spinner
@@ -207,155 +308,315 @@ export default function DashboardPage() {
                   </span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
                   <DialogTitle>{t('record_payment')}</DialogTitle>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="participant" className="text-right">
-                      {t('participant')}
-                    </Label>
-                    <Select
-                      value={selectedParticipantId}
-                      onValueChange={setSelectedParticipantId}
-                    >
-                      <SelectTrigger id="participant" className="col-span-3">
-                        <SelectValue placeholder={t('select_participant')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {participants.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                      {t('amount')}
-                    </Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      className="col-span-2"
-                      value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(e.target.value)}
-                    />
-                    <Select
-                      value={paymentCurrency}
-                      onValueChange={(v) =>
-                        setPaymentCurrency(v as typeof paymentCurrency)
-                      }
-                    >
-                      <SelectTrigger className="col-span-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currencies.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {c}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="payment-date" className="text-right">
-                      {t('payment_for')}
-                    </Label>
-                    <div className="col-span-3 grid grid-cols-2 gap-2">
-                      <Select
-                        value={String(paymentMonth)}
-                        onValueChange={(v) => setPaymentMonth(Number(v))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('month')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map((month, index) => (
-                            <SelectItem key={month} value={String(index)}>
-                              {t(month)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={String(paymentYear)}
-                        onValueChange={(v) => setPaymentYear(Number(v))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('year')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map((year) => (
-                            <SelectItem key={year} value={String(year)}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="bank-transfer" className="text-right">
-                      {t('bank_transfer')}
-                    </Label>
-                    <div className="col-span-3">
-                      <Input
-                        id="bank-transfer"
-                        type="file"
-                        className="sr-only"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                                if (file.size > MAX_FILE_SIZE) {
-                                    toast({
-                                        variant: 'destructive',
-                                        title: t('error'),
-                                        description: t('file_too_large'),
-                                    });
-                                    setBankTransferFile(null);
-                                    e.target.value = ''; // Reset file input
-                                } else {
-                                    setBankTransferFile(file);
+                <Tabs defaultValue="single" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="single">Single Payment</TabsTrigger>
+                    <TabsTrigger value="multiple">Multiple Payments</TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Single Payment Tab */}
+                  <TabsContent value="single">
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="participant" className="text-right">
+                          {t('participant')}
+                        </Label>
+                        <Select
+                          value={selectedParticipantId}
+                          onValueChange={setSelectedParticipantId}
+                        >
+                          <SelectTrigger id="participant" className="col-span-3">
+                            <SelectValue placeholder={t('select_participant')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {participants.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="amount" className="text-right">
+                          {t('amount')}
+                        </Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          className="col-span-2"
+                          value={paymentAmount}
+                          onChange={(e) => setPaymentAmount(e.target.value)}
+                        />
+                        <Select
+                          value={paymentCurrency}
+                          onValueChange={(v) =>
+                            setPaymentCurrency(v as typeof paymentCurrency)
+                          }
+                        >
+                          <SelectTrigger className="col-span-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {currencies.map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {c}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="payment-date" className="text-right">
+                          {t('payment_for')}
+                        </Label>
+                        <div className="col-span-3 grid grid-cols-2 gap-2">
+                          <Select
+                            value={String(paymentMonth)}
+                            onValueChange={(v) => setPaymentMonth(Number(v))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('month')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {months.map((month, index) => (
+                                <SelectItem key={month} value={String(index)}>
+                                  {t(month)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={String(paymentYear)}
+                            onValueChange={(v) => setPaymentYear(Number(v))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('year')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {years.map((year) => (
+                                <SelectItem key={year} value={String(year)}>
+                                  {year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="bank-transfer-single" className="text-right">
+                          {t('bank_transfer')}
+                        </Label>
+                        <div className="col-span-3">
+                          <Input
+                            id="bank-transfer-single"
+                            type="file"
+                            className="sr-only"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                    if (file.size > MAX_FILE_SIZE) {
+                                        toast({
+                                            variant: 'destructive',
+                                            title: t('error'),
+                                            description: t('file_too_large'),
+                                        });
+                                        setBankTransferFile(null);
+                                        e.target.value = '';
+                                    } else {
+                                        setBankTransferFile(file);
+                                    }
                                 }
-                            }
-                        }}
-                      />
-                      <Label
-                        htmlFor="bank-transfer"
-                        className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground"
-                      >
-                        <Upload className="h-4 w-4" />
-                        <span>
-                          {bankTransferFile
-                            ? bankTransferFile.name
-                            : t('upload_file')}
-                        </span>
-                      </Label>
-                      <p className="text-xs text-muted-foreground mt-1">{t('max_image_file_size_info')}</p>
+                            }}
+                          />
+                          <Label
+                            htmlFor="bank-transfer-single"
+                            className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground"
+                          >
+                            <Upload className="h-4 w-4" />
+                            <span>
+                              {bankTransferFile
+                                ? bankTransferFile.name
+                                : t('upload_file')}
+                            </span>
+                          </Label>
+                          <p className="text-xs text-muted-foreground mt-1">{t('max_image_file_size_info')}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 items-start gap-4">
+                        <Label htmlFor="remarks-single" className="text-right pt-2">
+                          {t('remarks')}
+                        </Label>
+                        <Textarea
+                          id="remarks-single"
+                          className="col-span-3"
+                          value={remarks}
+                          onChange={(e) => setRemarks(e.target.value)}
+                          placeholder={t('add_remarks_placeholder')}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="remarks" className="text-right pt-2">
-                      {t('remarks')}
-                    </Label>
-                    <Textarea
-                      id="remarks"
-                      className="col-span-3"
-                      value={remarks}
-                      onChange={(e) => setRemarks(e.target.value)}
-                      placeholder={t('add_remarks_placeholder')}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" onClick={handleSavePayment}>
-                    {t('save_payment')}
-                  </Button>
-                </DialogFooter>
+                    <DialogFooter>
+                      <Button type="button" onClick={handleSavePayment}>
+                        {t('save_payment')}
+                      </Button>
+                    </DialogFooter>
+                  </TabsContent>
+
+                  {/* Multiple Payments Tab */}
+                  <TabsContent value="multiple">
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="participant-multi" className="text-right">
+                              {t('participant')}
+                            </Label>
+                            <Select
+                              value={selectedParticipantId}
+                              onValueChange={setSelectedParticipantId}
+                            >
+                              <SelectTrigger id="participant-multi" className="col-span-3">
+                                <SelectValue placeholder={t('select_participant')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {participants.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Mode</Label>
+                             <RadioGroup value={multiPaymentMode} onValueChange={(v) => setMultiPaymentMode(v as 'single'|'bulk')} className="col-span-3 flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="single" id="r1" />
+                                    <Label htmlFor="r1">Single amount per month</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="bulk" id="r2" />
+                                    <Label htmlFor="r2">Distribute bulk amount</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                           <Label htmlFor="amount-multi" className="text-right">
+                              {multiPaymentMode === 'single' ? "Amount per Month" : "Total Bulk Amount"}
+                            </Label>
+                            <Input
+                              id="amount-multi"
+                              type="number"
+                              className="col-span-2"
+                              value={multiPaymentAmount}
+                              onChange={(e) => setMultiPaymentAmount(e.target.value)}
+                            />
+                            <Select
+                              value={paymentCurrency}
+                              onValueChange={(v) =>
+                                setPaymentCurrency(v as typeof paymentCurrency)
+                              }
+                            >
+                              <SelectTrigger className="col-span-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {currencies.map((c) => (
+                                  <SelectItem key={c} value={c}>
+                                    {c}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="year-multi" className="text-right">
+                              {t('year')}
+                            </Label>
+                             <Select
+                                value={String(multiPaymentYear)}
+                                onValueChange={(v) => setMultiPaymentYear(Number(v))}
+                              >
+                                <SelectTrigger id="year-multi" className="col-span-1">
+                                  <SelectValue placeholder={t('year')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {years.map((year) => (
+                                    <SelectItem key={year} value={String(year)}>
+                                      {year}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                         </div>
+                         <div className="grid grid-cols-4 items-start gap-4">
+                            <Label className="text-right pt-2">Months</Label>
+                            <div className="col-span-3">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                                {months.map((month, index) => (
+                                    <div key={month} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`month-${index}`}
+                                            checked={!!selectedMonths[index]}
+                                            onCheckedChange={(checked) => {
+                                                setSelectedMonths(prev => ({...prev, [index]: !!checked}))
+                                            }}
+                                        />
+                                        <Label htmlFor={`month-${index}`} className="font-normal">{t(month)}</Label>
+                                    </div>
+                                ))}
+                                </div>
+                                <div className="flex items-center space-x-2 mt-4 border-t pt-4">
+                                    <Checkbox
+                                        id="select-all-months"
+                                        checked={numSelectedMonths === 12}
+                                        onCheckedChange={(checked) => {
+                                            const newSelectedMonths: Record<number, boolean> = {};
+                                            if (checked) {
+                                                for(let i=0; i<12; i++) {
+                                                    newSelectedMonths[i] = true;
+                                                }
+                                            }
+                                            setSelectedMonths(newSelectedMonths);
+                                        }}
+                                    />
+                                    <Label htmlFor="select-all-months" className="font-semibold">Select All</Label>
+                                </div>
+                            </div>
+                         </div>
+                        {multiPaymentMode === 'bulk' && distributedAmount > 0 && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label className="text-right">Amount/Month</Label>
+                                <div className="col-span-3 text-sm text-muted-foreground">
+                                    {distributedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {paymentCurrency} will be recorded for each of the {numSelectedMonths} selected months.
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-4 items-start gap-4">
+                          <Label htmlFor="remarks-multi" className="text-right pt-2">
+                            {t('remarks')}
+                          </Label>
+                          <Textarea
+                            id="remarks-multi"
+                            className="col-span-3"
+                            value={remarks}
+                            onChange={(e) => setRemarks(e.target.value)}
+                            placeholder={`${t('add_remarks_placeholder')} (will be applied to all records)`}
+                          />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="button" onClick={handleSaveMultiplePayments}>
+                        Save {numSelectedMonths} Payments
+                      </Button>
+                    </DialogFooter>
+                  </TabsContent>
+
+                </Tabs>
               </DialogContent>
             </Dialog>
           )}
