@@ -256,19 +256,17 @@ export default function PolicyAndProceduresPage() {
             const imgProps = doc.getImageProperties(logo);
             const logoWidth = 30;
             const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-            // Place logo on the side corresponding to the language direction
-            doc.addImage(logo, 'PNG', isArabic ? pageWidth - margin - logoWidth : margin, margin, logoWidth, logoHeight);
+            const logoX = isArabic ? pageWidth - margin - logoWidth : margin;
+            doc.addImage(logo, 'PNG', logoX, margin, logoWidth, logoHeight);
             headerBottomY = margin + logoHeight;
           } catch (e) {
               console.warn("Could not add logo to PDF, skipping.", e);
           }
       }
       
-      doc.setFontSize(16);
-      doc.setFont('Amiri', 'bold');
+      doc.setFontSize(18); // Title font size
       doc.text(t('app_name'), pageWidth / 2, margin + 20, { align: 'center' });
 
-      // Adjust line position to be below the logo and title
       const lineY = Math.max(headerBottomY, margin + 20) + 5;
       doc.setLineWidth(0.25);
       doc.line(margin, lineY, pageWidth - margin, lineY);
@@ -277,26 +275,21 @@ export default function PolicyAndProceduresPage() {
 
       // Date
       doc.setFontSize(12);
-      doc.setFont('Amiri', 'normal');
       const formattedDate = format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS });
-      doc.text(formattedDate, isArabic ? pageWidth - margin : margin, contentStartY, { align: isArabic ? 'right' : 'left' });
+      const dateX = isArabic ? pageWidth - margin : margin;
+      const dateAlign = isArabic ? 'right' : 'left';
+      doc.text(formattedDate, dateX, contentStartY, { align: dateAlign });
       
       // Subject / Header of the letter
-      doc.setFontSize(14);
-      doc.setFont('Amiri', 'bold');
-      
-      // For Arabic, right-align the subject to prevent rendering issues.
-      // For English, center-align it.
-      const subjectX = isArabic ? pageWidth - margin : pageWidth / 2;
-      const subjectAlign = isArabic ? 'right' : 'center';
-      doc.text(letter.header, subjectX, contentStartY + 20, { align: subjectAlign });
+      doc.setFontSize(16); // Header font size
+      doc.text(letter.header, pageWidth / 2, contentStartY + 20, { align: 'center' });
       
       // Body
       doc.setFontSize(12);
-      doc.setFont('Amiri', 'normal');
       const bodyText = doc.splitTextToSize(letter.body, pageWidth - (margin * 2));
       const bodyAlign = isArabic ? 'right' : 'left';
-      doc.text(bodyText, isArabic ? pageWidth - margin : margin, contentStartY + 40, { align: bodyAlign });
+      const bodyX = isArabic ? pageWidth - margin : margin;
+      doc.text(bodyText, bodyX, contentStartY + 40, { align: bodyAlign });
 
       // Footer
       const footerY = pageHeight - margin - 15;
@@ -327,8 +320,7 @@ export default function PolicyAndProceduresPage() {
           const base64Font = (reader.result as string).split(',')[1];
           doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
           doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-          doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold');
-          doc.setFont('Amiri');
+          doc.setFont('Amiri', 'normal');
           generatePDFContent(doc, letter, isArabic, pageHeight, pageWidth, margin);
           doc.save(`letter-${letter.header}.pdf`);
         }
