@@ -317,7 +317,7 @@ export default function PolicyAndProceduresPage() {
 
     try {
       if (isArabic) {
-        const fontResponse = await fetch('/fonts/Cairo-Regular.ttf');
+        const fontResponse = await fetch('/fonts/Amiri-Regular.ttf');
         if (!fontResponse.ok) throw new Error('Failed to load Arabic font');
         const fontBlob = await fontResponse.blob();
         const reader = new FileReader();
@@ -325,9 +325,9 @@ export default function PolicyAndProceduresPage() {
         reader.readAsDataURL(fontBlob);
         reader.onloadend = () => {
           const base64Font = (reader.result as string).split(',')[1];
-          doc.addFileToVFS('Cairo-Regular.ttf', base64Font);
-          doc.addFont('Cairo-Regular.ttf', 'Amiri', 'normal');
-          doc.addFont('Cairo-Regular.ttf', 'Amiri', 'bold');
+          doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
+          doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+          doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold');
           doc.setFont('Amiri');
           generatePDFContent(doc, letter, isArabic, pageHeight, pageWidth, margin);
           doc.save(`letter-${letter.header}.pdf`);
