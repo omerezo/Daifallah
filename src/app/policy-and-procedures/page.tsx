@@ -242,33 +242,37 @@ export default function PolicyAndProceduresPage() {
   const handleGeneratePDF = async (letter: Letter) => {
     toast({ title: t('exporting_letter'), description: t('preparing_pdf') });
 
+    const isArabic = lang === 'ar';
+    const primaryFont = isArabic ? 'Cairo, sans-serif' : 'Inter, sans-serif';
+    const dateAlign = isArabic ? 'left' : 'right';
+    const bodyAlign = isArabic ? 'right' : 'left';
+    const mainDirection = isArabic ? 'rtl' : 'ltr';
+
     const letterElement = document.createElement('div');
-    // Style it for A4 paper size and to be off-screen
     letterElement.style.position = 'absolute';
     letterElement.style.left = '-9999px';
-    letterElement.style.width = '210mm'; // A4 width
+    letterElement.style.width = '210mm';
     letterElement.style.padding = '20mm';
-    letterElement.style.fontFamily = 'Amiri, serif'; // Assuming Amiri is loaded globally
-    letterElement.style.direction = dir;
+    letterElement.style.fontFamily = primaryFont;
+    letterElement.style.direction = mainDirection;
     letterElement.style.backgroundColor = 'white';
     letterElement.style.color = 'black';
     letterElement.style.boxSizing = 'border-box';
     
-    // Construct the HTML content, similar to the Word export
     letterElement.innerHTML = `
       <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
         ${logo && !logo.startsWith('data:image/svg') ? `<img src="${logo}" alt="logo" style="width: 100px; height: auto; display: block; margin: 0 auto 10px;">` : ''}
-        <h1 style="margin: 0; font-size: 20pt; font-family: Amiri, serif;">${t('app_name')}</h1>
+        <h1 style="margin: 0; font-size: 20pt; font-family: ${primaryFont};">${t('app_name')}</h1>
       </div>
-      <p style="text-align: ${dir === 'rtl' ? 'left' : 'right'}; font-size: 12pt; margin-bottom: 30px;">
-        ${format(new Date(letter.date), 'PPP', { locale: lang === 'ar' ? arSA : enUS })}
+      <p style="text-align: ${dateAlign}; font-size: 12pt; margin-bottom: 30px;">
+        ${format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS })}
       </p>
-      <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px; font-family: Amiri, serif;">${letter.header}</h2>
-      <div style="font-size: 12pt; line-height: 1.5; white-space: pre-wrap; text-align: ${dir === 'rtl' ? 'right' : 'left'};">
+      <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px; font-family: ${primaryFont};">${letter.header}</h2>
+      <div style="font-size: 12pt; line-height: 1.5; white-space: pre-wrap; text-align: ${bodyAlign};">
         ${letter.body.replace(/\n/g, '<br />')}
       </div>
       <div style="position: absolute; bottom: 20mm; left: 20mm; right: 20mm; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; font-size: 10pt;">
-        <p style="font-family: Amiri, serif;">${t('app_name')}</p>
+        <p style="font-family: ${primaryFont};">${t('app_name')}</p>
       </div>
     `;
 
@@ -276,8 +280,8 @@ export default function PolicyAndProceduresPage() {
 
     try {
         const canvas = await html2canvas(letterElement, {
-            scale: 2, // Higher scale for better quality
-            useCORS: true, // For external images like the logo
+            scale: 2,
+            useCORS: true,
             backgroundColor: '#ffffff',
         });
 
@@ -303,6 +307,12 @@ export default function PolicyAndProceduresPage() {
   const handleGenerateWord = (letter: Letter) => {
     toast({ title: t('exporting_letter') });
     
+    const isArabic = lang === 'ar';
+    const primaryFont = isArabic ? 'Arial, sans-serif' : 'Times New Roman, serif';
+    const dateAlign = isArabic ? 'left' : 'right';
+    const bodyAlign = isArabic ? 'right' : 'left';
+    const mainDirection = isArabic ? 'rtl' : 'ltr';
+
     const fullHtml = `
       <!DOCTYPE html>
       <html lang="${lang}">
@@ -310,7 +320,7 @@ export default function PolicyAndProceduresPage() {
           <meta charset="utf-8">
           <title>${letter.header}</title>
         </head>
-        <body style="font-family: 'Times New Roman', serif; direction: ${dir}; margin: 1in;">
+        <body style="font-family: ${primaryFont}; direction: ${mainDirection}; margin: 1in;">
 
             <!-- Header -->
             <div style="width: 100%; margin-bottom: 30px; text-align: center;">
@@ -321,13 +331,13 @@ export default function PolicyAndProceduresPage() {
 
             <!-- Letter Content -->
             <div style="clear: both;">
-              <p style="text-align: ${dir === 'rtl' ? 'left' : 'right'}; font-size: 12pt; margin-bottom: 30px;">
-                ${format(new Date(letter.date), 'PPP', { locale: lang === 'ar' ? arSA : enUS })}
+              <p style="text-align: ${dateAlign}; font-size: 12pt; margin-bottom: 30px;">
+                ${format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS })}
               </p>
               
               <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px;">${letter.header}</h2>
               
-              <div style="font-size: 12pt; line-height: 1.5; white-space: pre-wrap; text-align: ${dir === 'rtl' ? 'right' : 'left'};">
+              <div style="font-size: 12pt; line-height: 1.5; white-space: pre-wrap; text-align: ${bodyAlign};">
                 ${letter.body.replace(/\n/g, '<br />')}
               </div>
             </div>
