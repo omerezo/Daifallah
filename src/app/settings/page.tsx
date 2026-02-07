@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -28,7 +29,7 @@ export default function SettingsPage() {
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/webp")) {
+    if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result;
@@ -130,7 +131,7 @@ export default function SettingsPage() {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleLogoUpload}
-                  accept="image/png, image/jpeg, image/webp"
+                  accept="image/png, image/jpeg"
                   className="sr-only"
                   id="logo-upload-input"
                 />
