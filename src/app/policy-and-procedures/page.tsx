@@ -58,13 +58,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ar as arSA, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { default as jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
-
-// Base64 encoded Amiri font for jsPDF - moved here for component-specific usage
-const amiriFont = 'AAEAAAARAQAABAAQRFNJRwAAAAAAAmyAAAADgAAAA9hTUFSQwAAAAAAAbJAAAAQGAAAADxHUE9TAAAAAAABsAAAH3AAAOJHU1VCAAAAAAA/PAAAABwAAAAgT1MvMgAAAEQAAAA/AAAAYFhZ/lRjbWFwAAAAVgAAAIQAAAFCAA/qW2N2dCAAAABcAAAABAAAAAQAAAAAZnBnbQAAAIMAAADgAAABbQt1HmJnYXNwAAAApAAAAAwAAAAMAAAACGdseWYAAACqAAAB+3//AADrcGhlYWQAAAD8AAAANgAAADYPKA5naGhlYQAAAEgAAAAkAAAAJAg0B4hobXR4AAAAZAAAADLAAABMBt8BWGtlcm4AAABYAAAAIgAAACIAEgLga2xpc3QAAAGEAAAAJgAAACYAAAGhsb2NhAAAAlgAAAGIAAABgAdYOtG1AXAQAAAAAAAABhQAAAAEAAAAAAAEUAAEAAAAAAAAABAABAAIAAAAEAAgAAgAAAAAAAgAAAAMAAAAUAAMAAQAAABQABAAAAAIAAgAAAAAAACgAqd/9//8AAAAgAKrf///k/9UCAQABAAYADgAAAAcAFgAAAAAAARQADwADAAQAAwAAAAAAAPAAEAAAAAAAABUBAAACAAAAAAAA/5Vf+gF4/9UCABMABAACAAAAAQAAAAAAAAABAAAAAABUbFBMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAACAABAAkAAAAAAAMAAgACAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA- ... goes on for a long time';
 
 
 export default function PolicyAndProceduresPage() {
@@ -130,6 +128,16 @@ export default function PolicyAndProceduresPage() {
           variant: 'destructive',
           title: t('error'),
           description: t('file_too_large'),
+        });
+        setDocFile(null);
+        e.target.value = ''; // Reset file input
+        return;
+      }
+      if (file.type !== 'image/png' && file.type !== 'image/jpeg' && file.type !== 'application/pdf' && file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('invalid_file_type'),
         });
         setDocFile(null);
         e.target.value = ''; // Reset file input
@@ -242,111 +250,108 @@ export default function PolicyAndProceduresPage() {
   const handleGeneratePDF = async (letter: Letter) => {
     toast({ title: t('exporting_letter'), description: t('preparing_pdf') });
 
+    const doc = new jsPDF('p', 'mm', 'a4');
     const isArabic = lang === 'ar';
-    const primaryFont = isArabic ? 'Cairo, sans-serif' : 'Inter, sans-serif';
-    const dateAlign = isArabic ? 'left' : 'right';
-    const bodyAlign = isArabic ? 'right' : 'left';
-    const mainDirection = isArabic ? 'rtl' : 'ltr';
-
-    const letterElement = document.createElement('div');
-    letterElement.style.position = 'absolute';
-    letterElement.style.left = '-9999px';
-    letterElement.style.width = '210mm';
-    letterElement.style.padding = '20mm';
-    letterElement.style.fontFamily = primaryFont;
-    letterElement.style.direction = mainDirection;
-    letterElement.style.backgroundColor = 'white';
-    letterElement.style.color = 'black';
-    letterElement.style.boxSizing = 'border-box';
-    
-    letterElement.innerHTML = `
-      <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-        ${logo && !logo.startsWith('data:image/svg') ? `<img src="${logo}" alt="logo" style="width: 100px; height: auto; display: block; margin: 0 auto 10px;">` : ''}
-        <h1 style="margin: 0; font-size: 20pt; font-family: ${primaryFont};">${t('app_name')}</h1>
-      </div>
-      <p style="text-align: ${dateAlign}; font-size: 12pt; margin-bottom: 30px;">
-        ${format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS })}
-      </p>
-      <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px; font-family: ${primaryFont};">${letter.header}</h2>
-      <div style="font-size: 12pt; line-height: 1.5; white-space: pre-wrap; text-align: ${bodyAlign};">
-        ${letter.body.replace(/\n/g, '<br />')}
-      </div>
-      <div style="position: absolute; bottom: 20mm; left: 20mm; right: 20mm; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; font-size: 10pt;">
-        <p style="font-family: ${primaryFont};">${t('app_name')}</p>
-      </div>
-    `;
-
-    document.body.appendChild(letterElement);
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
 
     try {
-        const canvas = await html2canvas(letterElement, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-        });
-
-        document.body.removeChild(letterElement);
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
+      if (isArabic) {
+        const fontResponse = await fetch('/fonts/Amiri-Regular.ttf');
+        if (!fontResponse.ok) throw new Error('Failed to load Arabic font');
+        const fontBlob = await fontResponse.blob();
+        const reader = new FileReader();
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`letter-${letter.header}.pdf`);
-
-    } catch (e: any) {
-        if (document.body.contains(letterElement)) {
-            document.body.removeChild(letterElement);
+        reader.readAsDataURL(fontBlob);
+        reader.onloadend = () => {
+          const base64Font = (reader.result as string).split(',')[1];
+          doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
+          doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+          doc.setFont('Amiri');
+          generatePDFContent(doc, letter, isArabic, pageHeight, pageWidth, margin);
+          doc.save(`letter-${letter.header}.pdf`);
         }
+      } else {
+        doc.setFont('Helvetica');
+        generatePDFContent(doc, letter, isArabic, pageHeight, pageWidth, margin);
+        doc.save(`letter-${letter.header}.pdf`);
+      }
+    } catch (e: any) {
         console.error("PDF generation failed:", e);
         toast({ variant: 'destructive', title: t('error'), description: e.message || "PDF generation failed." });
     }
   };
+
+  const generatePDFContent = (doc: jsPDF, letter: Letter, isArabic: boolean, pageHeight: number, pageWidth: number, margin: number) => {
+      // Header
+      if (logo && !logo.startsWith('data:image/svg')) {
+          const imgProps = doc.getImageProperties(logo);
+          const logoWidth = 30;
+          const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+          doc.addImage(logo, 'PNG', margin, margin, logoWidth, logoHeight);
+      }
+      doc.setFontSize(16);
+      doc.text(t('app_name'), pageWidth / 2, margin + 15, { align: 'center' });
+      doc.setLineWidth(0.5);
+      doc.line(margin, margin + 25, pageWidth - margin, margin + 25);
+
+      // Date
+      doc.setFontSize(12);
+      const formattedDate = format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS });
+      doc.text(formattedDate, isArabic ? margin : pageWidth - margin, margin + 40, { align: isArabic ? 'left' : 'right' });
+      
+      // Subject
+      doc.setFontSize(14);
+      doc.setFont('Helvetica', 'bold');
+      if(isArabic) doc.setFont('Amiri', 'bold');
+      doc.text(letter.header, pageWidth / 2, margin + 60, { align: 'center' });
+      
+      // Body
+      doc.setFontSize(12);
+      doc.setFont('Helvetica', 'normal');
+      if(isArabic) doc.setFont('Amiri', 'normal');
+      const bodyText = doc.splitTextToSize(letter.body, pageWidth - (margin * 2));
+      const bodyAlign = isArabic ? 'right' : 'left';
+      doc.text(bodyText, isArabic ? pageWidth - margin : margin, margin + 80, { align: bodyAlign });
+
+      // Footer
+      doc.setLineWidth(0.5);
+      doc.line(margin, pageHeight - margin - 5, pageWidth - margin, pageHeight - margin - 5);
+      doc.setFontSize(10);
+      doc.text(t('app_name'), pageWidth / 2, pageHeight - margin, { align: 'center' });
+  }
 
   const handleGenerateWord = (letter: Letter) => {
     toast({ title: t('exporting_letter') });
     
     const isArabic = lang === 'ar';
     const primaryFont = isArabic ? 'Arial, sans-serif' : 'Times New Roman, serif';
-    const dateAlign = isArabic ? 'left' : 'right';
     const bodyAlign = isArabic ? 'right' : 'left';
     const mainDirection = isArabic ? 'rtl' : 'ltr';
 
     const fullHtml = `
       <!DOCTYPE html>
-      <html lang="${lang}">
+      <html lang="${lang}" dir="${mainDirection}">
         <head>
           <meta charset="utf-8">
           <title>${letter.header}</title>
         </head>
-        <body style="font-family: ${primaryFont}; direction: ${mainDirection}; margin: 1in;">
-
-            <!-- Header -->
-            <div style="width: 100%; margin-bottom: 30px; text-align: center;">
+        <body style="font-family: ${primaryFont}; margin: 1in; font-size: 12pt; line-height: 1.5;">
+            <div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc;">
               ${logo && !logo.startsWith('data:image/svg') ? `<img src="${logo}" alt="logo" style="width: 100px; height: auto; display: block; margin: 0 auto 10px;">` : ''}
-              <h1 style="margin: 0; font-size: 20pt;">${t('app_name')}</h1>
-              <hr style="margin-top: 10px;"/>
+              <h1 style="margin: 0; font-size: 18pt;">${t('app_name')}</h1>
             </div>
-
-            <!-- Letter Content -->
-            <div style="clear: both;">
-              <p style="text-align: ${dateAlign}; font-size: 12pt; margin-bottom: 30px;">
-                ${format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS })}
-              </p>
-              
-              <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px;">${letter.header}</h2>
-              
-              <div style="font-size: 12pt; line-height: 1.5; white-space: pre-wrap; text-align: ${bodyAlign};">
-                ${letter.body.replace(/\n/g, '<br />')}
-              </div>
+            <p style="text-align: ${isArabic ? 'left' : 'right'}; font-size: 12pt; margin-bottom: 30px;">
+              ${format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS })}
+            </p>
+            <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px;">${letter.header}</h2>
+            <div style="white-space: pre-wrap; text-align: ${bodyAlign};">
+              ${letter.body.replace(/\n/g, '<br />')}
             </div>
-
-            <!-- Footer -->
-             <div style="width: 100%; margin-top: 50px; padding-top: 20px; border-top: 1px solid #000; text-align: center; font-size: 10pt;">
+             <div style="position: fixed; bottom: 0.5in; left: 1in; right: 1in; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; font-size: 10pt;">
                 <p>${t('app_name')}</p>
             </div>
-
         </body>
       </html>
     `;
@@ -412,7 +417,7 @@ export default function PolicyAndProceduresPage() {
                                     <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="doc-file" className="text-right">{t('document_file')}</Label>
                                     <div className="col-span-3">
-                                        <Input id="doc-file" type="file" className="sr-only" onChange={handleFileChange} />
+                                        <Input id="doc-file" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
                                         <Label htmlFor="doc-file" className="flex h-10 w-full cursor-pointer items-center gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm text-muted-foreground ring-offset-background hover:bg-accent hover:text-accent-foreground">
                                         <Upload className="h-4 w-4" />
                                         <span>{docFile ? docFile.name : t('upload_file')}</span>

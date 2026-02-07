@@ -222,7 +222,7 @@
   "invalid_credentials": "Invalid email or password.",
   "logo_updated": "Logo Updated",
   "logo_updated_description": "Your committee logo has been successfully updated.",
-  "invalid_file_type": "Invalid file type. Please upload a PNG, JPG, or WEBP image.",
+  "invalid_file_type": "Invalid file type. Please upload a PDF, DOCX, PNG, or JPG.",
   "logo_too_large_description": "The selected image file is too large and could not be saved. Please choose a smaller file.",
   "edit_transaction": "Edit Transaction",
   "transaction_updated": "Transaction Updated",
