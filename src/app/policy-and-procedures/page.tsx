@@ -240,42 +240,81 @@ export default function PolicyAndProceduresPage() {
     
     try {
         const doc = new jsPDF('p', 'mm', 'a4');
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 20;
 
         doc.addFileToVFS('Amiri-Regular.ttf', amiriFont);
         doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-        doc.setFont('Amiri');
-
-        // Header
-        if (logo && !logo.startsWith('data:image/svg')) {
-          const imgProps = doc.getImageProperties(logo);
-          const logoWidth = 30;
-          const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-          doc.addImage(logo, 'PNG', dir === 'rtl' ? 170 : 10, 10, logoWidth, logoHeight);
-        }
-        doc.setFontSize(16);
-        doc.text(t('app_name'), 105, 20, { align: 'center'});
-        doc.setDrawColor(200, 200, 200);
-        doc.line(10, 35, 200, 35);
-
-        // Letter content
-        doc.setFontSize(12);
-        doc.text(format(new Date(letter.date), 'PPP', { locale: lang === 'ar' ? arSA : enUS }), dir === 'rtl' ? 198 : 12, 45, { align: dir === 'rtl' ? 'right' : 'left' });
-        doc.setFontSize(14);
-        doc.setFont('Amiri', 'bold');
-        doc.text(letter.header, 105, 55, { align: 'center' });
-        
+        doc.addFont('Amiri-Regular.ttf', 'Amiri-Bold', 'bold');
         doc.setFont('Amiri', 'normal');
-        doc.setFontSize(12);
-        const bodyLines = doc.splitTextToSize(letter.body, 180);
-        doc.text(bodyLines, dir === 'rtl' ? 198 : 12, 70, { align: dir === 'rtl' ? 'right' : 'left' });
+
+        // === Header ===
+        if (logo && !logo.startsWith('data:image/svg')) {
+          try {
+            const imgProps = doc.getImageProperties(logo);
+            const logoWidth = 30;
+            const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+            let imageFormat = 'PNG'; // Default
+            if (logo.startsWith('data:image/jpeg')) {
+                imageFormat = 'JPEG';
+            } else if (logo.startsWith('data:image/png')) {
+                imageFormat = 'PNG';
+            }
+            
+            const logoX = dir === 'rtl' ? pageWidth - margin - logoWidth : margin;
+            doc.addImage(logo, imageFormat, logoX, 15, logoWidth, logoHeight);
+          } catch(e) {
+            console.error("Failed to add logo to PDF:", e);
+          }
+        }
         
-        // Footer
-        const pageHeight = doc.internal.pageSize.getHeight();
-        doc.line(10, pageHeight - 20, 200, pageHeight - 20);
+        doc.setFont('Amiri', 'bold');
+        doc.setFontSize(18);
+        doc.text(t('app_name'), pageWidth / 2, 25, { align: 'center'});
+        
+        doc.setDrawColor(220, 220, 220);
+        doc.line(margin, 40, pageWidth - margin, 40);
+
+        // === Letter Info ===
+        let currentY = 50;
+        doc.setFontSize(12);
+        doc.setFont('Amiri', 'normal');
+        doc.text(
+            `${t('date')}: ${format(new Date(letter.date), 'PPP', { locale: lang === 'ar' ? arSA : enUS })}`,
+            dir === 'rtl' ? pageWidth - margin : margin, 
+            currentY, 
+            { align: dir === 'rtl' ? 'right' : 'left' }
+        );
+        currentY += 15;
+
+        // === Subject ===
+        doc.setFontSize(16);
+        doc.setFont('Amiri', 'bold');
+        doc.text(letter.header, pageWidth / 2, currentY, { align: 'center' });
+        currentY += 15;
+
+        // === Body ===
+        doc.setFontSize(12);
+        doc.setFont('Amiri', 'normal');
+        const bodyLines = doc.splitTextToSize(letter.body, pageWidth - (margin * 2));
+        doc.text(
+            bodyLines, 
+            dir === 'rtl' ? pageWidth - margin : margin, 
+            currentY, 
+            { align: dir === 'rtl' ? 'right' : 'left' }
+        );
+
+        // === Footer ===
+        doc.line(margin, pageHeight - 25, pageWidth - margin, pageHeight - 25);
         doc.setFontSize(10);
-        doc.text(t('app_name'), 105, pageHeight - 12, { align: 'center' });
-
-
+        doc.text(
+            t('app_name'), 
+            pageWidth / 2, 
+            pageHeight - 15, 
+            { align: 'center' }
+        );
+        
         doc.save(`letter-${letter.header}.pdf`);
     } catch(e: any) {
         console.error("PDF generation failed:", e);
@@ -286,51 +325,40 @@ export default function PolicyAndProceduresPage() {
   const handleGenerateWord = (letter: Letter) => {
     toast({ title: t('exporting_letter') });
     
-    const letterHtml = `
-      <div style="font-family: 'Times New Roman', serif; direction: ${dir};">
-        <p style="text-align: ${dir === 'rtl' ? 'left' : 'right'};">${format(new Date(letter.date), 'PPP', { locale: lang === 'ar' ? arSA : enUS })}</p>
-        <h2 style="text-align: center;">${letter.header}</h2>
-        <div style="white-space: pre-wrap;">${letter.body}</div>
-      </div>
-    `;
-
     const fullHtml = `
       <!DOCTYPE html>
       <html lang="${lang}">
         <head>
           <meta charset="utf-8">
           <title>${letter.header}</title>
-          <style>
-            @page {
-              size: A4;
-              margin: 1in;
-            }
-            body { font-family: 'Times New Roman', serif; }
-            .header, .footer {
-                width: 100%;
-                text-align: center;
-                position: fixed;
-                font-size: 10pt;
-            }
-            .header {
-                top: 0px;
-            }
-            .footer {
-                bottom: 0px;
-            }
-          </style>
         </head>
-        <body>
-            <div class="header">
-                ${logo && !logo.startsWith('data:image/svg') ? `<img src="${logo}" alt="logo" style="width: 100px; height: auto;">` : ''}
-                <p>${t('app_name')}</p>
-                <hr>
+        <body style="font-family: 'Times New Roman', serif; direction: ${dir}; margin: 1in;">
+
+            <!-- Header -->
+            <div style="width: 100%; margin-bottom: 30px; text-align: center;">
+              ${logo && !logo.startsWith('data:image/svg') ? `<img src="${logo}" alt="logo" style="width: 100px; height: auto; display: block; margin: 0 auto 10px;">` : ''}
+              <h1 style="margin: 0; font-size: 20pt;">${t('app_name')}</h1>
+              <hr style="margin-top: 10px;"/>
             </div>
-            ${letterHtml}
-            <div class="footer">
-                <hr>
+
+            <!-- Letter Content -->
+            <div style="clear: both;">
+              <p style="text-align: ${dir === 'rtl' ? 'left' : 'right'}; font-size: 12pt; margin-bottom: 30px;">
+                ${format(new Date(letter.date), 'PPP', { locale: lang === 'ar' ? arSA : enUS })}
+              </p>
+              
+              <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px;">${letter.header}</h2>
+              
+              <div style="font-size: 12pt; line-height: 1.5; white-space: pre-wrap; text-align: ${dir === 'rtl' ? 'right' : 'left'};">
+                ${letter.body.replace(/\n/g, '<br />')}
+              </div>
+            </div>
+
+            <!-- Footer -->
+             <div style="width: 100%; margin-top: 50px; padding-top: 20px; border-top: 1px solid #000; text-align: center; font-size: 10pt;">
                 <p>${t('app_name')}</p>
             </div>
+
         </body>
       </html>
     `;
@@ -339,13 +367,14 @@ export default function PolicyAndProceduresPage() {
         type: 'application/msword'
     });
     
-    const url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(fullHtml);
+    const url = URL.createObjectURL(blob);
     const downloadLink = document.createElement("a");
     document.body.appendChild(downloadLink);
     downloadLink.href = url;
     downloadLink.download = `${letter.header}.doc`;
     downloadLink.click();
     document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(url);
   };
 
   return (
