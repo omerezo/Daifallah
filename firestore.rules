@@ -45,5 +45,9 @@ service cloud.firestore {
     match /policyDocuments/{documentId} {
         allow read, write: if isSignedIn();
     }
+
+    match /letters/{letterId} {
+      allow read, write: if isSignedIn();
+    }
   }
 }

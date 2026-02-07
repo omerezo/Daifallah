@@ -82,3 +82,12 @@ export type PolicyDocument = {
   };
   uploadedAt: string;
 };
+
+export type Letter = {
+  id: string;
+  date: string; // ISO string for the letter's date
+  header: string;
+  body: string;
+  createdAt: string; // ISO string for creation timestamp
+  createdBy: string; // User ID
+};

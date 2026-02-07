@@ -18,6 +18,7 @@ import type {
   WalletTransaction,
   PolicyDocument,
   UserProfile,
+  Letter,
 } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useCollection, useDoc, useFirestore, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -55,6 +56,11 @@ interface DataContextType {
   policyDocuments: PolicyDocument[];
   addPolicyDocument: (doc: Omit<PolicyDocument, 'id' | 'uploadedAt'>) => void;
   deletePolicyDocument: (docId: string) => void;
+  
+  letters: Letter[];
+  addLetter: (letter: Omit<Letter, 'id' | 'createdAt'>) => void;
+  updateLetter: (letter: Letter) => void;
+  deleteLetter: (letterId: string) => void;
 
   recentActivities: RecentActivity[];
   addRecentActivity: (activity: RecentActivity) => void;
@@ -103,6 +109,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { data: policyDocumentsData, error: policyDocumentsError } = useCollection<PolicyDocument>(policyDocumentsRef);
   const policyDocuments = policyDocumentsData || [];
 
+  const lettersRef = useMemoFirebase(() => (firestore && authUser) ? collection(firestore, 'letters') : null, [firestore, authUser]);
+  const { data: lettersData, error: lettersError } = useCollection<Letter>(lettersRef);
+  const letters = lettersData || [];
+
   const logoRef = useMemoFirebase(() => (firestore && authUser) ? doc(firestore, 'appConfig', 'logo') : null, [firestore, authUser]);
   const { data: logoData, error: logoError } = useDoc<{url: string}>(logoRef);
   const logo = logoData?.url || '';
@@ -110,7 +120,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
 
   useEffect(() => {
-    const errors = [paymentsError, participantsError, expensesError, usersError, walletsError, walletTransactionsError, policyDocumentsError, logoError].filter(Boolean);
+    const errors = [paymentsError, participantsError, expensesError, usersError, walletsError, walletTransactionsError, policyDocumentsError, lettersError, logoError].filter(Boolean);
     if (errors.length > 0) {
       const nonPermissionErrors = errors.filter(e => e && !e.message.includes('permission-denied') && !e.message.includes('insufficient permissions'));
       if (nonPermissionErrors.length > 0) {
@@ -121,7 +131,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         });
       }
     }
-  }, [paymentsError, participantsError, expensesError, usersError, walletsError, walletTransactionsError, policyDocumentsError, logoError, toast]);
+  }, [paymentsError, participantsError, expensesError, usersError, walletsError, walletTransactionsError, policyDocumentsError, lettersError, logoError, toast]);
 
   const addPayment = useCallback((payment: Omit<Payment, 'id' | 'date'>) => {
     if (!currentUser || !firestore) return;
@@ -340,6 +350,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     deleteDocumentNonBlocking(doc(firestore, 'policyDocuments', docId));
   }, [firestore]);
 
+  const addLetter = useCallback((letter: Omit<Letter, 'id'|'createdAt'>) => {
+    if (!firestore) return;
+    addDocumentNonBlocking(collection(firestore, 'letters'), { ...letter, createdAt: new Date().toISOString() });
+  }, [firestore]);
+  
+  const updateLetter = useCallback((letter: Letter) => {
+    if (!firestore) return;
+    setDocumentNonBlocking(doc(firestore, 'letters', letter.id), letter, { merge: true });
+  }, [firestore]);
+
+  const deleteLetter = useCallback((letterId: string) => {
+    if (!firestore) return;
+    deleteDocumentNonBlocking(doc(firestore, 'letters', letterId));
+  }, [firestore]);
+
   const setLogo = useCallback((logoUrl: string) => {
       if (!firestore) return;
       setDocumentNonBlocking(doc(firestore, 'appConfig', 'logo'), { url: logoUrl }, { merge: true });
@@ -375,6 +400,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     policyDocuments,
     addPolicyDocument,
     deletePolicyDocument,
+    letters,
+    addLetter,
+    updateLetter,
+    deleteLetter,
     recentActivities,
     addRecentActivity,
     currentUser,
