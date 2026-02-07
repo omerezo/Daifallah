@@ -291,6 +291,7 @@
   "manage_letters": "إنشاء وإدارة وتصدير الخطابات الرسمية.",
   "letter_header": "عنوان/موضوع الخطاب",
   "letter_body": "نص الخطاب",
+  "letter_body_placeholder": "ابدأ في كتابة رسالتك هنا...",
   "letter_date": "تاريخ الخطاب",
   "save_letter": "حفظ الخطاب",
   "edit_letter": "تعديل الخطاب",

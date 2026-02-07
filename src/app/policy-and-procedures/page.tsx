@@ -59,7 +59,8 @@ import { format } from 'date-fns';
 import { ar as arSA, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { default as jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { htmlToText } from 'html-to-text';
 
 
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
@@ -257,7 +258,8 @@ export default function PolicyAndProceduresPage() {
             const logoWidth = 30;
             const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
             const logoX = isArabic ? pageWidth - margin - logoWidth : margin;
-            doc.addImage(logo, 'PNG', logoX, margin, logoWidth, logoHeight);
+            const format = logo.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+            doc.addImage(logo, format, logoX, margin, logoWidth, logoHeight);
             headerBottomY = margin + logoHeight;
           } catch (e) {
               console.warn("Could not add logo to PDF, skipping.", e);
@@ -268,7 +270,7 @@ export default function PolicyAndProceduresPage() {
       doc.text(t('app_name'), pageWidth / 2, margin + 20, { align: 'center' });
 
       const lineY = Math.max(headerBottomY, margin + 20) + 5;
-      doc.setLineWidth(0.25);
+      doc.setLineWidth(0.1);
       doc.line(margin, lineY, pageWidth - margin, lineY);
 
       const contentStartY = lineY + 15;
@@ -282,11 +284,15 @@ export default function PolicyAndProceduresPage() {
       
       // Subject / Header of the letter
       doc.setFontSize(16); // Header font size
-      doc.text(letter.header, pageWidth / 2, contentStartY + 20, { align: 'center' });
+      const subjectAlign = isArabic ? 'right' : 'center';
+      const subjectX = isArabic ? pageWidth - margin : pageWidth / 2;
+      doc.text(letter.header, subjectX, contentStartY + 20, { align: subjectAlign });
       
       // Body
       doc.setFontSize(12);
-      const bodyText = doc.splitTextToSize(letter.body, pageWidth - (margin * 2));
+      // Convert HTML to plain text for PDF
+      const plainTextBody = htmlToText(letter.body, { wordwrap: false });
+      const bodyText = doc.splitTextToSize(plainTextBody, pageWidth - (margin * 2));
       const bodyAlign = isArabic ? 'right' : 'left';
       const bodyX = isArabic ? pageWidth - margin : margin;
       doc.text(bodyText, bodyX, contentStartY + 40, { align: bodyAlign });
@@ -366,8 +372,8 @@ export default function PolicyAndProceduresPage() {
               ${format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS })}
             </p>
             <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px;">${letter.header}</h2>
-            <div style="white-space: pre-wrap; text-align: ${bodyAlign};">
-              ${letter.body.replace(/\n/g, '<br />')}
+            <div style="text-align: ${bodyAlign};">
+              ${letter.body}
             </div>
              <div style="position: fixed; bottom: 0.5in; left: 1in; right: 1in; text-align: center; border-top: 1px solid #ccc; padding-top: 10px; font-size: 10pt;">
                 <p>${t('app_name')}</p>
@@ -572,9 +578,14 @@ export default function PolicyAndProceduresPage() {
               <Label htmlFor="letter-header" className="text-right">{t('letter_header')}</Label>
               <Input id="letter-header" value={letterHeader} onChange={(e) => setLetterHeader(e.target.value)} className="col-span-3" />
             </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="letter-body" className="text-right pt-2">{t('letter_body')}</Label>
-              <Textarea id="letter-body" value={letterBody} onChange={(e) => setLetterBody(e.target.value)} className="col-span-3 min-h-[200px]" />
+            <div className="grid grid-cols-1 items-start gap-4">
+              <Label htmlFor="letter-body" className="sr-only">{t('letter_body')}</Label>
+              <RichTextEditor
+                value={letterBody}
+                onChange={setLetterBody}
+                placeholder={t('letter_body_placeholder')}
+                className="col-span-full min-h-[250px]"
+              />
             </div>
           </div>
           <DialogFooter>

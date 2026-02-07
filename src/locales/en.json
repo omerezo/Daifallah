@@ -291,6 +291,7 @@
   "manage_letters": "Create, manage, and export official letters.",
   "letter_header": "Letter Header/Subject",
   "letter_body": "Letter Body",
+  "letter_body_placeholder": "Start writing your letter here...",
   "letter_date": "Letter Date",
   "save_letter": "Save Letter",
   "edit_letter": "Edit Letter",
