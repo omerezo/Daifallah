@@ -247,6 +247,65 @@ export default function PolicyAndProceduresPage() {
     document.body.removeChild(link);
   }
 
+  const generatePDFContent = (doc: jsPDF, letter: Letter, isArabic: boolean, pageHeight: number, pageWidth: number, margin: number) => {
+      // Header
+      let headerBottomY = margin;
+
+      if (logo && !logo.startsWith('data:image/svg')) {
+          try {
+            const imgProps = doc.getImageProperties(logo);
+            const logoWidth = 30;
+            const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
+            // Place logo on the side corresponding to the language direction
+            doc.addImage(logo, 'PNG', isArabic ? pageWidth - margin - logoWidth : margin, margin, logoWidth, logoHeight);
+            headerBottomY = margin + logoHeight;
+          } catch (e) {
+              console.warn("Could not add logo to PDF, skipping.", e);
+          }
+      }
+      
+      doc.setFontSize(16);
+      doc.setFont('Amiri', 'bold');
+      doc.text(t('app_name'), pageWidth / 2, margin + 20, { align: 'center' });
+
+      // Adjust line position to be below the logo and title
+      const lineY = Math.max(headerBottomY, margin + 20) + 5;
+      doc.setLineWidth(0.25);
+      doc.line(margin, lineY, pageWidth - margin, lineY);
+
+      const contentStartY = lineY + 15;
+
+      // Date
+      doc.setFontSize(12);
+      doc.setFont('Amiri', 'normal');
+      const formattedDate = format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS });
+      doc.text(formattedDate, isArabic ? pageWidth - margin : margin, contentStartY, { align: isArabic ? 'right' : 'left' });
+      
+      // Subject / Header of the letter
+      doc.setFontSize(14);
+      doc.setFont('Amiri', 'bold');
+      
+      // For Arabic, right-align the subject to prevent rendering issues.
+      // For English, center-align it.
+      const subjectX = isArabic ? pageWidth - margin : pageWidth / 2;
+      const subjectAlign = isArabic ? 'right' : 'center';
+      doc.text(letter.header, subjectX, contentStartY + 20, { align: subjectAlign });
+      
+      // Body
+      doc.setFontSize(12);
+      doc.setFont('Amiri', 'normal');
+      const bodyText = doc.splitTextToSize(letter.body, pageWidth - (margin * 2));
+      const bodyAlign = isArabic ? 'right' : 'left';
+      doc.text(bodyText, isArabic ? pageWidth - margin : margin, contentStartY + 40, { align: bodyAlign });
+
+      // Footer
+      const footerY = pageHeight - margin - 15;
+      doc.setLineWidth(0.25);
+      doc.line(margin, footerY, pageWidth - margin, footerY);
+      doc.setFontSize(10);
+      doc.text(t('app_name'), pageWidth / 2, footerY + 10, { align: 'center' });
+  }
+
   const handleGeneratePDF = async (letter: Letter) => {
     toast({ title: t('exporting_letter'), description: t('preparing_pdf') });
 
@@ -258,7 +317,7 @@ export default function PolicyAndProceduresPage() {
 
     try {
       if (isArabic) {
-        const fontResponse = await fetch('/fonts/Amiri-Regular.ttf');
+        const fontResponse = await fetch('/fonts/Cairo-Regular.ttf');
         if (!fontResponse.ok) throw new Error('Failed to load Arabic font');
         const fontBlob = await fontResponse.blob();
         const reader = new FileReader();
@@ -266,8 +325,9 @@ export default function PolicyAndProceduresPage() {
         reader.readAsDataURL(fontBlob);
         reader.onloadend = () => {
           const base64Font = (reader.result as string).split(',')[1];
-          doc.addFileToVFS('Amiri-Regular.ttf', base64Font);
-          doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+          doc.addFileToVFS('Cairo-Regular.ttf', base64Font);
+          doc.addFont('Cairo-Regular.ttf', 'Amiri', 'normal');
+          doc.addFont('Cairo-Regular.ttf', 'Amiri', 'bold');
           doc.setFont('Amiri');
           generatePDFContent(doc, letter, isArabic, pageHeight, pageWidth, margin);
           doc.save(`letter-${letter.header}.pdf`);
@@ -283,50 +343,11 @@ export default function PolicyAndProceduresPage() {
     }
   };
 
-  const generatePDFContent = (doc: jsPDF, letter: Letter, isArabic: boolean, pageHeight: number, pageWidth: number, margin: number) => {
-      // Header
-      if (logo && !logo.startsWith('data:image/svg')) {
-          const imgProps = doc.getImageProperties(logo);
-          const logoWidth = 30;
-          const logoHeight = (imgProps.height * logoWidth) / imgProps.width;
-          doc.addImage(logo, 'PNG', margin, margin, logoWidth, logoHeight);
-      }
-      doc.setFontSize(16);
-      doc.text(t('app_name'), pageWidth / 2, margin + 15, { align: 'center' });
-      doc.setLineWidth(0.5);
-      doc.line(margin, margin + 25, pageWidth - margin, margin + 25);
-
-      // Date
-      doc.setFontSize(12);
-      const formattedDate = format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS });
-      doc.text(formattedDate, isArabic ? margin : pageWidth - margin, margin + 40, { align: isArabic ? 'left' : 'right' });
-      
-      // Subject
-      doc.setFontSize(14);
-      doc.setFont('Helvetica', 'bold');
-      if(isArabic) doc.setFont('Amiri', 'bold');
-      doc.text(letter.header, pageWidth / 2, margin + 60, { align: 'center' });
-      
-      // Body
-      doc.setFontSize(12);
-      doc.setFont('Helvetica', 'normal');
-      if(isArabic) doc.setFont('Amiri', 'normal');
-      const bodyText = doc.splitTextToSize(letter.body, pageWidth - (margin * 2));
-      const bodyAlign = isArabic ? 'right' : 'left';
-      doc.text(bodyText, isArabic ? pageWidth - margin : margin, margin + 80, { align: bodyAlign });
-
-      // Footer
-      doc.setLineWidth(0.5);
-      doc.line(margin, pageHeight - margin - 5, pageWidth - margin, pageHeight - margin - 5);
-      doc.setFontSize(10);
-      doc.text(t('app_name'), pageWidth / 2, pageHeight - margin, { align: 'center' });
-  }
-
   const handleGenerateWord = (letter: Letter) => {
     toast({ title: t('exporting_letter') });
     
     const isArabic = lang === 'ar';
-    const primaryFont = isArabic ? 'Arial, sans-serif' : 'Times New Roman, serif';
+    const primaryFont = isArabic ? 'Cairo, Arial, sans-serif' : 'Times New Roman, serif';
     const bodyAlign = isArabic ? 'right' : 'left';
     const mainDirection = isArabic ? 'rtl' : 'ltr';
 
@@ -338,11 +359,18 @@ export default function PolicyAndProceduresPage() {
           <title>${letter.header}</title>
         </head>
         <body style="font-family: ${primaryFont}; margin: 1in; font-size: 12pt; line-height: 1.5;">
-            <div style="text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc;">
-              ${logo && !logo.startsWith('data:image/svg') ? `<img src="${logo}" alt="logo" style="width: 100px; height: auto; display: block; margin: 0 auto 10px;">` : ''}
-              <h1 style="margin: 0; font-size: 18pt;">${t('app_name')}</h1>
-            </div>
-            <p style="text-align: ${isArabic ? 'left' : 'right'}; font-size: 12pt; margin-bottom: 30px;">
+            <table style="width: 100%; border-bottom: 1px solid #ccc; padding-bottom: 10px; margin-bottom: 20px;">
+                <tr>
+                    <td style="width: 120px; text-align: ${isArabic ? 'right' : 'left'};">
+                        ${logo && !logo.startsWith('data:image/svg') ? `<img src="${logo}" alt="logo" style="width: 100px; height: auto;">` : ''}
+                    </td>
+                    <td style="text-align: center;">
+                         <h1 style="margin: 0; font-size: 18pt;">${t('app_name')}</h1>
+                    </td>
+                    <td style="width: 120px;"></td>
+                </tr>
+            </table>
+            <p style="text-align: ${isArabic ? 'right' : 'left'}; font-size: 12pt; margin-bottom: 30px;">
               ${format(new Date(letter.date), 'PPP', { locale: isArabic ? arSA : enUS })}
             </p>
             <h2 style="text-align: center; font-size: 16pt; margin-bottom: 30px;">${letter.header}</h2>
