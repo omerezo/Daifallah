@@ -13,10 +13,9 @@
   - Logs: `logs\stdout.log` and `logs\stderr.log` (10 MB rotation enabled)
   - Status: `Running`
 - **Power/Sleep:** Verified `STANDBYIDLE` is `0x00000000` (Never sleep) on both AC and DC under the active Balanced power plan.
-- **Public URL:** **Pending owner input** — per Step 8, waiting for the owner to specify which domain to use before configuring public access (e.g., via `cloudflared`, which is installed on this server).
+- **Public URL:** `https://daifallah.scitech.top` (routed on the existing `mubaraklab-tunnel` → `http://localhost:3003`)
 
 ## Build & Typecheck Output
-- **`npm run typecheck`:** `17` TypeScript errors (did not block deploy, as `ignoreBuildErrors: true` is set in `next.config.js`).
 - **`npm run build` (last lines):**
 ```text
 Route (app)                              Size     First Load JS
@@ -42,21 +41,59 @@ Route (app)                              Size     First Load JS
 ○  (Static)  prerendered as static content
 ```
 
+- **`npm run typecheck`:** `17` TypeScript errors (did not block deploy, as `ignoreBuildErrors: true` is set in `next.config.js`). Full output:
+```text
+src/app/participants/page.tsx(515,50): error TS2322: Type 'string | undefined' is not assignable to type 'string | number'.
+  Type 'undefined' is not assignable to type 'string | number'.
+src/app/payments/page.tsx(750,100): error TS2322: Type 'string | Payment[] | Participant[]' is not assignable to type 'ReactNode'.
+  Type 'Payment[]' is not assignable to type 'ReactNode'.
+    Type 'Payment[]' is not assignable to type 'Iterable<ReactNode>'.
+      The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
+        Type 'IteratorResult<Payment, undefined>' is not assignable to type 'IteratorResult<ReactNode, any>'.
+          Type 'IteratorYieldResult<Payment>' is not assignable to type 'IteratorResult<ReactNode, any>'.
+            Type 'IteratorYieldResult<Payment>' is not assignable to type 'IteratorYieldResult<ReactNode>'.
+              Type 'Payment' is not assignable to type 'ReactNode'.
+                Type 'Payment' is missing the following properties from type 'ReactPortal': children, props, key
+src/app/policy-and-procedures/page.tsx(63,28): error TS7016: Could not find a declaration file for module 'html-to-text'. 'C:/Users/PC/.gemini/antigravity/scratch/Daifallah/node_modules/html-to-text/lib/html-to-text.mjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/html-to-text` if it exists or add a new declaration (.d.ts) file containing `declare module 'html-to-text';`
+src/app/users/page.tsx(467,17): error TS2322: Type 'string | undefined' is not assignable to type 'string | number'.
+  Type 'undefined' is not assignable to type 'string | number'.
+src/app/wallets/page.tsx(483,14): error TS18047: 'currentUser' is possibly 'null'.
+src/app/wallets/page.tsx(555,18): error TS18047: 'currentUser' is possibly 'null'.
+src/app/wallets/page.tsx(628,20): error TS18047: 'currentUser' is possibly 'null'.
+src/app/wallets/page.tsx(651,24): error TS18047: 'currentUser' is possibly 'null'.
+src/components/ui/calendar.tsx(57,9): error TS2353: Object literal may only specify known properties, and 'IconLeft' does not exist in type 'Partial<CustomComponents>'.
+src/components/ui/calendar.tsx(57,22): error TS7031: Binding element 'className' implicitly has an 'any' type.
+src/components/ui/calendar.tsx(60,23): error TS7031: Binding element 'className' implicitly has an 'any' type.
+src/lib/placeholder-data.ts(1,46): error TS2305: Module '"./types"' has no exported member 'User'.
+src/lib/placeholder-data.ts(4,3): error TS2741: Property 'participantId' is missing in type '{ id: string; date: string; participantName: string; amount: number; currency: "USD"; type: "Monthly Share"; remarks: string; paymentFor: string; recordedBy: string; }' but required in type 'Payment'.
+src/lib/placeholder-data.ts(15,3): error TS2741: Property 'participantId' is missing in type '{ id: string; date: string; participantName: string; amount: number; currency: "SAR"; type: "Donation"; paymentFor: string; recordedBy: string; }' but required in type 'Payment'.
+src/lib/placeholder-data.ts(25,3): error TS2741: Property 'participantId' is missing in type '{ id: string; date: string; participantName: string; amount: number; currency: "USD"; type: "Monthly Share"; paymentFor: string; recordedBy: string; }' but required in type 'Payment'.
+src/lib/placeholder-data.ts(35,3): error TS2741: Property 'participantId' is missing in type '{ id: string; date: string; participantName: string; amount: number; currency: "EGP"; type: "Monthly Share"; paymentFor: string; recordedBy: string; }' but required in type 'Payment'.
+src/lib/placeholder-data.ts(45,3): error TS2741: Property 'participantId' is missing in type '{ id: string; date: string; participantName: string; amount: number; currency: "USD"; type: "Monthly Share"; paymentFor: string; recordedBy: string; }' but required in type 'Payment'.
+```
+
 ## Verification / Test
 - Local HTTP check against `http://localhost:3003`:
   - `/` -> HTTP `200`
   - `/login` -> HTTP `200`
   - `/dashboard` -> HTTP `200`
   - `/payments` -> HTTP `200`
-- **Owner login test (Dashboard & Payments):** Not yet performed — no owner credentials are available to the agent, and the public domain has not been configured yet.
+- Public HTTPS check against `https://daifallah.scitech.top`:
+  - `/` -> HTTP `200`
+  - `/login` -> HTTP `200`
+  - `/dashboard` -> HTTP `200`
+  - `/payments` -> HTTP `200`
+- **Owner login test (Dashboard & Payments):** Not yet performed by the agent — no owner credentials are available.
 
 ## Files Changed & Why
-1. `package.json`: Changed `"build": "NODE_ENV=production next build"` to `"build": "next build"` so the build script works on Windows (where inline Unix `VAR=val` syntax fails).
-2. `.gitignore`: Added `/logs/` so NSSM service log files in `logs\` are not tracked by git.
-3. `handoff/from-agent.md`: Created this deployment report.
+1. `package.json`: Changed `"build": "NODE_ENV=production next build"` to `"build": "next build"` so the build script works on Windows (where inline Unix `VAR=val` syntax fails), and updated `next` to `^14.2.35` (via `npm install next@14`).
+2. `package-lock.json`: Updated lockfile from running `npm install next@14`.
+3. `.gitignore`: Added `/logs/` so NSSM service log files in `logs\` are not tracked by git.
+4. `handoff/from-agent.md`: Created/updated this deployment report.
 
 *(Optional clean-up note per Step 10: `experimental.allowedDevOrigins` in `next.config.js` triggers an `Unrecognized key(s)` warning in Next.js 14.2.35 and points to the old Firebase Studio workstation; it was left untouched as instructed.)*
 
 ## Next Steps for Owner
-1. **Provide the domain name** you want to use for public access (Step 8) so we can configure a Cloudflare Tunnel (`cloudflared`) or reverse proxy with HTTPS pointing to `http://localhost:3003`.
-2. **Firebase Auth Authorized Domains (Step 9):** Once the domain is chosen, add that exact domain (and server IP if accessed directly) in **Firebase Console > Authentication > Settings > Authorized domains**, then test logging in with an owner account and opening **Dashboard** and **Payments**.
+1. **Firebase Auth Authorized Domains (Step 9):** Add **`daifallah.scitech.top`** in **Firebase Console > Authentication > Settings > Authorized domains** (otherwise login will fail).
+2. **Owner Login Test:** Open `https://daifallah.scitech.top`, log in with an owner account, and verify **Dashboard** and **Payments**.
